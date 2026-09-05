@@ -118,8 +118,8 @@ export function BatchTagDialog({ open, skills, allTags, onClose, onApply }: Prop
                       className={cn(
                         "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-medium transition-colors",
                         marked
-                          ? "bg-red-500/15 text-red-500 line-through"
-                          : "bg-accent-bg text-accent-light hover:bg-red-500/10 hover:text-red-500"
+                          ? "bg-[var(--ds-danger-bg)] text-[var(--ds-danger)] line-through"
+                          : "bg-accent-bg text-accent-light hover:bg-[var(--ds-danger-bg)] hover:text-[var(--ds-danger)]"
                       )}
                       title={
                         marked
@@ -147,13 +147,12 @@ export function BatchTagDialog({ open, skills, allTags, onClose, onApply }: Prop
               {adds.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[12px] font-medium text-emerald-600 dark:text-emerald-400"
+                  className="inline-flex items-center gap-1 rounded-full bg-[var(--ds-success-bg)] px-2 py-0.5 text-[12px] font-medium text-[color-mix(in_srgb,var(--ds-success)_55%,var(--ds-strong))]"
                 >
                   {tag}
                   <button
                     aria-label={`${t("common.delete")} ${tag}`}
                     onClick={() => setAdds(adds.filter((a) => a !== tag))}
-                    className="hover:text-emerald-700 dark:hover:text-emerald-300"
                   >
                     <X className="h-2.5 w-2.5" />
                   </button>

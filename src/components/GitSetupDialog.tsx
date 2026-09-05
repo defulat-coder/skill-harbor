@@ -47,7 +47,7 @@ export function GitSetupDialog({ open, hasRemote, onClose, onClone, onInit }: Pr
         {loading && <LoadingState label={t("common.loading")} />}
         {error && <p role="alert" className="text-danger mb-4">{error}</p>}
         {!hasRemote && (
-          <div className="mb-4 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-600 dark:text-amber-400">
+          <div className="mb-4 rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_40%,transparent)] bg-[var(--ds-warning-bg)] px-3 py-2 text-[12px] text-[color-mix(in_srgb,var(--ds-warning)_55%,var(--ds-strong))]">
             {t("settings.gitSetupNeedRemote")}
           </div>
         )}

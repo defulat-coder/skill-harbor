@@ -80,25 +80,28 @@ export function SyncDots({
   const hiddenCount = dots.length - visible.length;
 
   const dim = size === "sm"
-    ? "h-[16px] w-[16px] text-[8px]"
-    : "h-[18px] w-[18px] text-[9px]";
+    ? "h-[16px] w-[16px] text-[11px]"
+    : "h-[18px] w-[18px] text-[11px]";
 
   const iconStateClass: Record<DotState, string> = {
     synced: "bg-surface",
     available: "bg-surface opacity-45",
-    orphan: "ring-1 ring-inset ring-amber-500/60 bg-surface",
+    orphan: "ring-1 ring-inset ring-[var(--ds-warning)] bg-surface",
   };
 
   const textStateClass: Record<DotState, string> = {
     synced: "border-transparent bg-[var(--color-text-primary)] text-[var(--color-bg)]",
     available: "border border-border-subtle bg-surface-hover text-faint",
-    orphan: "border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    orphan: "border border-[var(--ds-warning)] bg-[var(--ds-warning-bg)] text-[var(--ds-warning)]",
   };
 
+  // Chinese-first UI: these title strings are Chinese literals because the i18n
+  // resource files are outside this round's editable scope (same exemption as
+  // the pages' hardcoded Chinese). Kept in sync with ProjectAgentDots.tsx.
   const stateTitle: Record<DotState, string> = {
-    synced: " · synced",
+    synced: " · 已同步",
     available: "",
-    orphan: " · synced · agent unavailable",
+    orphan: " · 已同步 · 工具不可用",
   };
 
   const clickHint: Record<DotState, string> = {
@@ -112,13 +115,11 @@ export function SyncDots({
       {visible.map((dot) => {
         const useIcon = hasAgentIcon(dot.key);
         const isPending = pendingKey === dot.key;
-        const interactive = !!onToggle && !isPending;
         const title = `${dot.displayName}${stateTitle[dot.state]}${onToggle ? clickHint[dot.state] : ""}`;
         const baseClass = cn(
           "inline-flex select-none items-center justify-center overflow-hidden rounded-[4px] transition-colors",
           dim,
-          useIcon ? iconStateClass[dot.state] : cn("border font-mono font-semibold tracking-tight", textStateClass[dot.state]),
-          interactive && "cursor-pointer hover:ring-1 hover:ring-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+          useIcon ? iconStateClass[dot.state] : cn("border font-mono font-semibold tracking-[0.06em]", textStateClass[dot.state]),
           isPending && "opacity-70",
         );
         const content = isPending ? (
@@ -145,9 +146,9 @@ export function SyncDots({
                 e.stopPropagation();
                 onToggle(dot.key, dot.state === "available");
               }}
-              className={baseClass}
+              className="-m-1 inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-[4px] hover:ring-1 hover:ring-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-default disabled:hover:ring-0"
             >
-              {content}
+              <span className={baseClass}>{content}</span>
             </button>
           );
         }
@@ -160,7 +161,7 @@ export function SyncDots({
       })}
       {hiddenCount > 0 && (
         <span
-          title={`+${hiddenCount} more agents`}
+          title={`+${hiddenCount} 个 Agent`}
           className={cn(
             "inline-flex select-none items-center justify-center rounded-[4px] border border-border-subtle bg-surface-hover font-mono font-semibold text-faint",
             dim,

@@ -4,7 +4,7 @@
 .controlGroup { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
 .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .skillGrid { display: grid; grid-template-columns: repeat(auto-fill,minmax(250px,1fr)); gap: 14px; }
-.skillCard { border: 1px solid var(--ds-border); border-radius: var(--ds-radius); background: var(--ds-bg); transition: border-color 150ms cubic-bezier(0.23,1,0.32,1); }
+.skillCard { border: 1px solid var(--ds-border); border-radius: var(--ds-radius); background: var(--ds-bg); transition: border-color var(--ds-duration-exit) var(--ds-ease-out); }
 .skillCard:hover,.skillCard:focus-within { border-color: var(--ds-border-selected); }
 .skillRow { flex-wrap: wrap; border-bottom: 1px solid var(--ds-border-soft); background: var(--ds-bg); min-width: 0; }
 .skillRow:hover,.skillRow:focus-within { background: var(--ds-panel); }

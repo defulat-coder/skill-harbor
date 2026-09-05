@@ -134,7 +134,7 @@ function AgentToggle({
         {loading ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin text-muted" />
         ) : item.enabled ? (
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+          <CheckCircle2 className="h-3.5 w-3.5 text-[var(--ds-success)]" />
         ) : (
           <Circle className="h-3.5 w-3.5 text-muted" />
         )}

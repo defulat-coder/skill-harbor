@@ -1071,17 +1071,17 @@ export function Settings() {
 
           <div className="mt-0.5 flex flex-wrap items-center gap-1">
             {agent.is_custom && (
-              <span className="rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium text-sky-700 dark:text-sky-300">
+              <span className="rounded-full bg-[var(--ds-info-bg)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ds-info)_65%,var(--ds-strong))]">
                 {t("settings.customAgent")}
               </span>
             )}
             {agent.is_custom && agent.project_relative_skills_dir && (
-              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">
+              <span className="rounded-full bg-[var(--ds-success-bg)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ds-success)_55%,var(--ds-strong))]">
                 {t("settings.projectAgentSupported")}
               </span>
             )}
             {agent.has_path_override && !agent.is_custom && (
-              <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
+              <span className="rounded-full bg-[var(--ds-warning-bg)] px-2 py-0.5 text-[10px] font-medium text-[color-mix(in_srgb,var(--ds-warning)_55%,var(--ds-strong))]">
                 {t("settings.pathOverridden")}
               </span>
             )}
@@ -1093,7 +1093,7 @@ export function Settings() {
             onClick={() =>
               handleRemoveCustomAgent(agent.key, agent.display_name)
             }
-            className="mt-0.5 shrink-0 p-0.5 text-muted transition-opacity hover:text-red-500 "
+            className="mt-0.5 shrink-0 text-muted transition-opacity hover:text-[var(--ds-danger)]"
             title={t("settings.removeCustomAgent")}
           >
             <Trash2 className="h-3 w-3" />
@@ -1135,7 +1135,7 @@ export function Settings() {
             />
             <Button
               onClick={() => handleBrowsePath(setEditingPathValue)}
-              className="shrink-0 p-1 text-muted hover:text-accent"
+              className="shrink-0 text-muted hover:text-accent"
               title={t("settings.selectFolder")}
             >
               <FolderOpen className="h-3 w-3" />
@@ -1144,7 +1144,7 @@ export function Settings() {
               aria-label={t("common.save")}
               disabled={pathSaving}
               onClick={handleSavePath}
-              className="shrink-0 p-1 text-emerald-500 hover:text-emerald-400"
+              className="shrink-0 text-[var(--ds-success)]"
             >
               <Check className="h-3 w-3" />
             </Button>
@@ -1152,7 +1152,7 @@ export function Settings() {
               aria-label={t("common.cancel")}
               disabled={pathSaving}
               onClick={() => setEditingPathKey(null)}
-              className="shrink-0 p-1 text-muted hover:text-secondary"
+              className="shrink-0 text-muted hover:text-secondary"
             >
               <X className="h-3 w-3" />
             </Button>
@@ -1168,7 +1168,7 @@ export function Settings() {
             <Button
               type="button"
               onClick={() => startEditPath(agent.key, agent.skills_dir)}
-              className="shrink-0 p-0.5 text-muted hover:text-accent transition-opacity "
+              className="shrink-0 text-muted hover:text-accent transition-opacity"
               title={t("settings.editPath")}
             >
               <Pencil className="h-3 w-3" />
@@ -1177,7 +1177,7 @@ export function Settings() {
               <Button
                 type="button"
                 onClick={() => handleResetPath(agent.key)}
-                className="shrink-0 p-0.5 text-muted hover:text-amber-500 transition-opacity "
+                className="shrink-0 text-muted transition-opacity hover:text-[var(--ds-warning)]"
                 title={t("settings.resetPath")}
               >
                 <RotateCcw className="h-3 w-3" />
@@ -1208,7 +1208,7 @@ export function Settings() {
               aria-label={t("common.save")}
               disabled={pathSaving}
               onClick={handleSaveProjectPath}
-              className="shrink-0 p-1 text-emerald-500 hover:text-emerald-400"
+              className="shrink-0 text-[var(--ds-success)]"
             >
               <Check className="h-3 w-3" />
             </Button>
@@ -1216,7 +1216,7 @@ export function Settings() {
               aria-label={t("common.cancel")}
               disabled={pathSaving}
               onClick={() => setEditingProjectPathKey(null)}
-              className="shrink-0 p-1 text-muted hover:text-secondary"
+              className="shrink-0 text-muted hover:text-secondary"
             >
               <X className="h-3 w-3" />
             </Button>
@@ -1248,7 +1248,7 @@ export function Settings() {
                   agent.project_relative_skills_dir,
                 )
               }
-              className="shrink-0 p-0.5 text-muted hover:text-accent transition-opacity "
+              className="shrink-0 text-muted hover:text-accent transition-opacity"
               title={t("settings.editPath")}
             >
               <Pencil className="h-3 w-3" />
@@ -1257,7 +1257,7 @@ export function Settings() {
               <Button
                 type="button"
                 onClick={() => handleResetProjectPath(agent.key)}
-                className="shrink-0 p-0.5 text-muted hover:text-amber-500 transition-opacity "
+                className="shrink-0 text-muted transition-opacity hover:text-[var(--ds-warning)]"
                 title={t("settings.resetPath")}
               >
                 <RotateCcw className="h-3 w-3" />
@@ -1337,8 +1337,8 @@ export function Settings() {
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <Button
+                    variant="primary"
                     onClick={() => setShowAddCustom(true)}
-                    className="flex items-center gap-1 text-[13px] text-accent hover:text-accent-light transition-colors font-medium"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     {t("settings.addCustomAgent")}
@@ -1346,21 +1346,18 @@ export function Settings() {
                   <Button
                     disabled={bulkBusy}
                     onClick={() => handleToggleAllTools(true)}
-                    className="text-[13px] text-accent hover:text-accent-light transition-colors font-medium"
                   >
                     {t("settings.enableAll")}
                   </Button>
                   <Button
                     disabled={bulkBusy}
                     onClick={() => handleToggleAllTools(false)}
-                    className="text-[13px] text-muted hover:text-secondary transition-colors font-medium"
                   >
                     {t("settings.disableAll")}
                   </Button>
                   <Button
                     onClick={handleRefresh}
                     disabled={refreshing}
-                    className="flex items-center gap-1.5 text-[13px] text-accent hover:text-accent-light transition-colors font-medium"
                   >
                     {refreshing ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1449,7 +1446,7 @@ export function Settings() {
                       <Button
                         disabled={addingCustom}
                         onClick={() => handleBrowsePath(setCustomPath)}
-                        className={`${actionButtonClass} bg-surface-hover hover:bg-surface-active text-tertiary border-border`}
+                        className={actionButtonClass}
                       >
                         <FolderOpen className="w-3 h-3" />
                         {t("settings.selectFolder")}
@@ -1482,7 +1479,6 @@ export function Settings() {
                       type="submit"
                       variant="primary"
                       disabled={addingCustom}
-                      className={`${actionButtonClass} bg-accent text-white border-accent hover:opacity-90 disabled:opacity-50`}
                     >
                       {addingCustom ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -1608,7 +1604,7 @@ export function Settings() {
                             handleBrowsePath(setCentralRepoPathInput)
                           }
                           disabled={savingCentralRepoPath}
-                          className={`${actionButtonClass} text-muted hover:text-secondary`}
+                          className={actionButtonClass}
                         >
                           <FolderOpen className="w-3 h-3" />
                           {t("settings.selectFolder")}
@@ -1617,7 +1613,7 @@ export function Settings() {
                           type="button"
                           onClick={() => void handleSaveCentralRepoPath()}
                           disabled={savingCentralRepoPath}
-                          className={`${actionButtonClass} border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/5 dark:text-emerald-400`}
+                          className={actionButtonClass}
                         >
                           {savingCentralRepoPath ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
@@ -1635,7 +1631,7 @@ export function Settings() {
                             setEditingCentralRepoPath(false);
                           }}
                           disabled={savingCentralRepoPath}
-                          className={`${actionButtonClass} text-muted hover:text-secondary`}
+                          className={actionButtonClass}
                         >
                           <X className="w-3 h-3" />
                         </Button>
@@ -1652,7 +1648,7 @@ export function Settings() {
                       <Button
                         type="button"
                         onClick={handleStartEditCentralRepoPath}
-                        className={`${actionButtonClass} text-muted hover:text-secondary`}
+                        className={actionButtonClass}
                       >
                         <Pencil className="w-3 h-3" />
                         {t("settings.changeDir")}
@@ -1663,7 +1659,7 @@ export function Settings() {
                         type="button"
                         onClick={() => void handleResetCentralRepoPath()}
                         disabled={savingCentralRepoPath}
-                        className={`${actionButtonClass} text-muted hover:text-secondary`}
+                        className={actionButtonClass}
                       >
                         {savingCentralRepoPath ? (
                           <Loader2 className="w-3 h-3 animate-spin" />
@@ -1677,12 +1673,7 @@ export function Settings() {
                       type="button"
                       onClick={handleOpenRepoInFinder}
                       disabled={openingRepo}
-                      className={cn(
-                        actionButtonClass,
-                        "border-accent-border bg-accent-bg text-accent",
-                        "hover:border-accent hover:bg-accent-bg",
-                        openingRepo && "cursor-wait opacity-70",
-                      )}
+                      className={actionButtonClass}
                     >
                       {openingRepo ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -1938,7 +1929,7 @@ export function Settings() {
                     <Button
                       onClick={handleSaveProxy}
                       disabled={proxySaving}
-                      className={`${actionButtonClass} bg-surface-hover hover:bg-surface-active text-tertiary border-border`}
+                      className={actionButtonClass}
                     >
                       {proxySaving ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -2043,7 +2034,7 @@ export function Settings() {
                     <Button
                       type="button"
                       onClick={() => navigate("/backup")}
-                      className={`${actionButtonClass} bg-surface-hover hover:bg-surface-active text-tertiary border-border`}
+                      className={actionButtonClass}
                     >
                       <ExternalLink className="w-3 h-3" />
                       {t("settings.openBackupPage")}
@@ -2061,7 +2052,7 @@ export function Settings() {
                     <Button
                       onClick={handleSaveGitRemote}
                       disabled={gitRemoteSaving}
-                      className={`${actionButtonClass} bg-surface-hover hover:bg-surface-active text-tertiary border-border`}
+                      className={actionButtonClass}
                     >
                       {gitRemoteSaving ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -2073,7 +2064,7 @@ export function Settings() {
                     <Button
                       onClick={handleDisconnectGitRemote}
                       disabled={gitRemoteDisconnecting}
-                      className={`${actionButtonClass} bg-surface-hover hover:bg-surface-active text-tertiary border-border`}
+                      className={actionButtonClass}
                     >
                       {gitRemoteDisconnecting ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -2151,9 +2142,9 @@ export function Settings() {
             {/* About */}
             <section hidden={activeSection !== "about"} className="space-y-2">
               {repoWarnings.length > 0 && (
-                <div className="ds-panel flex flex-wrap items-start gap-2 p-3 border border-amber-500/40 bg-amber-500/10">
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-700 dark:text-amber-300" />
-                  <div className="min-w-0 flex-1 space-y-1 text-[13px] text-amber-800 dark:text-amber-300">
+                <div className="ds-panel flex flex-wrap items-start gap-2 p-3 border border-[color-mix(in_srgb,var(--ds-warning)_40%,transparent)] bg-[var(--ds-warning-bg)]">
+                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-[var(--ds-warning)]" />
+                  <div className="min-w-0 flex-1 space-y-1 text-[13px] text-[color-mix(in_srgb,var(--ds-warning)_55%,var(--ds-strong))]">
                     {repoWarnings.map((code) => (
                       <p key={code}>{t(`settings.repoWarning_${code}`)}</p>
                     ))}
@@ -2161,8 +2152,8 @@ export function Settings() {
                 </div>
               )}
               {lastPanic && (
-                <div className="ds-panel flex flex-wrap items-center justify-between gap-2 p-3 border border-red-500/40 bg-red-500/10">
-                  <div className="flex min-w-0 items-center gap-2 text-[13px] text-red-700 dark:text-red-300">
+                <div className="ds-panel flex flex-wrap items-center justify-between gap-2 p-3 border border-[color-mix(in_srgb,var(--ds-danger)_40%,transparent)] bg-[var(--ds-danger-bg)]">
+                  <div className="flex min-w-0 items-center gap-2 text-[13px] text-[var(--ds-danger)]">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
                     <span>
                       {t("settings.panicBanner", { time: lastPanic.timestamp })}
@@ -2171,9 +2162,9 @@ export function Settings() {
                   <div className="flex gap-2">
                     <Button
                       type="button"
+                      variant="danger"
                       onClick={handleReportIssue}
                       disabled={reportingIssue}
-                      className={`${actionButtonClass} bg-red-600 hover:bg-red-700 text-white border-red-600`}
                     >
                       {reportingIssue ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -2185,7 +2176,7 @@ export function Settings() {
                     <Button
                       type="button"
                       onClick={handleDismissPanic}
-                      className={`${actionButtonClass} bg-surface-hover hover:bg-surface-active text-tertiary border-border`}
+                      className={actionButtonClass}
                     >
                       {t("settings.panicDismiss")}
                     </Button>
@@ -2204,7 +2195,7 @@ export function Settings() {
                     <p className="text-muted text-[13px]">
                       {t("settings.tagline")}
                       {appUpdate?.has_update && (
-                        <span className="ml-2 text-amber-500 font-medium">
+                        <span className="ml-2 font-medium text-[var(--ds-warning)]">
                           {t("settings.updateAvailable", {
                             version: appUpdate.latest_version,
                           })}
@@ -2219,9 +2210,9 @@ export function Settings() {
                       <>
                         <Button
                           type="button"
+                          variant="primary"
                           onClick={handleAutoUpdate}
                           disabled={installing}
-                          className={`${actionButtonClass} bg-accent text-white border-accent hover:opacity-90`}
                         >
                           {installing ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
@@ -2237,7 +2228,7 @@ export function Settings() {
                           onClick={() => {
                             openUrl(appUpdate.release_url).catch(() => {});
                           }}
-                          className={`${actionButtonClass} bg-surface-hover hover:bg-surface-active text-tertiary border-border`}
+                          className={actionButtonClass}
                         >
                           <ExternalLink className="w-3 h-3" />{" "}
                           {t("settings.download")}
@@ -2246,10 +2237,10 @@ export function Settings() {
                     ) : (
                       <Button
                         type="button"
+                        variant="primary"
                         onClick={() => {
                           openUrl(appUpdate.release_url).catch(() => {});
                         }}
-                        className={`${actionButtonClass} bg-accent text-white border-accent hover:opacity-90`}
                       >
                         <Download className="w-3 h-3" />{" "}
                         {t("settings.download")}
@@ -2260,7 +2251,7 @@ export function Settings() {
                       type="button"
                       onClick={handleCheckUpdate}
                       disabled={checkingUpdate}
-                      className={`${actionButtonClass} bg-surface-hover hover:bg-surface-active text-tertiary border-border`}
+                      className={actionButtonClass}
                     >
                       {checkingUpdate ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -2275,7 +2266,7 @@ export function Settings() {
                   <Button
                     type="button"
                     onClick={openHelp}
-                    className={`${actionButtonClass} bg-surface-hover hover:bg-surface-active text-tertiary border-border`}
+                    className={actionButtonClass}
                   >
                     <BookOpen className="w-3 h-3" /> {t("settings.help")}
                   </Button>
@@ -2284,7 +2275,7 @@ export function Settings() {
                     onClick={handleReportIssue}
                     disabled={reportingIssue}
                     title={t("settings.reportIssueHint")}
-                    className={`${actionButtonClass} bg-surface-hover hover:bg-surface-active text-tertiary border-border`}
+                    className={actionButtonClass}
                   >
                     {reportingIssue ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
@@ -2298,7 +2289,7 @@ export function Settings() {
                     onClick={handleExportLogs}
                     disabled={exportingLogs}
                     title={t("settings.exportLogsHint")}
-                    className={`${actionButtonClass} bg-surface-hover hover:bg-surface-active text-tertiary border-border`}
+                    className={actionButtonClass}
                   >
                     {exportingLogs ? (
                       <Loader2 className="w-3 h-3 animate-spin" />

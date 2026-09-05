@@ -3,17 +3,20 @@ import { getSkillSearchStatus, indexSkillSearch, type SkillSearchStatus } from "
 import { getErrorMessage } from "../lib/error";
 
 // Indexing belongs to the application: navigating away must not lose the job state.
-let state = { status: null as SkillSearchStatus | null, loading: false, building: false, error: "", completedAt: "" };
+// Initial loading is true so first paint shows the checking state instead of a false empty state.
+let state = { status: null as SkillSearchStatus | null, loading: true, building: false, error: "", completedAt: "" };
 const listeners = new Set<() => void>();
 function publish(next: Partial<typeof state>) { state = { ...state, ...next }; listeners.forEach(listener => listener()); }
 function subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; }
 const snapshot = () => state;
+let refreshing = false;
 export async function refreshSkillIndex() {
-  if (state.loading || state.building) return;
+  if (refreshing || state.building) return;
+  refreshing = true;
   publish({ loading: true, error: "" });
   try { publish({ status: await getSkillSearchStatus() }); }
   catch (error) { publish({ error: getErrorMessage(error, "无法读取索引状态") }); }
-  finally { publish({ loading: false }); }
+  finally { refreshing = false; publish({ loading: false }); }
 }
 export async function buildSkillIndex() {
   if (state.loading || state.building) return;

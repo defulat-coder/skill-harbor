@@ -41,15 +41,9 @@ export default {
       },
       fontFamily: {
         sans: [
-          '"SF Pro Text"',
+          '"Albert Sans"',
           '"PingFang SC"',
-          '"Hiragino Sans GB"',
-          '"Noto Sans SC"',
           '"Microsoft YaHei"',
-          '-apple-system',
-          'BlinkMacSystemFont',
-          '"Segoe UI"',
-          'system-ui',
           'sans-serif',
         ],
         mono: [

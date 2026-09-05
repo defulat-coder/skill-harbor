@@ -316,8 +316,8 @@ export function Backup() {
         icon: XCircle,
         title: t("backup.status.failed"),
         description: backupError,
-        className: "border-red-500/40 bg-red-500/10",
-        iconClassName: "text-red-500",
+        className: "border-[color-mix(in_srgb,var(--ds-danger)_40%,transparent)] bg-[var(--ds-danger-bg)]",
+        iconClassName: "text-[var(--ds-danger)]",
       };
     }
     switch (mode) {
@@ -343,8 +343,8 @@ export function Backup() {
           icon: AlertTriangle,
           title: t("backup.status.needsFix"),
           description: t("backup.status.needsFixDesc"),
-          className: "border-red-500/40 bg-red-500/10",
-          iconClassName: "text-red-500",
+          className: "border-[color-mix(in_srgb,var(--ds-danger)_40%,transparent)] bg-[var(--ds-danger-bg)]",
+          iconClassName: "text-[var(--ds-danger)]",
         };
       case "pending_changes": {
         // Three distinct situations wear this state; naming them precisely
@@ -364,8 +364,8 @@ export function Backup() {
               : (gitStatus?.changed_skill_count ?? 0) > 0
                 ? t("backup.status.pendingSkills", { count: gitStatus?.changed_skill_count })
                 : t("backup.status.pendingDesc", { local: localCount, remote: remoteCount }),
-          className: "border-amber-500/40 bg-amber-500/10",
-          iconClassName: "text-amber-600 dark:text-amber-400",
+          className: "border-[color-mix(in_srgb,var(--ds-warning)_40%,transparent)] bg-[var(--ds-warning-bg)]",
+          iconClassName: "text-[var(--ds-warning)]",
         };
       }
       case "up_to_date":
@@ -375,8 +375,8 @@ export function Backup() {
           description: t("backup.status.syncedDesc", {
             when: formatSnapshotWhen(gitStatus?.current_snapshot_tag ?? null) ?? t("backup.status.noSnapshot"),
           }),
-          className: "border-emerald-500/30 bg-emerald-500/10",
-          iconClassName: "text-emerald-600 dark:text-emerald-400",
+          className: "border-[color-mix(in_srgb,var(--ds-success)_35%,transparent)] bg-[var(--ds-success-bg)]",
+          iconClassName: "text-[var(--ds-success)]",
         };
     }
   }, [backupError, gitStatus, mode, t]);
@@ -839,11 +839,12 @@ export function Backup() {
                             className="h-6 min-w-0 flex-1 rounded-lg border border-border-subtle bg-background px-1.5 text-[12px] text-secondary outline-none focus:border-border"
                           />
                           <Button variant="ghost"
+                            iconOnly
                             type="button"
                             onClick={handleSaveDeviceName}
                             disabled={deviceNameSaving || !deviceNameDraft.trim()}
-                            className="rounded p-0.5 text-muted transition-colors hover:text-secondary"
                             title={t("common.save")}
+                            aria-label={t("common.save")}
                           >
                             <Check className="h-3.5 w-3.5" />
                           </Button>
@@ -852,13 +853,14 @@ export function Backup() {
                         <div className="flex items-center gap-1">
                           <span className="truncate text-secondary">{deviceName || "-"}</span>
                           <Button variant="ghost"
+                            iconOnly
                             type="button"
                             onClick={() => {
                               setDeviceNameDraft(deviceName);
                               setDeviceNameEditing(true);
                             }}
-                            className="rounded p-0.5 text-faint transition-colors hover:text-secondary"
                             title={t("backup.device.rename")}
+                            aria-label={t("backup.device.rename")}
                           >
                             <Pencil className="h-3 w-3" />
                           </Button>
@@ -872,25 +874,23 @@ export function Backup() {
 
               <div className="flex shrink-0 flex-wrap items-center gap-2">
                 {authErrorNeedsReconnect && (
-                  <Button variant="ghost"
+                  <Button
                     type="button"
                     onClick={() => setReconnectMode(true)}
                     disabled={operationBusy}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 text-[13px] font-medium text-amber-700 transition-colors hover:bg-amber-500/15 disabled:opacity-50 dark:text-amber-300"
                   >
                     <Github className="h-3.5 w-3.5" />
                     {t("backup.github.reconnect")}
                   </Button>
                 )}
                 {mode === "needs_fix" ? (
-                  <Button variant="ghost"
+                  <Button variant="danger-ghost"
                     type="button"
                     onClick={() => {
                       setRecoveryReason(gitStatus?.upstream_health ?? "unrelated_histories");
                       setRecoveryOpen(true);
                     }}
                     disabled={operationBusy}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/10 px-3 text-[13px] font-medium text-red-600 transition-colors hover:bg-red-500/15 disabled:opacity-50 dark:text-red-300"
                   >
                     <Wrench className="h-3.5 w-3.5" />
                     {t("settings.gitRecoveryTitle")}
@@ -928,13 +928,13 @@ export function Backup() {
 
           {conflictsError && <div className={styles.error} role="alert">{conflictsError}<Button onClick={refreshPendingConflicts}>{t("backup.actions.retry")}</Button></div>}
           {pendingConflicts.length > 0 && (
-            <section className="app-panel border-amber-500/40 bg-amber-500/5 p-4">
+            <section className="app-panel border-[color-mix(in_srgb,var(--ds-warning)_40%,transparent)] bg-[var(--ds-warning-bg)] p-4">
               <div className="mb-1 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-300" />
+                <AlertTriangle className="h-4 w-4 text-[var(--ds-warning)]" />
                 <h2 className="text-[14px] font-semibold text-secondary">
                   {t("backup.conflicts.title")}
                 </h2>
-                <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-300">
+                <span className="rounded-full border border-[color-mix(in_srgb,var(--ds-warning)_40%,transparent)] px-2 py-0.5 text-[11px] font-medium text-[color-mix(in_srgb,var(--ds-warning)_55%,var(--ds-strong))]">
                   {pendingConflicts.length}
                 </span>
               </div>
@@ -968,27 +968,27 @@ export function Backup() {
                           <Loader2 className="h-4 w-4 animate-spin text-muted" />
                         ) : (
                           <>
-                            <Button variant="ghost"
+                            <Button
+                              size="sm"
                               type="button"
                               onClick={() => handleResolveConflict(conflict.skill_id, "keep_local")}
                               disabled={operationBusy}
-                              className="rounded-lg border border-border-subtle px-2.5 py-1 text-[12px] font-medium text-secondary transition-colors hover:bg-surface-hover disabled:opacity-50"
                             >
                               {t("backup.conflicts.keepLocal")}
                             </Button>
-                            <Button variant="ghost"
+                            <Button
+                              size="sm"
                               type="button"
                               onClick={() => handleResolveConflict(conflict.skill_id, "use_remote")}
                               disabled={operationBusy}
-                              className="rounded-lg border border-border-subtle px-2.5 py-1 text-[12px] font-medium text-secondary transition-colors hover:bg-surface-hover disabled:opacity-50"
                             >
                               {t("backup.conflicts.useRemote")}
                             </Button>
-                            <Button variant="ghost"
+                            <Button
+                              size="sm"
                               type="button"
                               onClick={() => handleResolveConflict(conflict.skill_id, "keep_both")}
                               disabled={operationBusy}
-                              className="rounded-lg border border-border-subtle px-2.5 py-1 text-[12px] font-medium text-secondary transition-colors hover:bg-surface-hover disabled:opacity-50"
                             >
                               {t("backup.conflicts.keepBoth")}
                             </Button>
@@ -1019,6 +1019,7 @@ export function Backup() {
                       {deviceInfo.user_code}
                     </div>
                     <Button variant="ghost"
+                      size="sm"
                       type="button"
                       onClick={async () => {
                         try {
@@ -1026,7 +1027,6 @@ export function Backup() {
                           toast.success(t("backup.github.deviceCodeCopied"));
                         } catch (error) { toast.error(mapGitError(error)); }
                       }}
-                      className="inline-flex items-center gap-1 text-[12px] text-muted transition-colors hover:text-secondary"
                     >
                       <Copy className="h-3 w-3" />
                       {t("backup.github.deviceCopyCode")}
@@ -1041,9 +1041,9 @@ export function Backup() {
                       {t("backup.github.deviceWaiting")}
                     </span>
                     <Button variant="ghost"
+                      size="sm"
                       type="button"
                       onClick={cancelDeviceFlow}
-                      className="rounded-lg px-2.5 py-1 text-[12px] font-medium text-tertiary transition-colors hover:bg-surface-hover hover:text-secondary"
                     >
                       {t("common.cancel")}
                     </Button>
@@ -1108,9 +1108,9 @@ export function Backup() {
                         </Button>
                       </div>
                       <Button variant="ghost"
+                        size="sm"
                         type="button"
                         onClick={() => void openUrl(GITHUB_TOKEN_URL)}
-                        className="inline-flex items-center gap-1 text-[12px] text-muted transition-colors hover:text-secondary"
                       >
                         <ExternalLink className="h-3 w-3" />
                         {t("backup.github.tokenHint")}
@@ -1118,16 +1118,16 @@ export function Backup() {
                     </>
                   ) : (
                     <Button variant="ghost"
+                      size="sm"
                       type="button"
                       onClick={() => setPatMode(true)}
-                      className="text-[12px] text-muted transition-colors hover:text-secondary"
                     >
                       {t("backup.github.patToggle")}
                     </Button>
                   )}
 
                   {githubError && (
-                    <div role="alert" id="backup-github-error" className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-[12px] leading-5 text-red-600 dark:text-red-300">
+                    <div role="alert" id="backup-github-error" className="rounded-md border border-[color-mix(in_srgb,var(--ds-danger)_40%,transparent)] bg-[var(--ds-danger-bg)] px-3 py-2 text-[12px] leading-5 text-[var(--ds-danger)]">
                       {githubError}
                     </div>
                   )}
@@ -1178,10 +1178,10 @@ export function Backup() {
                 <h2 className="text-[14px] font-semibold text-secondary">{t("backup.history.title")}</h2>
               </div>
               <Button variant="ghost"
+                size="sm"
                 type="button"
                 onClick={refreshVersions}
                 disabled={versionsLoading || !gitStatus?.is_repo}
-                className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2 text-[13px] text-muted transition-colors hover:bg-surface-hover hover:text-secondary disabled:opacity-50"
               >
                 <RefreshCw className={cn("h-3 w-3", versionsLoading && "animate-spin")} />
                 {t("settings.refresh")}
@@ -1211,11 +1211,11 @@ export function Backup() {
                         {version.commit} · {formatDateTime(version.committed_at)}
                       </div>
                     </div>
-                    <Button variant="ghost"
+                    <Button
+                      size="sm"
                       type="button"
                       onClick={() => setRestoreVersionTag(version.tag)}
                       disabled={operationBusy}
-                      className="shrink-0 rounded-lg border border-border-subtle px-2 py-1 text-[12px] font-medium text-secondary transition-colors hover:bg-surface-hover disabled:opacity-50"
                     >
                       {restoringVersionTag === version.tag
                         ? t("mySkills.gitVersionRestoring")
@@ -1234,7 +1234,7 @@ export function Backup() {
             <div className="space-y-2 text-[13px]">
               {["skills", "metadata"].map((key) => (
                 <div key={key} className="flex items-start gap-2 text-tertiary">
-                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--ds-success)]" />
                   <span>{t(`backup.scope.included.${key}`)}</span>
                 </div>
               ))}
@@ -1247,7 +1247,7 @@ export function Backup() {
             </div>
             </Disclosure>
             {sizeReport && (sizeReport.oversized.length > 0 || sizeReport.total_bytes > sizeReport.repo_warn_bytes) ? (
-              <div className="mt-3 space-y-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[12px] leading-5 text-amber-700 dark:text-amber-300">
+              <div className="mt-3 space-y-1 rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_40%,transparent)] bg-[var(--ds-warning-bg)] px-3 py-2 text-[12px] leading-5 text-[color-mix(in_srgb,var(--ds-warning)_55%,var(--ds-strong))]">
                 {sizeReport.total_bytes > sizeReport.repo_warn_bytes && (
                   <div>{t("backup.scope.repoTooLarge", { size: formatBytes(sizeReport.total_bytes) })}</div>
                 )}
@@ -1322,17 +1322,17 @@ export function Backup() {
               </p>
             )}
             {githubRepoWebUrl && (
-              <div className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2.5">
-                <div className="text-[13px] font-medium text-red-700 dark:text-red-300">
+              <div className="mt-3 rounded-md border border-[color-mix(in_srgb,var(--ds-danger)_40%,transparent)] bg-[var(--ds-danger-bg)] px-3 py-2.5">
+                <div className="text-[13px] font-medium text-[var(--ds-danger)]">
                   {t("backup.disconnect.deleteRemote")}
                 </div>
-                <p className="mt-1 text-[12px] leading-4 text-red-700/80 dark:text-red-300/80">
+                <p className="mt-1 text-[12px] leading-4 text-[color-mix(in_srgb,var(--ds-danger)_75%,var(--ds-text))]">
                   {t("backup.disconnect.deleteRemoteDesc")}
                 </p>
-                <Button variant="ghost"
+                <Button variant="danger-ghost"
+                  size="sm"
                   type="button"
                   onClick={() => setDeleteRemoteConfirmOpen(true)}
-                  className="mt-2 inline-flex h-7 items-center gap-1.5 rounded-lg border border-red-500/50 px-2.5 text-[12px] font-medium text-red-700 transition-colors hover:bg-red-500/15 dark:text-red-300"
                 >
                   <ExternalLink className="h-3 w-3" />
                   {t("backup.disconnect.deleteRemoteAction")}

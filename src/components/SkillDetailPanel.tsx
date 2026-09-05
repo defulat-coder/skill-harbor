@@ -231,7 +231,7 @@ function SkillDetailPanelContent({
 
   const meta = (
     <>
-      <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-muted">
+      <div className="flex flex-wrap items-center gap-2 text-[12px] text-muted">
         {tools && <SyncDots skill={skill} tools={tools} size="sm" includeOrphan />}
         {skill.tags.length > 0 && (
           <>
@@ -265,7 +265,7 @@ function SkillDetailPanelContent({
                       {item.label}
                     </div>
                     <div
-                      className="mt-0.5 truncate font-mono text-[12.5px] text-secondary"
+                      className="mt-0.5 truncate font-mono text-[12px] text-secondary"
                       title={item.value ?? undefined}
                     >
                       {item.value}
@@ -315,7 +315,7 @@ function SkillDetailPanelContent({
               className={cn(
                 "rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors",
                 contentTab === tab
-                  ? "bg-accent text-white"
+                  ? "bg-accent text-[var(--ds-on-accent)]"
                   : "bg-surface-hover text-muted hover:text-secondary"
               )}
               disabled={tab === "source" && sourceLoading}

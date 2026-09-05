@@ -31,7 +31,7 @@ export function CloseActionDialog({ open, onCancel, onClose, onHide }: Props) {
 
 
   return <DetailSheet open={open} size="compact" title={t("closeAction.title")} description={t("closeAction.message")} onClose={handleCancel}>
-    <label className="flex items-center gap-2 mb-5"><input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} /><span>{t("closeAction.remember")}</span></label>
-    <div className="flex justify-end gap-2"><Button onClick={handleClose}>{t("closeAction.close")}</Button><Button variant="primary" onClick={handleHide}>{t("closeAction.hide")}</Button></div>
+    <label className="flex items-center gap-2 mb-5"><input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} className="h-3.5 w-3.5 cursor-pointer [accent-color:var(--ds-accent)]" /><span>{t("closeAction.remember")}</span></label>
+    <div className="flex justify-end gap-2"><Button variant="ghost" onClick={handleCancel}>{t("common.cancel")}</Button><Button onClick={handleClose}>{t("closeAction.close")}</Button><Button variant="primary" onClick={handleHide}>{t("closeAction.hide")}</Button></div>
   </DetailSheet>;
 }

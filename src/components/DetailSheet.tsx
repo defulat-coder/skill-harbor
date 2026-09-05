@@ -1,6 +1,7 @@
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useEffect, useRef, useId, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "./ui/Button";
 import styles from "./DetailSheet.module.css";
 
@@ -16,6 +17,7 @@ interface DetailSheetProps {
 }
 const easing = 'cubic-bezier(0.23,1,0.32,1)';
 export function DetailSheet({ open, title, description, meta, onClose, children, size = "default", closeDisabled = false }: DetailSheetProps) {
+  const { t } = useTranslation();
   const ref = useRef<HTMLDialogElement>(null);
   const closeRequested = useRef(false);
   const titleId = useId();
@@ -50,7 +52,7 @@ export function DetailSheet({ open, title, description, meta, onClose, children,
     onClose();
   }
   return createPortal(<dialog ref={ref} data-workbench-dialog className={`${styles.dialog} ${size === 'compact' ? styles.compact : ''}`} aria-labelledby={titleId} onCancel={e => { e.preventDefault(); void dismiss(); }} onClick={e => { if (e.target === e.currentTarget) { const r = e.currentTarget.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) void dismiss(); } }}>
-    <header className={styles.header}><Button variant="ghost" iconOnly disabled={closeDisabled} onClick={() => void dismiss()} className={styles.close} aria-label="关闭详情"><X size={18} /></Button><h2 id={titleId}>{title}</h2>{description && <div className={styles.description}>{description}</div>}{meta}</header>
+    <header className={styles.header}><Button variant="ghost" iconOnly disabled={closeDisabled} onClick={() => void dismiss()} className={styles.close} aria-label={t("common.close")}><X size={18} /></Button><h2 id={titleId}>{title}</h2>{description && <div className={styles.description}>{description}</div>}{meta}</header>
     <div className={styles.body}>{children}</div>
   </dialog>, document.body);
 }

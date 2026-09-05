@@ -984,7 +984,7 @@ export function MySkills() {
       return {
         icon: Wrench,
         label: t("backup.status.needsFix"),
-        className: "text-red-500",
+        className: "text-[var(--ds-danger)]",
         iconClassName: "",
       };
     }
@@ -992,7 +992,7 @@ export function MySkills() {
       return {
         icon: ArrowUpCircle,
         label: t("backup.status.pending"),
-        className: "text-amber-600 dark:text-amber-400",
+        className: "text-[var(--ds-warning)]",
         iconClassName: "",
       };
     }
@@ -1047,19 +1047,19 @@ export function MySkills() {
     if (skill.update_status === "update_available") {
       return {
         label: "Update",
-        className: "bg-amber-500/12 text-amber-600 dark:text-amber-400",
+        className: "bg-[var(--ds-warning-bg)] text-[var(--ds-warning)]",
       };
     }
     if (skill.update_status === "source_missing") {
       return {
         label: t("mySkills.updateStatus.sourceMissing"),
-        className: "bg-red-500/10 text-red-600 dark:text-red-300",
+        className: "bg-[var(--ds-danger-bg)] text-[var(--ds-danger)]",
       };
     }
     if (skill.update_status === "error") {
       return {
         label: t("mySkills.updateStatus.error"),
-        className: "bg-red-500/10 text-red-600 dark:text-red-300",
+        className: "bg-[var(--ds-danger-bg)] text-[var(--ds-danger)]",
       };
     }
     return null;
@@ -1133,23 +1133,21 @@ export function MySkills() {
             {t("mySkills.updateActions.checkAll")}
           </Button>
           {(availableUpdateCount > 0 || batchUpdating) && (
-          <button
+          <Button variant="ghost"
             onClick={handleUpdateAvailableSkills}
-            disabled={batchUpdating || availableUpdateCount === 0}
-            className="mr-2 inline-flex items-center gap-1 rounded-md px-3 py-2 text-[13px] font-medium text-accent-light transition-colors hover:bg-accent-bg disabled:opacity-50"
+            busy={batchUpdating}
+            disabled={availableUpdateCount === 0}
           >
-            <RotateCcw className={cn("h-3.5 w-3.5", batchUpdating && "animate-spin")} />
+            <RotateCcw className="h-3.5 w-3.5" />
             {t("mySkills.updateActions.updateAvailable", { count: availableUpdateCount })}
-          </button>
+          </Button>
           )}
+          <div className="ds-view-toggle" aria-label="视图与选择">
           <button
             aria-label="网格视图"
                 aria-pressed={viewMode === "grid"}
                 onClick={() => setViewMode("grid")}
-            className={cn(
-              "rounded-md p-2 transition-colors outline-none",
-              viewMode === "grid" ? "bg-surface-active text-secondary" : "text-muted hover:text-tertiary"
-            )}
+            className={viewMode === "grid" ? "is-active" : ""}
           >
             <LayoutGrid className="h-4 w-4" />
           </button>
@@ -1157,23 +1155,20 @@ export function MySkills() {
             aria-label="列表视图"
                 aria-pressed={viewMode === "list"}
                 onClick={() => setViewMode("list")}
-            className={cn(
-              "rounded-md p-2 transition-colors outline-none",
-              viewMode === "list" ? "bg-surface-active text-secondary" : "text-muted hover:text-tertiary"
-            )}
+            className={viewMode === "list" ? "is-active" : ""}
           >
             <List className="h-4 w-4" />
           </button>
           <button
+            aria-label={isMultiSelect ? t("mySkills.cancelSelect") : t("mySkills.selectMode")}
+            aria-pressed={isMultiSelect}
             onClick={() => isMultiSelect ? exitMultiSelect() : setIsMultiSelect(true)}
-            className={cn(
-              "rounded-md p-2 transition-colors outline-none",
-              isMultiSelect ? "bg-surface-active text-secondary" : "text-muted hover:text-tertiary"
-            )}
+            className={isMultiSelect ? "is-active" : ""}
             title={isMultiSelect ? t("mySkills.cancelSelect") : t("mySkills.selectMode")}
           >
             <SquareCheck className="h-4 w-4" />
           </button>
+          </div>
         </div>
       </div>
 
@@ -1188,7 +1183,7 @@ export function MySkills() {
             className={cn(
               "rounded-full px-2.5 py-0.5 text-[12px] font-medium transition-colors",
               sourceFilters.has(src)
-                ? "bg-accent text-white dark:bg-accent dark:text-white"
+                ? "bg-accent text-[var(--ds-on-accent)]"
                 : "bg-surface-hover text-muted hover:text-secondary"
             )}
           >
@@ -1282,7 +1277,7 @@ export function MySkills() {
 
       {filtered.length === 0 ? (
         <div className="ds-empty">
-          <Layers className="mb-4 h-12 w-12 text-faint" />
+          <Layers className="mb-4 h-8 w-8 text-faint" />
           <h2>{skills.length === 0 ? t("mySkills.noSkills") : t("mySkills.noMatch")}</h2>
           <p className="text-[13px] text-muted">
             {skills.length === 0 ? t("mySkills.addFirst") : t("mySkills.noMatch")}
@@ -1385,7 +1380,7 @@ export function MySkills() {
                       <button
                         onClick={(e) => { e.stopPropagation(); handleRefreshSkill(skill); }}
                         disabled={updatingSkillId === skill.id}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500/12 px-2 py-0.5 text-[11px] font-medium text-amber-600 outline-none transition-colors hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-400"
+                        className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--ds-warning-bg)] px-2 py-0.5 text-[11px] font-medium text-[var(--ds-warning)] outline-none transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)] disabled:opacity-50"
                         title={refreshLabel(skill)}
                       >
                         <RotateCcw className={cn("h-2.5 w-2.5", updatingSkillId === skill.id && "animate-spin")} />
@@ -1449,7 +1444,7 @@ export function MySkills() {
                         {conflictIds.has(skill.id) && (
                           <button
                             onClick={(e) => { e.stopPropagation(); navigate("/backup"); }}
-                            className="rounded-full bg-amber-500/12 px-2 py-0.5 text-[13px] font-medium text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400"
+                            className="rounded-full bg-[var(--ds-warning-bg)] px-2 py-0.5 text-[13px] font-medium text-[var(--ds-warning)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)]"
                             title={t("mySkills.needsAttentionHint")}
                           >
                             {t("mySkills.needsAttention")}
@@ -1499,7 +1494,7 @@ export function MySkills() {
                             disabled={tagSaving}
                             aria-label={`移除标签 ${tag}`}
                             onClick={(e) => { e.stopPropagation(); handleRemoveTag(skill, tag); }}
-                            className="hidden group-hover/tag:inline-flex rounded-full p-0 opacity-60 hover:opacity-100"
+                            className="hidden group-hover/tag:inline-flex -m-[7px] items-center justify-center rounded-full p-[7px] opacity-60 hover:opacity-100"
                           >
                             <X className="h-2.5 w-2.5" />
                           </button>
@@ -1568,7 +1563,7 @@ export function MySkills() {
                       {enabledInPreset && (
                         <>
                           <span className="text-faint">·</span>
-                          <span className="truncate text-[12px] font-medium text-amber-600 dark:text-amber-400/80">
+                          <span className="truncate text-[12px] font-medium text-[var(--ds-warning)]">
                             {viewedPresetName}
                           </span>
                         </>
@@ -1669,7 +1664,7 @@ export function MySkills() {
                   {conflictIds.has(skill.id) && (
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate("/backup"); }}
-                      className="rounded-full bg-amber-500/12 px-2 py-0.5 text-[12px] font-medium text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400"
+                      className="rounded-full bg-[var(--ds-warning-bg)] px-2 py-0.5 text-[12px] font-medium text-[var(--ds-warning)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)]"
                       title={t("mySkills.needsAttentionHint")}
                     >
                       {t("mySkills.needsAttention")}
@@ -1679,7 +1674,7 @@ export function MySkills() {
                     <button
                       onClick={(e) => { e.stopPropagation(); handleRefreshSkill(skill); }}
                       disabled={updatingSkillId === skill.id}
-                      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500/12 px-2 py-0.5 text-[11px] font-medium text-amber-600 outline-none transition-colors hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-400"
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--ds-warning-bg)] px-2 py-0.5 text-[11px] font-medium text-[var(--ds-warning)] outline-none transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)] disabled:opacity-50"
                       title={refreshLabel(skill)}
                     >
                       <RotateCcw className={cn("h-2.5 w-2.5", updatingSkillId === skill.id && "animate-spin")} />
@@ -1712,7 +1707,7 @@ export function MySkills() {
                     {sourceTypeLabel(skill)}
                   </span>
                   {enabledInPreset && (
-                    <span className="text-[13px] font-medium text-amber-600 dark:text-amber-400/80">
+                    <span className="text-[13px] font-medium text-[var(--ds-warning)]">
                       {viewedPresetName}
                     </span>
                   )}

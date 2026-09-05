@@ -134,9 +134,6 @@ export function AddProjectDialog({ open, onClose, onAdded }: Props) {
     }
   };
 
-  const inputClass =
-    "w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-[13px] text-secondary focus:border-border transition-all placeholder-faint";
-
   return (
     <DetailSheet open={open} size="compact" title={t("project.addProjectTitle")} closeDisabled={adding || scanning} onClose={onClose}>
         {error && <p role="alert" className="wb-error mb-4">{error}</p>}
@@ -189,7 +186,7 @@ export function AddProjectDialog({ open, onClose, onAdded }: Props) {
                 value={scanRoot}
                 onChange={(e) => setScanRoot(e.target.value)}
                 placeholder={t("project.scanDirPlaceholder")}
-                className={cn(inputClass, "flex-1")}
+                className="app-input flex-1"
                 onKeyDown={(e) => e.key === "Enter" && handleScan()}
               />
               <Button
@@ -257,7 +254,7 @@ export function AddProjectDialog({ open, onClose, onAdded }: Props) {
                         className={cn(
                           "w-4 h-4 rounded border flex items-center justify-center shrink-0",
                           selected.has(path)
-                            ? "bg-accent-dark border-accent-border text-white"
+                            ? "bg-accent-dark border-accent-border text-[var(--ds-on-accent)]"
                             : "border-border-subtle"
                         )}
                       >
@@ -292,7 +289,7 @@ export function AddProjectDialog({ open, onClose, onAdded }: Props) {
               value={linkedName}
               onChange={(e) => setLinkedName(e.target.value)}
               placeholder={t("project.linkedNamePlaceholder")}
-              className={inputClass}
+              className="app-input w-full"
             />
             <div className="flex gap-2">
               <input
@@ -301,7 +298,7 @@ export function AddProjectDialog({ open, onClose, onAdded }: Props) {
                 value={linkedPath}
                 onChange={(e) => setLinkedPath(e.target.value)}
                 placeholder={t("project.linkedPathPlaceholder")}
-                className={cn(inputClass, "flex-1")}
+                className="app-input flex-1"
               />
               <Button
                 onClick={async () => {

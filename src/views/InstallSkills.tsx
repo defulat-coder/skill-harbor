@@ -770,8 +770,8 @@ export function InstallSkills() {
               <div ref={marketListRef} className="scroll-mt-4" />
 
               {filteredMarketSkills.length === 0 ? (
-                <div className="app-panel flex flex-col items-center justify-center rounded-2xl px-6 py-14 text-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-background text-muted">
+                <div className="app-panel flex flex-col items-center justify-center rounded-xl px-6 py-14 text-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-background text-muted">
                     <Search className="h-5 w-5" />
                   </div>
                   <h3 className="mt-4 text-[14px] font-semibold text-secondary">
@@ -780,6 +780,9 @@ export function InstallSkills() {
                   <p className="mt-1 max-w-md text-[13px] text-muted">
                     {t("install.noResults.description")}
                   </p>
+                  {hasMarketQuery || marketSourceFilter !== "all" ? (
+                    <Button variant="secondary" className="mt-4" onClick={() => { setMarketQuery(""); setMarketSourceFilter("all"); }}>清除搜索</Button>
+                  ) : null}
                 </div>
               ) : (
                 <>
@@ -827,7 +830,7 @@ export function InstallSkills() {
                         <div className="flex flex-wrap items-center gap-1">
                           <span className={styles.contributor}>@{skill.source}</span>
                           {marketTab === "alltime" && skill.installs > 0 && (
-                            <span className="inline-flex items-center gap-1 rounded-[5px] border border-border-subtle bg-background px-1.5 py-0.5 text-[13px] leading-4 text-muted">
+                            <span className="inline-flex items-center gap-1 rounded border border-border-subtle bg-background px-1.5 py-0.5 text-[13px] leading-4 text-muted">
                               <DownloadCloud className="h-3 w-3" />
                               {skill.installs >= 1_000_000
                                 ? `${(skill.installs / 1_000_000).toFixed(1)}M`
@@ -844,14 +847,13 @@ export function InstallSkills() {
 
                   {totalMarketPages > 1 ? (
                     <div className="mt-5 flex flex-wrap items-center justify-center gap-1.5">
-                      <button
+                      <Button size="sm"
                         onClick={() => changeMarketPage(Math.max(1, currentMarketPage - 1))}
                         disabled={currentMarketPage === 1}
-                        className="inline-flex items-center gap-1 rounded-[6px] border border-border-subtle bg-surface px-3 py-1.5 text-[13px] font-medium text-secondary transition-colors hover:bg-surface-hover disabled:opacity-50"
                       >
                         <ChevronLeft className="h-3.5 w-3.5" />
                         {t("install.pagination.previous")}
-                      </button>
+                      </Button>
 
                       {visibleMarketPages.map((page, index) => {
                         const previousPage = visibleMarketPages[index - 1];
@@ -860,49 +862,40 @@ export function InstallSkills() {
                         return (
                           <div key={page} className="flex items-center gap-1.5">
                             {showGap ? <span className="px-1 text-[13px] text-faint">...</span> : null}
-                            <button
+                            <Button size="sm"
+                              variant={page === currentMarketPage ? "primary" : "secondary"}
+                              aria-pressed={page === currentMarketPage}
+                              aria-label={`第 ${page} 页`}
                               onClick={() => changeMarketPage(page)}
-                              className={cn(
-                                "min-w-8 rounded-[6px] border px-2.5 py-1.5 text-[13px] font-semibold transition-colors",
-                                page === currentMarketPage
-                                  ? "border-accent-border bg-accent-dark text-white"
-                                  : "border-border-subtle bg-surface text-secondary hover:bg-surface-hover"
-                              )}
                             >
                               {page}
-                            </button>
+                            </Button>
                           </div>
                         );
                       })}
 
-                      <button
+                      <Button size="sm"
                         onClick={() => changeMarketPage(Math.min(totalMarketPages, currentMarketPage + 1))}
                         disabled={currentMarketPage === totalMarketPages}
-                        className="inline-flex items-center gap-1 rounded-[6px] border border-border-subtle bg-surface px-3 py-1.5 text-[13px] font-medium text-secondary transition-colors hover:bg-surface-hover disabled:opacity-50"
                       >
                         {t("install.pagination.next")}
                         <ChevronRight className="h-3.5 w-3.5" />
-                      </button>
+                      </Button>
                     </div>
                   ) : null}
 
                   {hasMarketQuery ? (
                     <div className="mt-4 flex justify-center">
-                      <button
-                        type="button"
+                      <Button size="sm"
                         onClick={() => setMarketSearchLimit((value) => value + MARKET_SEARCH_STEP)}
-                        disabled={!canLoadMoreSearch || marketLoading}
-                        className="inline-flex items-center gap-2 rounded-[6px] border border-border-subtle bg-surface px-3.5 py-2 text-[13px] font-medium text-secondary transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
+                        disabled={!canLoadMoreSearch}
+                        busy={marketLoading}
                       >
-                        {marketLoading ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Search className="h-3.5 w-3.5" />
-                        )}
+                        <Search className="h-3.5 w-3.5" />
                         {isLoadingMoreSearch
                           ? t("install.loadingMore")
                           : t("install.loadMoreSearch")}
-                      </button>
+                      </Button>
                     </div>
                   ) : null}
                 </>
@@ -988,26 +981,21 @@ export function InstallSkills() {
               </div>
 
               <div className="flex items-center gap-2">
-                <button
+                <Button size="sm"
                   onClick={runScan}
-                  disabled={scanLoading}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-hover px-3 py-2 text-[13px] font-medium text-secondary transition-colors hover:bg-surface-active disabled:opacity-50"
+                  busy={scanLoading}
                 >
-                  <RefreshCw className={cn("h-3.5 w-3.5", scanLoading && "animate-spin")} />
+                  <RefreshCw className="h-3.5 w-3.5" />
                   {t("install.scan.rescan")}
-                </button>
-                <button
+                </Button>
+                <Button size="sm" variant="primary"
                   onClick={handleImportAllDiscovered}
-                  disabled={scanLoading || importingAll || pendingGroups.length === 0}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-accent-border bg-accent-dark px-3 py-2 text-[13px] font-medium text-white transition-colors hover:bg-accent disabled:opacity-50"
+                  busy={importingAll}
+                  disabled={scanLoading || pendingGroups.length === 0}
                 >
-                  {importingAll ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <DownloadCloud className="h-3.5 w-3.5" />
-                  )}
+                  <DownloadCloud className="h-3.5 w-3.5" />
                   {t("install.scan.importAll")}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -1090,7 +1078,7 @@ export function InstallSkills() {
                                   </button>
                                 ) : null}
                                 {group.imported ? (
-                                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[13px] font-semibold text-emerald-400">
+                                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--ds-success-bg)] px-2 py-0.5 text-[13px] font-semibold text-[var(--ds-success)]">
                                     <Check className="h-3 w-3" />
                                     {t("install.scan.imported")}
                                   </span>
@@ -1106,7 +1094,7 @@ export function InstallSkills() {
 
                               {primaryLocation ? (
                                 <div className="flex min-w-0 items-center gap-2">
-                                  <span className="inline-flex shrink-0 rounded-[4px] border border-border-subtle bg-surface px-1.5 py-px text-[13px] font-medium text-tertiary">
+                                  <span className="inline-flex shrink-0 rounded border border-border-subtle bg-surface px-1.5 py-px text-[13px] font-medium text-tertiary">
                                     {primaryLocation.tool}
                                   </span>
                                   <code className="block min-w-0 truncate text-[13px] text-tertiary">
@@ -1118,18 +1106,14 @@ export function InstallSkills() {
 
                             <div className="flex shrink-0 items-start justify-end">
                               {group.imported ? null : (
-                                <button
+                                <Button size="sm" variant="primary"
                                   onClick={() => primaryPath && handleImportDiscovered(primaryPath, importName)}
-                                  disabled={!primaryPath || isImporting}
-                                  className="inline-flex items-center justify-center gap-1.5 rounded-[6px] border border-accent-border bg-accent-dark px-2.5 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-accent disabled:opacity-50"
+                                  busy={isImporting}
+                                  disabled={!primaryPath}
                                 >
-                                  {isImporting ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    <DownloadCloud className="h-3 w-3" />
-                                  )}
+                                  <DownloadCloud className="h-3 w-3" />
                                   {t("install.scan.importOne")}
-                                </button>
+                                </Button>
                               )}
                             </div>
                           </div>
@@ -1139,7 +1123,7 @@ export function InstallSkills() {
                               <div className="space-y-1">
                                 {otherLocations.map((location) => (
                                   <div key={location.id} className="flex min-w-0 items-center gap-2">
-                                    <span className="inline-flex shrink-0 rounded-[4px] border border-border-subtle bg-surface px-1.5 py-px text-[13px] font-medium text-tertiary">
+                                    <span className="inline-flex shrink-0 rounded border border-border-subtle bg-surface px-1.5 py-px text-[13px] font-medium text-tertiary">
                                       {location.tool}
                                     </span>
                                     <code className="block min-w-0 truncate text-[13px] text-muted">

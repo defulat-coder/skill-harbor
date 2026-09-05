@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUp, BookOpen, Folder, Link2 } from "lucide-react";
+import { ArrowRight, ArrowUp, BookOpen, Folder, Link2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { Button } from "../components/ui/Button";
 import { LoadingState } from "../components/ui/LoadingState";
@@ -85,12 +85,12 @@ function SearchHomeContent({ index }: { index: ReturnType<typeof useSkillIndex> 
       <form className={styles.composer} onSubmit={event => { event.preventDefault(); void search(); }}>
         <label className={styles.inputLabel} htmlFor="skill-question">描述你的需求</label>
         <textarea ref={textarea} id="skill-question" maxLength={2000} value={query} onChange={event => setQuery(event.target.value)} placeholder="例如：有哪些技能能帮我检查代码？应该怎么使用？" rows={4} disabled={phase === "search"} onKeyDown={event => { if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !event.nativeEvent.isComposing) { event.preventDefault(); void search(); } }} />
-        <div className={styles.composerActions}><span>⌘ / Ctrl + Enter 提问</span><Button type="submit" variant="primary" disabled={busy || !query.trim() || !status?.ready || building} aria-label="检索技能并生成中文回答"><ArrowUp size={18} />{phase === "search" ? "检索中" : phase === "answer" ? "回答中" : "提问"}</Button></div>
+        <div className={styles.composerActions}><span>⌘ / Ctrl + Enter 提问</span><Button type="submit" variant="primary" disabled={busy || !query.trim() || !status?.ready || building}><ArrowUp size={18} />{phase === "search" ? "检索中" : phase === "answer" ? "回答中" : "提问"}</Button></div>
         <div className={styles.directory}><Folder size={14} aria-hidden /><span title={status?.root}>全局技能库</span><Link to="/library">浏览技能库</Link></div>
       </form>
       <div className={styles.indexRow}>
         <span role="status">{building ? "索引正在构建…" : statusLoading ? "正在检查索引…" : status?.ready ? `索引就绪 · ${status.files} 个文件` : "尚未建立可用索引"}</span>
-        <Link to="/search-index">索引管理 →</Link>
+        <Link to="/search-index" className={styles.indexLink}>索引管理 <ArrowRight size={14} aria-hidden /></Link>
       </div>
       {!status?.ready && !statusLoading && !building && <p className={styles.hint}>请先到索引管理建立索引，再用中文提问。</p>}
       {(statusError || status?.error) && <div role="alert" className={styles.error}>{statusError || status?.error}<Button disabled={busy || statusLoading || building} onClick={() => void refreshSkillIndex()}>重新检查</Button></div>}

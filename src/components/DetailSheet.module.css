@@ -1,6 +1,6 @@
-.dialog { padding:0; margin:auto; width:min(820px,calc(100vw - 48px)); max-width:none; max-height:calc(100vh - 64px); border:1px solid var(--ds-border); border-radius:16px; color:var(--ds-text); background:var(--ds-bg); box-shadow:0 24px 60px #00000024; font:14px/1.7 var(--ds-font); }
+.dialog { padding:0; margin:auto; width:min(820px,calc(100vw - 48px)); max-width:none; max-height:calc(100vh - 64px); border:1px solid var(--ds-border); border-radius:16px; color:var(--ds-text); background:var(--ds-bg); box-shadow:var(--ds-shadow); font:14px/1.7 var(--ds-font); }
 .dialog[open] { display:flex; flex-direction:column; }
-.dialog::backdrop { background:#20202059; backdrop-filter:blur(4px); }
+.dialog::backdrop { background:var(--ds-scrim); backdrop-filter:blur(4px); }
 .compact { width:min(480px,calc(100vw - 32px)); }
 .header { position:relative; padding:24px 28px 20px; border-bottom:1px solid var(--ds-border-soft); flex-shrink:0; }
 .header h2 { padding-right:34px; font-size:20px; line-height:1.4; font-weight:600; color:var(--ds-strong); overflow-wrap:anywhere; }

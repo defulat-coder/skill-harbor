@@ -1,7 +1,7 @@
 /* Project content owns its composition; shared shell/tokens/controls stay global. */
 .page { min-width: 0; }
 .projectGrid { display: grid; grid-template-columns: repeat(auto-fill,minmax(280px,1fr)); gap: 14px; }
-.projectCard { display: flex; flex-direction: column; padding: 16px; min-width: 0; border: 1px solid var(--ds-border); border-radius: var(--ds-radius); color: var(--ds-text); background: var(--ds-bg); text-decoration: none; transition: border-color 150ms cubic-bezier(.23,1,.32,1); }
+.projectCard { display: flex; flex-direction: column; padding: 16px; min-width: 0; border: 1px solid var(--ds-border); border-radius: var(--ds-radius); color: var(--ds-text); background: var(--ds-bg); text-decoration: none; transition: border-color var(--ds-duration-exit) var(--ds-ease-out); }
 .projectCard:hover { border-color: var(--ds-border-selected); }
 .projectCard h3 { margin: 12px 0 4px; font-size: 16px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
 .projectCard p { margin: 0 0 20px; color: var(--ds-muted); font-size: 12px; overflow-wrap: anywhere; }

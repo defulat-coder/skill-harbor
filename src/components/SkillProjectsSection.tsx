@@ -235,8 +235,8 @@ export function SkillProjectsSection({ skill, projects, onChanged }: Props) {
             <div
               key={project.id}
               className={cn(
-                "rounded-md border border-border-subtle bg-background px-3 py-2 text-[12.5px]",
-                row?.state === "installed" && "border-emerald-500/30 bg-emerald-500/5",
+                "rounded-md border border-border-subtle bg-background px-3 py-2 text-[12px]",
+                row?.state === "installed" && "border-[color-mix(in_srgb,var(--ds-success)_35%,transparent)] bg-[var(--ds-success-bg)]",
               )}
             >
               <div className="flex min-w-0 flex-col gap-1.5">
@@ -249,7 +249,7 @@ export function SkillProjectsSection({ skill, projects, onChanged }: Props) {
                     <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-faint" />
                   ) : row.state === "error" ? (
                     <span
-                      className="shrink-0 text-rose-500"
+                      className="shrink-0 text-[var(--ds-danger)]"
                       title={row.error || t("common.error")}
                     >
                       {t("common.error")}
@@ -294,8 +294,8 @@ export function SkillProjectsSection({ skill, projects, onChanged }: Props) {
                           className={cn(
                             "inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-[12px] font-semibold transition-colors disabled:cursor-default",
                             agentState === "available" && "text-accent-light hover:bg-accent-bg",
-                            agentState === "installed" && "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/15 dark:text-emerald-400",
-                            agentState === "conflict" && "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+                            agentState === "installed" && "bg-[var(--ds-success-bg)] text-[var(--ds-success)] hover:bg-[color-mix(in_srgb,var(--ds-success)_16%,transparent)]",
+                            agentState === "conflict" && "bg-[var(--ds-danger-bg)] text-[var(--ds-danger)]",
                           )}
                         >
                           <AgentIcon

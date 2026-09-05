@@ -246,7 +246,7 @@ export function CommandPalette() {
       if (groupItems.length === 0) return null;
       return (
         <div key={g.kind}>
-          <div className="px-4 pt-3 pb-1 font-mono text-[12px] uppercase tracking-[0.12em] text-faint">
+          <div className="px-4 pt-3 pb-1 text-[12px] font-medium text-faint">
             {g.label} · {groupItems.length}
           </div>
           {groupItems.map((item) => {

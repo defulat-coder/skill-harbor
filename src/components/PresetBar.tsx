@@ -133,12 +133,13 @@ export function PresetBar({
               }}
               disabled={busy}
               title={preset.name}
+              aria-pressed={s.status === "active" ? true : s.status === "partial" ? "mixed" : false}
               className={cn(
                 "inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-[12px] font-medium transition-colors disabled:opacity-50",
                 s.status === "active"
                   ? `${presetIcon.activeClass} ${presetIcon.colorClass}`
                   : s.status === "partial"
-                  ? "border-amber-400/50 bg-amber-500/8 text-amber-600 dark:text-amber-400 hover:bg-amber-500/12"
+                  ? "border-[var(--ds-warning)] bg-[var(--ds-warning-bg)] text-[var(--ds-warning)] hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)]"
                   : "border-border-subtle text-faint hover:border-border hover:text-muted"
               )}
             >
@@ -148,7 +149,7 @@ export function PresetBar({
               <span className="max-w-[140px] truncate">{preset.name}</span>
               {s.status === "active" && <Check className="h-3 w-3 shrink-0" />}
               {s.status === "partial" && (
-                <span className="rounded-full bg-amber-500/20 px-1.5 py-px text-[10px] font-semibold">
+                <span className="rounded-full bg-[color-mix(in_srgb,var(--ds-warning)_20%,transparent)] px-1.5 py-px text-[10px] font-semibold">
                   {s.installed}/{s.total}
                 </span>
               )}

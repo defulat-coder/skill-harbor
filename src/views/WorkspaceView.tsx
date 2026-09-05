@@ -4,7 +4,7 @@ import { LoadingState } from "../components/ui/LoadingState";
 import { Button } from "../components/ui/Button";
 import { PageHeader } from "../components/ui/PageHeader";
 import styles from "./WorkspaceView.module.css";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import {
   ChevronRight,
@@ -13,7 +13,6 @@ import {
   Globe,
   LayoutGrid,
   List,
-  Loader2,
   Plus,
   RefreshCw,
   Search,
@@ -35,6 +34,7 @@ import * as api from "../lib/tauri";
 import type { ManagedSkill, ProjectSkill } from "../lib/tauri";
 import { getErrorMessage } from "../lib/error";
 import { getTagActiveColor, getTagColor, pruneStaleTagFilters, UNTAGGED_FILTER } from "../lib/skillTags";
+import { getSyncStatusMeta } from "../lib/syncStatusMeta";
 import { AddSkillsSheet } from "../components/AddSkillsSheet";
 import type { WorkspaceConfig } from "./workspaceConfigs";
 
@@ -75,11 +75,23 @@ function WorkspaceSkillCard({
   actionsHover?: boolean;
   onClick: () => void;
 }) {
+  // The whole card is clickable; nested controls (title button, action menu)
+  // stop propagation, so only activate when the keydown lands on the card itself.
+  const handleCardKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onClick();
+    }
+  };
   if (viewMode === "list") {
     return (
       <div
         className={cn(styles.skillRow, "group relative flex cursor-pointer items-center gap-3.5 px-3.5 py-3")}
         onClick={onClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={handleCardKeyDown}
       >
         <div className="flex h-4 w-4 shrink-0 items-center justify-center">
           <span
@@ -146,6 +158,9 @@ function WorkspaceSkillCard({
         styles.skillCard, "group relative flex h-full cursor-pointer flex-col overflow-hidden"
       )}
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={handleCardKeyDown}
     >
       <div className="flex items-center gap-2.5 px-3.5 pt-3 pb-1.5">
         <div className="flex h-4 w-4 shrink-0 items-center justify-center">
@@ -201,35 +216,15 @@ function WorkspaceSkillCard({
   );
 }
 
-function getLocalStatusMeta(t: (key: string) => string, status: ProjectSkill["sync_status"]) {
-  switch (status) {
-    case "in_sync":
-      return {
-        label: t("globalWorkspace.localSkills.status.inSync"),
-        className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-      };
-    case "project_newer":
-      return {
-        label: t("globalWorkspace.localSkills.status.localNewer"),
-        className: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-      };
-    case "center_newer":
-      return {
-        label: t("globalWorkspace.localSkills.status.centerNewer"),
-        className: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
-      };
-    case "diverged":
-      return {
-        label: t("globalWorkspace.localSkills.status.diverged"),
-        className: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
-      };
-    default:
-      return {
-        label: t("globalWorkspace.localSkills.status.localOnly"),
-        className: "bg-surface-hover text-muted",
-      };
-  }
-}
+/* Colors come from src/lib/syncStatusMeta.ts; only the i18n labels stay local
+   (this page uses the globalWorkspace.* key namespace). */
+const SYNC_STATUS_LABEL_KEYS: Record<ProjectSkill["sync_status"], string> = {
+  in_sync: "globalWorkspace.localSkills.status.inSync",
+  project_newer: "globalWorkspace.localSkills.status.localNewer",
+  center_newer: "globalWorkspace.localSkills.status.centerNewer",
+  diverged: "globalWorkspace.localSkills.status.diverged",
+  project_only: "globalWorkspace.localSkills.status.localOnly",
+};
 
 export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
   const { agentKey } = useParams<{ agentKey?: string }>();
@@ -621,7 +616,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     await Promise.all([refreshManagedSkills(), refreshTools(), loadLocalSkills()]);
   }, [loadLocalSkills, refreshManagedSkills, refreshTools]);
 
-  const renderLocalSkillActions = (skill: ProjectSkill, variant: "grid" | "list") => {
+  const renderLocalSkillActions = (skill: ProjectSkill) => {
     const uploadKey = `upload:${skill.relative_path}`;
     const pullKey = `pull:${skill.relative_path}`;
     const canPull = skill.sync_status === "center_newer" || skill.sync_status === "diverged";
@@ -629,34 +624,38 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     const isManaged = !!skill.center_skill_id && managedLocalIds.has(skill.center_skill_id);
     const canDeleteLocal = !isManaged && skill.sync_status === "project_only";
     const removing = removingLocalSkillId === skill.relative_path;
-    const buttonClassName = variant === "grid"
-      ? "rounded px-2 py-1 text-[13px] font-medium text-muted transition-colors outline-none hover:bg-surface-hover hover:text-secondary disabled:opacity-50"
-      : "rounded p-0.5 text-muted transition-colors hover:bg-surface-hover hover:text-secondary disabled:opacity-50";
+    const pulling = localActionKey === pullKey;
+    const uploading = localActionKey === uploadKey;
 
     if (isInSync && !isManaged) return null;
 
     return (
       <>
         {!isInSync && canPull && (
-          <button
+          <Button
+            iconOnly
+            size="sm"
+            variant="ghost"
+            busy={pulling}
+            disabled={!!localActionKey}
             onClick={(e) => {
               e.stopPropagation();
               setPullConfirmSkill(skill);
             }}
-            disabled={!!localActionKey}
-            className={buttonClassName}
             title={t("globalWorkspace.localSkills.pull")}
+            aria-label={t("globalWorkspace.localSkills.pull")}
           >
-            {localActionKey === pullKey ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Download className="h-3.5 w-3.5" />
-            )}
-          </button>
+            {!pulling && <Download className="h-3.5 w-3.5" aria-hidden />}
+          </Button>
         )}
 
         {!isInSync && (
-          <button
+          <Button
+            iconOnly
+            size="sm"
+            variant="ghost"
+            busy={uploading}
+            disabled={!!localActionKey}
             onClick={(e) => {
               e.stopPropagation();
               if (skill.sync_status === "project_only") {
@@ -665,16 +664,11 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
                 setUploadConfirmSkill(skill);
               }
             }}
-            disabled={!!localActionKey}
-            className={buttonClassName}
             title={t("globalWorkspace.localSkills.upload")}
+            aria-label={t("globalWorkspace.localSkills.upload")}
           >
-            {localActionKey === uploadKey ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Upload className="h-3.5 w-3.5" />
-            )}
-          </button>
+            {!uploading && <Upload className="h-3.5 w-3.5" aria-hidden />}
+          </Button>
         )}
 
         {(isManaged || canDeleteLocal) && <CardActionMenu label={`管理 ${skill.name}`} actions={[
@@ -781,37 +775,33 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
               />
             </div>
 
-              <button
+              <Button
+                iconOnly
+                variant="ghost"
+                busy={localSkillsLoading}
                 onClick={() => void loadLocalSkills()}
-                disabled={localSkillsLoading}
-                className="rounded-md p-2 text-muted transition-colors outline-none hover:text-tertiary disabled:opacity-50"
                 title={t("settings.refresh")}
+                aria-label={t("settings.refresh")}
               >
-                <RefreshCw className={cn("h-4 w-4", localSkillsLoading && "animate-spin")} />
-              </button>
-            <div className="app-segmented shrink-0">
+                {!localSkillsLoading && <RefreshCw className="h-4 w-4" aria-hidden />}
+              </Button>
+            <div className="ds-view-toggle shrink-0" aria-label="视图切换">
 
               <button
                 aria-label="网格视图"
                 aria-pressed={viewMode === "grid"}
                 onClick={() => setViewMode("grid")}
-                className={cn(
-                  "rounded-md p-2 transition-colors outline-none",
-                  viewMode === "grid" ? "bg-surface-active text-secondary" : "text-muted hover:text-tertiary"
-                )}
+                className={viewMode === "grid" ? "is-active" : ""}
               >
-                <LayoutGrid className="h-4 w-4" />
+                <LayoutGrid className="h-4 w-4" aria-hidden />
               </button>
               <button
                 aria-label="列表视图"
                 aria-pressed={viewMode === "list"}
                 onClick={() => setViewMode("list")}
-                className={cn(
-                  "rounded-md p-2 transition-colors outline-none",
-                  viewMode === "list" ? "bg-surface-active text-secondary" : "text-muted hover:text-tertiary"
-                )}
+                className={viewMode === "list" ? "is-active" : ""}
               >
-                <List className="h-4 w-4" />
+                <List className="h-4 w-4" aria-hidden />
               </button>
             </div>
 
@@ -832,7 +822,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
               className={cn(
                 "rounded-full px-2.5 py-0.5 text-[12px] font-medium transition-colors",
                 tagFilters.size === 0
-                  ? "bg-accent text-white dark:bg-accent dark:text-white"
+                  ? "bg-accent text-[var(--ds-on-accent)]"
                   : "bg-surface-hover text-muted hover:text-secondary"
               )}
             >
@@ -916,13 +906,10 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
           </h2>
           {localSkills.length > 0 && <Button variant="secondary" onClick={() => { setSearch(""); setTagFilters(new Set()); }}>清除筛选</Button>}
           {localSkills.length === 0 && (
-            <button
-              onClick={() => setAddDialogOpen(true)}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-accent-hover"
-            >
-              <Plus className="h-3.5 w-3.5" />
+            <Button variant="primary" className="mt-4" onClick={() => setAddDialogOpen(true)}>
+              <Plus className="h-3.5 w-3.5" aria-hidden />
               {t("globalWorkspace.addSkill")}
-            </button>
+            </Button>
           )}
         </div>
       ) : (
@@ -935,7 +922,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
           )}
         >
           {visibleLocalSkills.map((skill) => {
-            const statusMeta = getLocalStatusMeta(t, skill.sync_status);
+            const statusMeta = getSyncStatusMeta(t(SYNC_STATUS_LABEL_KEYS[skill.sync_status]), skill.sync_status);
             const isManaged = !!skill.center_skill_id && managedLocalIds.has(skill.center_skill_id);
 
             return (
@@ -948,7 +935,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
                 status={statusMeta}
                 fileCount={skill.files.length}
                 active={isManaged}
-                actions={renderLocalSkillActions(skill, viewMode)}
+                actions={renderLocalSkillActions(skill)}
                 actionsHover={viewMode === "list"}
                 onClick={() => void openLocalDetail(skill)}
               />
@@ -979,8 +966,8 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
         meta={
           localDetailSkill ? (
             <div className="flex flex-wrap items-center gap-2">
-              <span className={cn("rounded-full px-2.5 py-1 text-[12px] font-medium", getLocalStatusMeta(t, localDetailSkill.sync_status).className)}>
-                {getLocalStatusMeta(t, localDetailSkill.sync_status).label}
+              <span className={cn("rounded-full px-2.5 py-1 text-[12px] font-medium", getSyncStatusMeta(t(SYNC_STATUS_LABEL_KEYS[localDetailSkill.sync_status]), localDetailSkill.sync_status).className)}>
+                {getSyncStatusMeta(t(SYNC_STATUS_LABEL_KEYS[localDetailSkill.sync_status]), localDetailSkill.sync_status).label}
               </span>
               <span className="rounded-full bg-surface-hover px-2.5 py-1 text-[12px] text-muted">
                 {localDetailSkill.relative_path}
@@ -996,11 +983,12 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
               <button
                 key={tab}
                 type="button"
+                aria-pressed={localContentTab === tab}
                 onClick={() => setLocalContentTab(tab)}
                 className={cn(
                   "rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors",
                   localContentTab === tab
-                    ? "bg-accent text-white"
+                    ? "bg-accent text-[var(--ds-on-accent)]"
                     : "bg-surface-hover text-muted hover:text-secondary"
                 )}
                 disabled={(tab === "diff" || tab === "center") && localCenterDocLoading}

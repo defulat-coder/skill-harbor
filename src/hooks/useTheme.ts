@@ -14,11 +14,11 @@ function getSystemTheme(): ResolvedTheme {
 
 function applyThemeClass(resolved: ResolvedTheme) {
   const root = document.documentElement;
-  if (resolved === "dark") {
-    root.classList.add("dark");
-  } else {
-    root.classList.remove("dark");
-  }
+  // Mark both states explicitly: design-system.css has a prefers-color-scheme
+  // fallback that applies to :root without either class (pre-JS paint), so an
+  // explicit light choice must be detectable to keep OS-dark users light.
+  root.classList.toggle("dark", resolved === "dark");
+  root.classList.toggle("light", resolved === "light");
 }
 
 export function useTheme() {
@@ -26,25 +26,25 @@ export function useTheme() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === "light" || stored === "dark" || stored === "system")
       return stored;
-    return "light";
+    return "system";
   });
+  const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme);
 
   const resolvedTheme: ResolvedTheme =
-    theme === "system" ? getSystemTheme() : theme;
+    theme === "system" ? systemTheme : theme;
 
   // Apply class on mount and theme change
   useEffect(() => {
     applyThemeClass(resolvedTheme);
   }, [resolvedTheme]);
 
-  // Listen for system preference changes when in "system" mode
+  // Track the OS preference so system mode re-renders on OS theme switches.
   useEffect(() => {
-    if (theme !== "system") return;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => applyThemeClass(getSystemTheme());
+    const handler = () => setSystemTheme(getSystemTheme());
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
-  }, [theme]);
+  }, []);
 
   // Load from Tauri settings on mount
   useEffect(() => {

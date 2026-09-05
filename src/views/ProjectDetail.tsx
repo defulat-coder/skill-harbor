@@ -1,7 +1,8 @@
 import { Disclosure } from "../components/ui/Disclosure";
 import { Button } from "../components/ui/Button";
+import { LoadingState } from "../components/ui/LoadingState";
 import { PageHeader } from "../components/ui/PageHeader";
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   FolderOpen,
@@ -14,7 +15,6 @@ import {
   Upload,
   RotateCcw,
   Layers,
-  Loader2,
   Trash2,
   SquareCheck,
   Square,
@@ -36,6 +36,7 @@ import { PresetBar } from "../components/PresetBar";
 import { SkillMarkdown } from "../components/SkillMarkdown";
 import { DocumentDiffViewer } from "../components/DocumentDiffViewer";
 import { getTagActiveColor, getTagColor, pruneStaleTagFilters, UNTAGGED_FILTER } from "../lib/skillTags";
+import { getSyncStatusMeta } from "../lib/syncStatusMeta";
 import { enabledInstalledAgentKeys, getDefaultExportAgents } from "../lib/exportAgents";
 import { cn } from "../utils";
 import * as api from "../lib/tauri";
@@ -61,33 +62,23 @@ interface ProjectSkillGroup {
   centerSkillIds: string[];
 }
 
-function getSyncStatusMeta(t: (key: string) => string, status: ProjectSkill["sync_status"]) {
-  switch (status) {
-    case "in_sync":
-      return {
-        label: t("project.syncStatus.inSync"),
-        className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-      };
-    case "project_newer":
-      return {
-        label: t("project.syncStatus.projectNewer"),
-        className: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-      };
-    case "center_newer":
-      return {
-        label: t("project.syncStatus.centerNewer"),
-        className: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
-      };
-    case "diverged":
-      return {
-        label: t("project.syncStatus.diverged"),
-        className: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
-      };
-    default:
-      return {
-        label: t("project.syncStatus.projectOnly"),
-        className: "bg-surface-hover text-muted",
-      };
+/* Colors come from src/lib/syncStatusMeta.ts; only the i18n labels stay local
+   (this page uses the project.* key namespace). */
+const SYNC_STATUS_LABEL_KEYS: Record<ProjectSkill["sync_status"], string> = {
+  in_sync: "project.syncStatus.inSync",
+  project_newer: "project.syncStatus.projectNewer",
+  center_newer: "project.syncStatus.centerNewer",
+  diverged: "project.syncStatus.diverged",
+  project_only: "project.syncStatus.projectOnly",
+};
+
+// Whole-card click targets: nested controls stop propagation, so only activate
+// when the keydown lands on the card itself.
+function handleCardKeyDown(event: ReactKeyboardEvent<HTMLDivElement>, activate: () => void) {
+  if (event.target !== event.currentTarget) return;
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    activate();
   }
 }
 
@@ -898,59 +889,47 @@ export function ProjectDetail() {
               ))}
             </div>
 
-            <div className="app-segmented shrink-0">
-              <button
-                aria-label={t("common.refresh")} disabled={loading}
-                onClick={loadSkills}
-                className="rounded-md p-2 text-muted transition-colors hover:bg-surface-hover hover:text-secondary"
-                title={t("common.refresh")}
-              >
-                <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-              </button>
+            <Button
+              iconOnly
+              variant="ghost"
+              busy={loading}
+              onClick={() => void loadSkills()}
+              title={t("common.refresh")}
+              aria-label={t("common.refresh")}
+            >
+              {!loading && <RefreshCw className="h-4 w-4" aria-hidden />}
+            </Button>
+            <div className="ds-view-toggle shrink-0" aria-label="视图与选择">
               <button
                 aria-label="网格视图" aria-pressed={viewMode === "grid"}
                 onClick={() => setViewMode("grid")}
-                className={cn(
-                  "rounded-md p-2 transition-colors",
-                  viewMode === "grid" ? "bg-surface-active text-secondary" : "text-muted hover:text-tertiary"
-                )}
+                className={viewMode === "grid" ? "is-active" : ""}
               >
-                <LayoutGrid className="h-4 w-4" />
+                <LayoutGrid className="h-4 w-4" aria-hidden />
               </button>
               <button
                 aria-label="列表视图" aria-pressed={viewMode === "list"}
                 onClick={() => setViewMode("list")}
-                className={cn(
-                  "rounded-md p-2 transition-colors",
-                  viewMode === "list" ? "bg-surface-active text-secondary" : "text-muted hover:text-tertiary"
-                )}
+                className={viewMode === "list" ? "is-active" : ""}
               >
-                <List className="h-4 w-4" />
+                <List className="h-4 w-4" aria-hidden />
               </button>
               <button
                 aria-pressed={isMultiSelect}
                 aria-label={isMultiSelect ? t("project.cancelSelect") : t("project.selectMode")}
                 onClick={() => isMultiSelect ? exitMultiSelect() : setIsMultiSelect(true)}
-                className={cn(
-                  "rounded-md p-2 transition-colors",
-                  isMultiSelect ? "bg-surface-active text-secondary" : "text-muted hover:text-tertiary"
-                )}
+                className={isMultiSelect ? "is-active" : ""}
                 title={isMultiSelect ? t("project.cancelSelect") : t("project.selectMode")}
               >
-                <SquareCheck className="h-4 w-4" />
+                <SquareCheck className="h-4 w-4" aria-hidden />
               </button>
             </div>
 
             <div className="relative shrink-0">
-              <button
-                onClick={() => {
-                  setShowExportDialog(true);
-                }}
-                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-accent px-3 text-[13px] font-medium text-white transition-colors hover:bg-accent-hover"
-              >
-                <Plus className="h-3.5 w-3.5" />
+              <Button variant="primary" onClick={() => setShowExportDialog(true)}>
+                <Plus className="h-3.5 w-3.5" aria-hidden />
                 {t("project.addSkill")}
-              </button>
+              </Button>
 
             </div>
           </div>
@@ -963,7 +942,7 @@ export function ProjectDetail() {
               className={cn(
                 "rounded-full px-2.5 py-0.5 text-[12px] font-medium transition-colors",
                 tagFilters.size === 0
-                  ? "bg-accent text-white dark:bg-accent dark:text-white"
+                  ? "bg-accent text-[var(--ds-on-accent)]"
                   : "bg-surface-hover text-muted hover:text-secondary"
               )}
             >
@@ -1067,9 +1046,7 @@ export function ProjectDetail() {
       )}
 
       {loading ? (
-        <div className="flex flex-1 flex-col items-center justify-center pb-20 text-center">
-          <div className="text-[13px] text-muted">{t("common.loading")}</div>
-        </div>
+        <LoadingState label={t("common.loading")} />
       ) : filtered.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center pb-20 text-center">
           <Layers className="mb-4 h-12 w-12 text-faint" />
@@ -1081,15 +1058,10 @@ export function ProjectDetail() {
           </p>
           {groupedSkills.length > 0 && <Button onClick={() => { setSearch(""); setTagFilters(new Set()); setFilterMode("all"); }}>清除筛选</Button>}
           {groupedSkills.length === 0 && (
-            <button
-              onClick={() => {
-                setShowExportDialog(true);
-              }}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-accent-hover"
-            >
-              <Plus className="h-3.5 w-3.5" />
+            <Button variant="primary" className="mt-4" onClick={() => setShowExportDialog(true)}>
+              <Plus className="h-3.5 w-3.5" aria-hidden />
               {t("project.addSkillsCta")}
-            </button>
+            </Button>
           )}
         </div>
       ) : (
@@ -1115,7 +1087,7 @@ export function ProjectDetail() {
               skill.status === "project_newer" ||
               skill.status === "center_newer" ||
               skill.status === "diverged";
-            const statusMeta = getSyncStatusMeta(t, skill.status);
+            const statusMeta = getSyncStatusMeta(t(SYNC_STATUS_LABEL_KEYS[skill.status]), skill.status);
             const assignedAgents = getAssignedAgents(skill.variants);
 
             if (viewMode === "grid") {
@@ -1128,6 +1100,13 @@ export function ProjectDetail() {
                   )}
                   onClick={() =>
                     isMultiSelect ? toggleSelect(skillKey) : handleOpenDetail(skill)
+                  }
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) =>
+                    handleCardKeyDown(event, () =>
+                      isMultiSelect ? toggleSelect(skillKey) : void handleOpenDetail(skill)
+                    )
                   }
                 >
                   <div className="flex items-center gap-2.5 px-3.5 pt-3 pb-1.5">
@@ -1144,7 +1123,7 @@ export function ProjectDetail() {
                             skill.enabledCount === skill.totalCount
                               ? "bg-accent-light shadow-[0_0_0_3px_var(--color-accent-bg)]"
                               : skill.enabledCount > 0
-                                ? "bg-amber-500 shadow-[0_0_0_3px_rgba(245,158,11,0.15)]"
+                                ? "bg-[var(--ds-warning)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--ds-warning)_15%,transparent)]"
                                 : "bg-surface-active"
                           )}
                           title={`${skill.enabledCount}/${skill.totalCount}`}
@@ -1192,7 +1171,7 @@ export function ProjectDetail() {
                         {statusMeta.label}
                       </span>
                       {skill.enabledCount === 0 && (
-                        <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[12px] font-medium text-red-600 dark:text-red-300">
+                        <span className="rounded-full bg-[var(--ds-danger-bg)] px-2 py-0.5 text-[12px] font-medium text-[var(--ds-danger)]">
                           {t("project.disabled")}
                         </span>
                       )}
@@ -1212,38 +1191,44 @@ export function ProjectDetail() {
                           }
                         />
                         {canUpdateCenter && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleUpdateCenter(skill); }}
+                          <Button
+                            iconOnly
+                            size="sm"
+                            variant="ghost"
+                            busy={isUpdatingCenter}
                             disabled={isUpdatingCenter || isUpdatingProject}
-                            className="rounded px-2 py-1 text-[13px] font-medium text-muted transition-colors hover:bg-surface-hover hover:text-secondary disabled:opacity-50"
+                            onClick={(e) => { e.stopPropagation(); handleUpdateCenter(skill); }}
                             title={t("project.updateCenter")}
+                            aria-label={t("project.updateCenter")}
                           >
-                            {isUpdatingCenter ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <Upload className="h-3.5 w-3.5" />
-                            )}
-                          </button>
+                            {!isUpdatingCenter && <Upload className="h-3.5 w-3.5" aria-hidden />}
+                          </Button>
                         )}
                         {canUpdateProject && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleUpdateProject(skill); }}
+                          <Button
+                            iconOnly
+                            size="sm"
+                            variant="ghost"
+                            busy={isUpdatingProject}
                             disabled={isUpdatingCenter || isUpdatingProject}
-                            className="rounded px-2 py-1 text-[13px] font-medium text-muted transition-colors hover:bg-surface-hover hover:text-secondary disabled:opacity-50"
+                            onClick={(e) => { e.stopPropagation(); handleUpdateProject(skill); }}
                             title={
                               skill.status === "project_newer"
                                 ? t("project.resetFromCenter")
                                 : t("project.updateProject")
                             }
+                            aria-label={
+                              skill.status === "project_newer"
+                                ? t("project.resetFromCenter")
+                                : t("project.updateProject")
+                            }
                           >
-                            {isUpdatingProject ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : skill.status === "project_newer" ? (
-                              <RotateCcw className="h-3.5 w-3.5" />
-                            ) : (
-                              <Download className="h-3.5 w-3.5" />
+                            {!isUpdatingProject && (
+                              skill.status === "project_newer"
+                                ? <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                                : <Download className="h-3.5 w-3.5" aria-hidden />
                             )}
-                          </button>
+                          </Button>
                         )}
                         {project.supports_skill_toggle ? (
                           <ToggleSwitch
@@ -1257,13 +1242,16 @@ export function ProjectDetail() {
                             }
                           />
                         ) : null}
-                        <button
+                        <Button
+                          iconOnly
+                          size="sm"
+                          variant="danger-ghost"
                           onClick={(e) => { e.stopPropagation(); setDeleteTarget(skill); }}
-                          className="rounded px-2 py-1 text-muted transition-colors hover:bg-red-500/10 hover:text-red-500"
                           title={t("project.deleteSkill")}
+                          aria-label={t("project.deleteSkill")}
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -1282,6 +1270,13 @@ export function ProjectDetail() {
                 onClick={() =>
                   isMultiSelect ? toggleSelect(skillKey) : handleOpenDetail(skill)
                 }
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) =>
+                  handleCardKeyDown(event, () =>
+                    isMultiSelect ? toggleSelect(skillKey) : void handleOpenDetail(skill)
+                  )
+                }
               >
                 <div className="flex h-4 w-4 shrink-0 items-center justify-center">
                   {isMultiSelect ? (
@@ -1295,7 +1290,7 @@ export function ProjectDetail() {
                         skill.enabledCount === skill.totalCount
                           ? "bg-accent-light shadow-[0_0_0_3px_var(--color-accent-bg)]"
                           : skill.enabledCount > 0
-                            ? "bg-amber-500 shadow-[0_0_0_3px_rgba(245,158,11,0.15)]"
+                            ? "bg-[var(--ds-warning)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--ds-warning)_15%,transparent)]"
                             : "bg-surface-active"
                       )}
                       title={`${skill.enabledCount}/${skill.totalCount}`}
@@ -1334,7 +1329,7 @@ export function ProjectDetail() {
                     {statusMeta.label}
                   </span>
                   {skill.enabledCount === 0 && (
-                    <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[12px] font-medium text-red-600 dark:text-red-300">
+                    <span className="rounded-full bg-[var(--ds-danger-bg)] px-2 py-0.5 text-[12px] font-medium text-[var(--ds-danger)]">
                       {t("project.disabled")}
                     </span>
                   )}
@@ -1364,40 +1359,46 @@ export function ProjectDetail() {
 
                 {!isMultiSelect && (
                   <>
-                    <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                       {canUpdateCenter && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleUpdateCenter(skill); }}
+                        <Button
+                          iconOnly
+                          size="sm"
+                          variant="ghost"
+                          busy={isUpdatingCenter}
                           disabled={isUpdatingCenter || isUpdatingProject}
-                          className="rounded p-0.5 text-muted transition-colors hover:bg-surface-hover hover:text-secondary disabled:opacity-50"
+                          onClick={(e) => { e.stopPropagation(); handleUpdateCenter(skill); }}
                           title={t("project.updateCenter")}
+                          aria-label={t("project.updateCenter")}
                         >
-                          {isUpdatingCenter ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Upload className="h-3.5 w-3.5" />
-                          )}
-                        </button>
+                          {!isUpdatingCenter && <Upload className="h-3.5 w-3.5" aria-hidden />}
+                        </Button>
                       )}
                       {canUpdateProject && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleUpdateProject(skill); }}
+                        <Button
+                          iconOnly
+                          size="sm"
+                          variant="ghost"
+                          busy={isUpdatingProject}
                           disabled={isUpdatingCenter || isUpdatingProject}
-                          className="rounded p-0.5 text-muted transition-colors hover:bg-surface-hover hover:text-secondary disabled:opacity-50"
+                          onClick={(e) => { e.stopPropagation(); handleUpdateProject(skill); }}
                           title={
                             skill.status === "project_newer"
                               ? t("project.resetFromCenter")
                               : t("project.updateProject")
                           }
+                          aria-label={
+                            skill.status === "project_newer"
+                              ? t("project.resetFromCenter")
+                              : t("project.updateProject")
+                          }
                         >
-                          {isUpdatingProject ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : skill.status === "project_newer" ? (
-                            <RotateCcw className="h-3.5 w-3.5" />
-                          ) : (
-                            <Download className="h-3.5 w-3.5" />
+                          {!isUpdatingProject && (
+                            skill.status === "project_newer"
+                              ? <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                              : <Download className="h-3.5 w-3.5" aria-hidden />
                           )}
-                        </button>
+                        </Button>
                       )}
                     </div>
                     {project.supports_skill_toggle ? (
@@ -1412,13 +1413,16 @@ export function ProjectDetail() {
                         }
                       />
                     ) : null}
-                    <button
+                    <Button
+                      iconOnly
+                      size="sm"
+                      variant="danger-ghost"
                       onClick={(e) => { e.stopPropagation(); setDeleteTarget(skill); }}
-                      className="shrink-0 rounded p-0.5 text-muted transition-colors hover:bg-red-500/10 hover:text-red-500"
                       title={t("project.deleteSkill")}
+                      aria-label={t("project.deleteSkill")}
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                    </Button>
                   </>
                 )}
               </div>
@@ -1618,7 +1622,7 @@ function ProjectSkillDetailPanel({
               className={cn(
                 "rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors",
                 contentTab === tab
-                  ? "bg-accent text-white"
+                  ? "bg-accent text-[var(--ds-on-accent)]"
                   : "bg-surface-hover text-muted hover:text-secondary"
               )}
               disabled={(tab === "diff" || tab === "center") && centerDocLoading}

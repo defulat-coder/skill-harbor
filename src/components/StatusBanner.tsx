@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { AlertTriangle, OctagonAlert, RefreshCw } from "lucide-react";
 import { getErrorMessage } from "../lib/error";
 import { Button } from "./ui/Button";
 import styles from "./StatusBanner.module.css";
@@ -17,6 +17,7 @@ export function StatusBanner({ title, description, actionLabel, onAction, tone =
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const pending = useRef(false);
+  const Icon = tone === "danger" ? OctagonAlert : AlertTriangle;
   async function act() {
     if (!onAction || pending.current) return;
     pending.current = true;
@@ -27,7 +28,7 @@ export function StatusBanner({ title, description, actionLabel, onAction, tone =
     finally { pending.current = false; setBusy(false); }
   }
   return <section className={`${styles.banner} ${styles[tone]} ${compact ? styles.compact : ""}`} aria-label={title}>
-    <AlertTriangle className={styles.icon} size={18} aria-hidden />
+    <Icon className={styles.icon} size={18} aria-hidden />
     <div className={styles.content}><p className={styles.title}>{title}</p>{description && <p className={styles.description}>{description}</p>}{error && <p role="alert" className={styles.error}>{error}</p>}{busy && <p role="status" className={styles.description}>正在处理…</p>}</div>
     {actionLabel && onAction && <Button onClick={() => void act()} busy={busy} className={styles.action}>{!busy && <RefreshCw size={14} aria-hidden />}{actionLabel}</Button>}
   </section>;

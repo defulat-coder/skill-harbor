@@ -435,7 +435,7 @@ function AddSkillsSheetBody({ open, onClose, target, managedSkills, onInstalled 
                       aria-pressed={active}
                       title={tt.display_name}
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border py-1 pl-1 pr-2.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+                        "inline-flex items-center gap-1.5 rounded-full border py-1 pl-1 pr-2.5 text-[12px] font-medium transition-colors",
                         active
                           ? "border-accent-border bg-accent-bg text-accent-light"
                           : "border-border-subtle bg-surface text-muted hover:bg-surface-hover hover:text-secondary",
@@ -451,7 +451,7 @@ function AddSkillsSheetBody({ open, onClose, target, managedSkills, onInstalled 
                           )}
                         />
                         {active && (
-                          <span className="absolute -right-0.5 -top-0.5 inline-flex h-3 w-3 items-center justify-center rounded-full bg-accent text-white">
+                          <span className="absolute -right-0.5 -top-0.5 inline-flex h-3 w-3 items-center justify-center rounded-full bg-accent text-[var(--ds-on-accent)]">
                             <CheckCircle2 className="h-2.5 w-2.5" strokeWidth={3} />
                           </span>
                         )}
@@ -534,11 +534,12 @@ function AddSkillsSheetBody({ open, onClose, target, managedSkills, onInstalled 
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <span className="text-[12px] text-muted">{t("mySkills.tags.filter")}</span>
               <button
+                aria-pressed={tagFilters.size === 0}
                 onClick={() => setTagFilters(new Set())}
                 className={cn(
                   "rounded-full px-2.5 py-0.5 text-[12px] font-medium transition-colors",
                   tagFilters.size === 0
-                    ? "bg-accent text-white dark:bg-accent dark:text-white"
+                    ? "bg-accent text-[var(--ds-on-accent)]"
                     : "bg-surface-hover text-muted hover:text-secondary",
                 )}
               >
@@ -591,7 +592,7 @@ function AddSkillsSheetBody({ open, onClose, target, managedSkills, onInstalled 
                     className={cn(
                       "rounded-full px-2.5 py-0.5 text-[12px] font-medium transition-colors",
                       active
-                        ? "bg-accent text-white dark:bg-accent dark:text-white"
+                        ? "bg-accent text-[var(--ds-on-accent)]"
                         : "bg-surface-hover text-muted hover:text-secondary",
                     )}
                   >

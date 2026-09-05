@@ -65,7 +65,7 @@ export function SkillPickerRow({
               <span
                 key={tag}
                 className={cn(
-                  "inline-flex items-center rounded-full px-1.5 py-0.5 text-[10.5px] font-medium",
+                  "inline-flex items-center rounded-full px-1.5 py-0.5 text-[12px] font-medium",
                   getTagColor(tag, allTags),
                 )}
               >
@@ -82,8 +82,8 @@ export function SkillPickerRow({
         <span
           className={cn(
             "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
-            status === "installed" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-            status === "conflict" && "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+            status === "installed" && "bg-[var(--ds-success-bg)] text-[var(--ds-success)]",
+            status === "conflict" && "bg-[var(--ds-danger-bg)] text-[var(--ds-danger)]",
             status === "unavailable" && "bg-surface-hover text-muted",
           )}
         >

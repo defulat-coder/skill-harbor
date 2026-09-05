@@ -43,7 +43,7 @@ export function SkillMarkdown({ content, className }: SkillMarkdownProps) {
             />
           ),
           p: ({ className, ...props }) => (
-            <p className={cn("mb-4 text-[13px] leading-6 text-secondary", className)} {...props} />
+            <p className={cn("mb-4 text-[14px] leading-7 text-secondary", className)} {...props} />
           ),
           a: ({ className, href, ...props }) => {
             const dangerous = /^(javascript|vbscript|data):/i;

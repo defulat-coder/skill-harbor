@@ -1,5 +1,5 @@
 import { Trash2, CheckCircle2, Circle, RotateCcw, Tag, Download, Upload } from "lucide-react";
-import { cn } from "../utils";
+import { Button } from "./ui/Button";
 
 interface MultiSelectToolbarLabels {
   hint: string;
@@ -67,81 +67,49 @@ export function MultiSelectToolbar({
       {selectedCount > 0 && (
         <>
           {anyUpdatable && labels.update && onUpdate && (
-            <button
-              onClick={onUpdate}
-              disabled={updating}
-              className="inline-flex items-center gap-1.5 rounded-md bg-accent px-2.5 py-1 text-[13px] font-medium text-white transition-colors hover:opacity-90 disabled:opacity-50"
-            >
-              <RotateCcw className={cn("h-3.5 w-3.5", updating && "animate-spin")} />
+            <Button variant="primary" busy={updating} onClick={onUpdate}>
+              {!updating && <RotateCcw size={14} aria-hidden />}
               {labels.update}
-            </button>
+            </Button>
           )}
           {anyCanUpdateProject && labels.updateProject && onUpdateProject && (
-            <button
-              onClick={onUpdateProject}
-              disabled={updatingProject}
-              className="inline-flex items-center gap-1.5 rounded-md bg-sky-600/90 px-2.5 py-1 text-[13px] font-medium text-white hover:bg-sky-500 transition-colors disabled:opacity-50"
-            >
-              <Download className={cn("h-3.5 w-3.5", updatingProject && "animate-spin")} />
+            <Button variant="secondary" busy={updatingProject} onClick={onUpdateProject}>
+              {!updatingProject && <Download size={14} aria-hidden />}
               {labels.updateProject}
-            </button>
+            </Button>
           )}
           {anyCanUpdateCenter && labels.updateCenter && onUpdateCenter && (
-            <button
-              onClick={onUpdateCenter}
-              disabled={updatingCenter}
-              className="inline-flex items-center gap-1.5 rounded-md bg-amber-600/90 px-2.5 py-1 text-[13px] font-medium text-white hover:bg-amber-500 transition-colors disabled:opacity-50"
-            >
-              <Upload className={cn("h-3.5 w-3.5", updatingCenter && "animate-spin")} />
+            <Button variant="secondary" busy={updatingCenter} onClick={onUpdateCenter}>
+              {!updatingCenter && <Upload size={14} aria-hidden />}
               {labels.updateCenter}
-            </button>
+            </Button>
           )}
           {onEditTags && labels.editTags && (
-            <button
-              onClick={onEditTags}
-              className="inline-flex items-center gap-1.5 rounded-md bg-violet-600/90 px-2.5 py-1 text-[13px] font-medium text-white hover:bg-violet-500 transition-colors"
-            >
-              <Tag className="h-3.5 w-3.5" />
+            <Button variant="secondary" onClick={onEditTags}>
+              <Tag size={14} aria-hidden />
               {labels.editTags}
-            </button>
+            </Button>
           )}
-          <button
-            onClick={onDelete}
-            className="inline-flex items-center gap-1.5 rounded-md bg-red-600/90 px-2.5 py-1 text-[13px] font-medium text-white hover:bg-red-500 transition-colors"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
+          <Button variant="danger" onClick={onDelete}>
+            <Trash2 size={14} aria-hidden />
             {labels.delete}
-          </button>
+          </Button>
           {showToggle && (
-            <button
-              onClick={onToggle}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[13px] font-medium text-white transition-colors",
-                anyDisabled
-                  ? "bg-emerald-600/90 hover:bg-emerald-500"
-                  : "bg-amber-600/90 hover:bg-amber-500"
-              )}
-            >
+            <Button variant="secondary" onClick={onToggle}>
               {anyDisabled
-                ? <CheckCircle2 className="h-3.5 w-3.5" />
-                : <Circle className="h-3.5 w-3.5" />}
+                ? <CheckCircle2 size={14} aria-hidden />
+                : <Circle size={14} aria-hidden />}
               {anyDisabled ? labels.enable : labels.disable}
-            </button>
+            </Button>
           )}
         </>
       )}
-      <button
-        onClick={onSelectAll}
-        className="rounded-md px-2.5 py-1 text-[13px] font-medium text-muted hover:text-secondary hover:bg-surface-hover transition-colors"
-      >
+      <Button variant="secondary" onClick={onSelectAll}>
         {isAllSelected ? labels.deselectAll : labels.selectAll}
-      </button>
-      <button
-        onClick={onCancel}
-        className="rounded-md px-2.5 py-1 text-[13px] font-medium text-muted hover:text-secondary hover:bg-surface-hover transition-colors"
-      >
+      </Button>
+      <Button variant="secondary" onClick={onCancel}>
         {labels.cancel}
-      </button>
+      </Button>
     </div>
   );
 }
