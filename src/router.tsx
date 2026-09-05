@@ -17,6 +17,7 @@ import * as api from "./lib/tauri";
 import * as wb from "./lib/workbench";
 import { CodingWorkspace, LobsterWorkspace, RootComponent } from "./routerComponents";
 import { Backup } from "./views/Backup";
+import { ChatNewConversation, ChatView } from "./views/ChatView";
 import { GlobalSkills } from "./views/GlobalSkills";
 import { InstallSkills } from "./views/InstallSkills";
 import { MySkills } from "./views/MySkills";
@@ -151,6 +152,18 @@ const projectAdvancedRoute = createRoute({
   component: ProjectDetail,
 });
 
+const chatRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: "/chat",
+  component: ChatNewConversation,
+});
+
+const chatConversationRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: "/chat/$conversationId",
+  component: ChatView,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: "/settings",
@@ -172,6 +185,8 @@ const routeTree = rootRoute.addChildren([
     backupRoute,
     projectRoute,
     projectAdvancedRoute,
+    chatRoute,
+    chatConversationRoute,
     settingsRoute,
   ]),
 ]);

@@ -1,0 +1,86 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.userRow {
+  display: flex;
+  justify-content: flex-end;
+}
+.userBubble {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: var(--ds-radius-panel);
+  background: var(--ds-subtle);
+  color: var(--ds-strong);
+  font-size: 14px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.assistant {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.markdown {
+  margin: 0;
+  max-width: none;
+}
+.placeholder {
+  margin: 0;
+  color: var(--ds-muted);
+  font-size: 13px;
+}
+.thinking {
+  margin: 8px 0 0;
+  color: var(--ds-muted);
+  font-size: 13px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.tool {
+  border: 1px solid var(--ds-border-soft);
+  border-radius: var(--ds-radius);
+  background: var(--ds-panel);
+  overflow: hidden;
+}
+.tool[data-error] {
+  border-color: color-mix(in srgb, var(--ds-danger) 35%, var(--ds-border-soft));
+}
+.toolTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ds-muted);
+}
+.toolName {
+  font-weight: 600;
+  color: var(--ds-strong);
+}
+.toolError {
+  color: var(--ds-danger);
+}
+.toolPending {
+  color: var(--ds-soft);
+}
+.toolHeading {
+  margin: 10px 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ds-muted);
+}
+.toolBody {
+  margin: 0;
+  max-height: 240px;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ds-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

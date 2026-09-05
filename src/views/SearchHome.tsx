@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { ArrowRight, ArrowUp, BookOpen, Folder, Link2, Loader2 } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import {
+  ArrowRight,
+  ArrowUp,
+  BookOpen,
+  Folder,
+  Link2,
+  Loader2,
+  MessagesSquare,
+} from "lucide-react";
 import { useApp } from "../hooks/useApp";
 import { Button } from "../components/ui/Button";
 import { LoadingState } from "../components/ui/LoadingState";
@@ -10,6 +18,7 @@ import { SkillLinkDialog } from "../components/SkillLinkDialog";
 import { getErrorMessage } from "../lib/error";
 import { answerSkillSearch, querySkillSearch, type SkillSearchResult } from "../lib/skillSearch";
 import { useSkillIndex } from "../hooks/useSkillIndex";
+import { useChatStore } from "../stores/useChatStore";
 import styles from "./SearchHome.module.css";
 
 // Preserve the current question when reading a skill and returning in this app session.
@@ -34,6 +43,8 @@ function SearchHomeContent({ index }: { index: ReturnType<typeof useSkillIndex> 
   const [error, setError] = useState("");
   const [answerError, setAnswerError] = useState("");
   const [linkId, setLinkId] = useState<string | null>(null);
+  const [includeSkillContext, setIncludeSkillContext] = useState(true);
+  const navigate = useNavigate();
   const request = useRef(0);
   const working = useRef(false);
   const mounted = useRef(true);
@@ -143,6 +154,18 @@ function SearchHomeContent({ index }: { index: ReturnType<typeof useSkillIndex> 
       }
     }
   }
+  // 对话提问：铸造内存会话并跳转；输入非空时作为首条消息带过去。
+  // 未配置对话 CLI 也照常跳转，由对话页给出设置引导。
+  function startChat() {
+    const id = useChatStore.getState().createConversation();
+    const question = query.trim();
+    if (question) {
+      useChatStore
+        .getState()
+        .setPendingFirstMessage({ conversationId: id, message: question, includeSkillContext });
+    }
+    void navigate({ to: "/chat/$conversationId", params: { conversationId: id } });
+  }
 
   return (
     <div className={styles.page}>
@@ -196,19 +219,44 @@ function SearchHomeContent({ index }: { index: ReturnType<typeof useSkillIndex> 
               }}
             />
             <div className={styles.composerActions}>
-              <span>⌘ / Ctrl + Enter 提问</span>
-              <button
-                type="submit"
-                className={styles.send}
-                aria-label="提问"
-                disabled={busy || !query.trim() || !status?.ready || building}
-              >
-                {busy ? (
-                  <Loader2 size={18} className={styles.sendSpinner} aria-hidden />
-                ) : (
-                  <ArrowUp size={18} aria-hidden />
-                )}
-              </button>
+              <div className={styles.composerMeta}>
+                <span>⌘ / Ctrl + Enter 提问</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={includeSkillContext}
+                  aria-label="技能库上下文"
+                  className={styles.contextSwitch}
+                  data-on={includeSkillContext ? "" : undefined}
+                  onClick={() => setIncludeSkillContext((value) => !value)}
+                >
+                  <span className={styles.contextThumb} aria-hidden />
+                </button>
+                <span>技能库上下文</span>
+              </div>
+              <div className={styles.composerButtons}>
+                <button
+                  type="button"
+                  className={styles.chatAsk}
+                  onClick={startChat}
+                  disabled={busy}
+                >
+                  <MessagesSquare size={15} aria-hidden />
+                  对话提问
+                </button>
+                <button
+                  type="submit"
+                  className={styles.send}
+                  aria-label="提问"
+                  disabled={busy || !query.trim() || !status?.ready || building}
+                >
+                  {busy ? (
+                    <Loader2 size={18} className={styles.sendSpinner} aria-hidden />
+                  ) : (
+                    <ArrowUp size={18} aria-hidden />
+                  )}
+                </button>
+              </div>
             </div>
             {beamPhase === "idle" ? null : (
               <div

@@ -95,9 +95,70 @@
   gap: 12px;
   padding: 4px 4px 0;
 }
-.composerActions > span {
+.composerMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
   font-size: 12px;
   color: var(--ds-muted);
+}
+.composerButtons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+/* 技能库上下文开关：仅作用于"对话提问"的首条消息，沿用控件 token。 */
+.contextSwitch {
+  appearance: none;
+  position: relative;
+  width: 28px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--ds-border);
+  border-radius: 999px;
+  background: var(--ds-subtle);
+  cursor: pointer;
+  transition: background 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.contextSwitch[data-on] {
+  background: var(--ds-accent);
+  border-color: var(--ds-accent);
+}
+.contextThumb {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ds-bg);
+  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.contextSwitch[data-on] .contextThumb {
+  transform: translateX(12px);
+}
+.chatAsk {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-control);
+  background: var(--ds-bg);
+  color: var(--ds-text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.chatAsk:hover:not(:disabled) {
+  background: var(--ds-hover);
+}
+.chatAsk:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 /* Send mark, ported from OpenDesign `.home-hero__submit`: a 36px near-black
    squircle with the brand-green arrow; the pair carries its own contrast, so
@@ -352,7 +413,7 @@
   .hit {
     padding: 16px;
   }
-  .composerActions > span {
+  .composerMeta {
     font-size: 11px;
   }
 }

@@ -27,6 +27,10 @@
 - 每条来源显示技能名、原始路径、行号范围与命中片段；阅读/链接操作使用现有公共控件和流程。没有检索时不填示例结果。
 - 避免重复提交、忽略过期请求、卸载时失效请求。输入有可见标签，支持按钮和 Cmd/Ctrl+Enter；中文输入法组合态不触发快捷提交。
 
+## 对话入口
+
+composer 操作行另有"技能库上下文"开关（默认开）与副按钮"对话提问"：点击后携带当前输入跳转 `/chat/:id`，用设置页选定的本机 CLI 发起流式多轮对话；开关开启时把本次检索命中片段注入对话 prompt。⌘/Ctrl+Enter 与主按钮仍是上述技能搜索主流程，不受影响。对话功能的设计与实现边界见 [CHAT.md](CHAT.md)。
+
 ## 实现与数据边界
 
 `SearchHome.tsx`、同名 CSS Module、`lib/skillSearch.ts` 为前端；后端命令为 `skill_search_status`、`skill_search_index`、`skill_search_query`、`skill_search_answer`。

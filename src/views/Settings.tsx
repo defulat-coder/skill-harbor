@@ -5,6 +5,7 @@ import { DetailSheet } from "../components/DetailSheet";
 import styles from "./Settings.module.css";
 import { PageHeader } from "../components/ui/PageHeader";
 import { RunnerSettings } from "../components/RunnerSettings";
+import { ChatCliSettings } from "../components/ChatCliSettings";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -20,6 +21,7 @@ import {
   Info,
   Loader2,
   ExternalLink,
+  MessageSquare,
   Sun,
   Moon,
   Monitor,
@@ -243,6 +245,12 @@ export function Settings() {
       label: "本地执行",
       description: "连接 Codex CLI，用于项目任务和中文用法说明。",
       icon: Terminal,
+    },
+    {
+      id: "chat",
+      label: t("settings.chatCli.navLabel"),
+      description: t("settings.chatCli.navDesc"),
+      icon: MessageSquare,
     },
     {
       id: "tools",
@@ -1226,8 +1234,13 @@ export function Settings() {
           <div hidden={activeSection !== "runner"}>
             <RunnerSettings />
           </div>
-          {activeSection !== "runner" && settingsLoading && <LoadingState label="正在读取设置…" />}
-          {activeSection !== "runner" && settingsLoadError && (
+          <div hidden={activeSection !== "chat"}>
+            <ChatCliSettings />
+          </div>
+          {activeSection !== "runner" && activeSection !== "chat" && settingsLoading && (
+            <LoadingState label="正在读取设置…" />
+          )}
+          {activeSection !== "runner" && activeSection !== "chat" && settingsLoadError && (
             <div role="alert" className={styles.error}>
               {settingsLoadError}
               <Button onClick={retrySettingsLoad}>重新读取</Button>

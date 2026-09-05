@@ -1,0 +1,207 @@
+.panel {
+  padding: 24px;
+  display: grid;
+  gap: 20px;
+}
+.panel h3 {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.help {
+  color: var(--ds-muted);
+  font-size: 13px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+.help:empty {
+  display: none;
+}
+.error {
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-danger);
+  font-size: 14px;
+  line-height: 1.7;
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+}
+.groupTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ds-muted);
+  margin-bottom: 8px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.card {
+  background: var(--ds-bg);
+  border: 1px solid var(--ds-border-soft);
+  border-radius: var(--ds-radius-panel);
+  min-width: 0;
+  transition: border-color 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.card:hover {
+  border-color: var(--ds-border);
+}
+.cardActive,
+.cardActive:hover {
+  border-color: var(--ds-border-selected);
+}
+.cardSelect {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  padding: 14px;
+  text-align: start;
+  background: none;
+  border: 0;
+  border-radius: var(--ds-radius-panel);
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.cardSelect:focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: 2px;
+}
+.cardUnavailable .cardSelect {
+  opacity: 0.6;
+}
+.cardBody {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.cardTitleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.cardName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ds-strong);
+  line-height: 1.5;
+}
+.cardMeta {
+  font-size: 12px;
+  color: var(--ds-muted);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--ds-panel);
+  border: 1px solid var(--ds-border-soft);
+  color: var(--ds-muted);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.badgeOk {
+  background: var(--ds-success-bg);
+  border-color: transparent;
+  color: var(--ds-success);
+}
+.badgeMissing {
+  background: var(--ds-danger-bg);
+  border-color: transparent;
+  color: var(--ds-danger);
+}
+.badgeUnknown {
+  background: var(--ds-info-bg);
+  border-color: transparent;
+  color: var(--ds-info);
+}
+.badgeSelected {
+  background: var(--ds-subtle);
+  border-color: transparent;
+  color: var(--ds-strong);
+}
+.config {
+  border-top: 1px solid var(--ds-border-soft);
+  padding: 16px 14px;
+  display: grid;
+  gap: 16px;
+}
+.field {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+.field label {
+  font-size: 13px;
+  font-weight: 500;
+}
+.warning {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--ds-warning-bg);
+  color: var(--ds-warning);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.envFields {
+  display: grid;
+  gap: 16px;
+  padding-top: 12px;
+}
+.envActions {
+  display: flex;
+  justify-content: flex-start;
+}
+.skeletonCard {
+  height: 88px;
+  border-radius: var(--ds-radius-panel);
+  background: var(--ds-subtle);
+  border: 1px solid var(--ds-border-soft);
+  animation: chat-cli-pulse 1.4s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+}
+@keyframes chat-cli-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+  .skeletonCard {
+    animation: none;
+  }
+}
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

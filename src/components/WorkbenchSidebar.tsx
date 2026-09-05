@@ -13,6 +13,7 @@ import {
   Terminal,
   SlidersHorizontal,
   Layers,
+  MessageSquare,
 } from "lucide-react";
 import { useApp } from "../hooks/useApp";
 
@@ -62,6 +63,10 @@ export function WorkbenchSidebar() {
               </Link>
             ))}
           </nav>
+          <Link to="/chat" className={row} activeProps={activeRow}>
+            <MessageSquare size={17} />
+            对话
+          </Link>
           <div className="ds-nav-divider" />
           <Link to="/search-index" className={row} activeProps={activeRow}>
             <Database size={17} />

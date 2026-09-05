@@ -36,3 +36,4 @@ pub mod tool_adapters;
 pub mod tool_service;
 
 pub mod task_runner;
+pub mod agent_cli;

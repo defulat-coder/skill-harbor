@@ -69,9 +69,9 @@ pub struct SearchStatus {
 #[derive(Deserialize, specta::Type)]
 struct RawHit { path: String, line_start: u32, line_end: u32, text: String, score: f64 }
 #[derive(Serialize, specta::Type)]
-pub struct SearchHit { skill_id: String, name: String, path: String, line_start: u32, line_end: u32, text: String, score: f64 }
+pub struct SearchHit { pub skill_id: String, pub name: String, pub path: String, pub line_start: u32, pub line_end: u32, pub text: String, pub score: f64 }
 #[derive(Serialize, specta::Type)]
-pub struct SearchResult { query: String, hits: Vec<SearchHit>, warning: Option<String> }
+pub struct SearchResult { pub query: String, pub hits: Vec<SearchHit>, pub warning: Option<String> }
 
 fn runtime_path(app: &tauri::AppHandle) -> Result<PathBuf, AppError> {
     let bundled = app.path().resource_dir().map_err(AppError::internal)?.join("search-runtime");
@@ -146,14 +146,14 @@ fn safe_document(root: &Path, path: &str) -> Option<PathBuf> {
     if !resolved.starts_with(&root) || !resolved.is_file() { return None; }
     match resolved.extension()?.to_str()?.to_ascii_lowercase().as_str() { "md" | "mdx" => Some(resolved), _ => None }
 }
-#[tauri::command]
-#[specta::specta]
-pub async fn skill_search_query(app: tauri::AppHandle, query: String, store: State<'_, Arc<SkillStore>>) -> Result<SearchResult, AppError> {
+/// Shared retrieval core behind `skill_search_query`, also called internally
+/// by chat_start when skill context injection is enabled.
+pub(crate) async fn query_skills(app: &tauri::AppHandle, query: &str, store: &SkillStore) -> Result<SearchResult, AppError> {
     let query = query.trim();
     if query.is_empty() || query.chars().count() > 2000 { return Err(AppError::invalid_input("请输入1到2000字的问题")); }
     let _lock = SEARCH_LOCK.try_lock().map_err(|_| AppError::invalid_input("技能索引正在处理，请稍后再试"))?;
     let root = search_root()?;
-    let result = execute(&app, &root, "query", Some(query)).await?;
+    let result = execute(app, &root, "query", Some(query)).await?;
     let raw: Vec<RawHit> = serde_json::from_value(result["hits"].clone()).map_err(AppError::internal)?;
     let skills = store.get_all_skills().map_err(AppError::internal)?;
     let mut hits = Vec::new();
@@ -166,6 +166,11 @@ pub async fn skill_search_query(app: tauri::AppHandle, query: String, store: Sta
         if hits.len()==8 { break; }
     }
     Ok(SearchResult { query:query.into(),hits,warning:result["warning"].as_str().map(String::from) })
+}
+#[tauri::command]
+#[specta::specta]
+pub async fn skill_search_query(app: tauri::AppHandle, query: String, store: State<'_, Arc<SkillStore>>) -> Result<SearchResult, AppError> {
+    query_skills(&app, &query, &store).await
 }
 #[cfg(test)]
 mod tests {

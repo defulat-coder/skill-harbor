@@ -1,0 +1,91 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ds-border-soft);
+}
+.agent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--ds-strong);
+  font-size: 14px;
+}
+.agentMeta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ds-muted);
+  font-size: 12px;
+}
+.hint {
+  margin: 0;
+  padding: 24px 0;
+  text-align: center;
+  color: var(--ds-muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 24px;
+  border: 1px dashed var(--ds-border);
+  border-radius: var(--ds-radius-panel);
+  color: var(--ds-muted);
+  text-align: center;
+}
+.empty p {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.settingsLink {
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.status {
+  margin: 0;
+  color: var(--ds-muted);
+  font-size: 12px;
+}
+.error {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--ds-danger);
+  border-radius: var(--ds-radius);
+  color: var(--ds-danger);
+  background: var(--ds-danger-bg);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.errorHint {
+  color: var(--ds-muted);
+  font-size: 12px;
+}
+/* Composer stays pinned above the scrollport's bottom edge while the message
+   list grows; the scroll container is Layout's .ds-main. */
+.composerDock {
+  position: sticky;
+  bottom: 0;
+  padding-top: 8px;
+  background: linear-gradient(to bottom, transparent, var(--ds-bg) 24%);
+}

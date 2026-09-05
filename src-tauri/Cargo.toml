@@ -52,7 +52,7 @@ rand = "0.10.2"
 image = { version = "0.25.10", default-features = false, features = ["png"] }
 notify = "8.2.0"
 clap = { version = "4.6.6", features = ["derive"] }
-specta = { version = "2.0.0-rc.25", features = ["derive", "function"] }
+specta = { version = "2.0.0-rc.25", features = ["derive", "function", "serde_json"] }
 tauri-specta = { version = "2.0.0-rc.25", features = ["typescript"] }
 
 [dev-dependencies]

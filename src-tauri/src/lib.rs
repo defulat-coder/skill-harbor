@@ -789,6 +789,7 @@ pub fn restart_app(app: &tauri::AppHandle) {
 fn teardown_before_exit(app: &tauri::AppHandle) {
     core::task_runner::shutdown();
     commands::skill_search::shutdown();
+    core::agent_cli::session::shutdown();
     QUITTING.store(true, Ordering::SeqCst);
     if let Some(w) = app.get_webview_window("main") {
         if let Err(err) = w.destroy() {
@@ -813,6 +814,9 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::skill_search::skill_search_index,
             commands::skill_search::skill_search_query,
             commands::skill_search_answer::skill_search_answer,
+            commands::chat::chat_detect_agents,
+            commands::chat::chat_start,
+            commands::chat::chat_cancel,
             commands::skill_guides::get_skill_guide,
             commands::skill_guides::save_skill_guide,
             commands::skill_guides::generate_skill_guide,
@@ -1187,6 +1191,7 @@ pub fn run() {
             if matches!(event, tauri::RunEvent::Exit) {
                 core::task_runner::shutdown();
                 commands::skill_search::shutdown();
+                core::agent_cli::session::shutdown();
             }
         });
 }

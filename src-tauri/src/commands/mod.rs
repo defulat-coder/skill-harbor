@@ -15,3 +15,4 @@ pub mod skill_guides;
 
 pub mod skill_search;
 pub mod skill_search_answer;
+pub mod chat;

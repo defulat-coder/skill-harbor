@@ -37,16 +37,18 @@ export function Layout() {
   }
   const pageTitle = pathname.startsWith("/project/")
     ? "项目工作台"
-    : ({
-        "/": "首页",
-        "/library": "全局技能",
-        "/search-index": "索引管理",
-        "/projects": "项目",
-        "/install": "发现技能",
-        "/settings": "设置",
-        "/backup": "备份与恢复",
-        "/my-skills": "维护与更新",
-      }[pathname] ?? "工具全局目录");
+    : pathname.startsWith("/chat")
+      ? "对话"
+      : ({
+          "/": "首页",
+          "/library": "全局技能",
+          "/search-index": "索引管理",
+          "/projects": "项目",
+          "/install": "发现技能",
+          "/settings": "设置",
+          "/backup": "备份与恢复",
+          "/my-skills": "维护与更新",
+        }[pathname] ?? "工具全局目录");
 
   // Cmd+, to open Settings
   useEffect(() => {
