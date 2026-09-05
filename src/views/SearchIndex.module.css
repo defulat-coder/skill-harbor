@@ -1,0 +1,10 @@
+.page { display: flex; flex-direction: column; gap: 24px; }
+.panel { padding: 24px; border: 1px solid var(--ds-border); border-radius: var(--ds-radius); background: var(--ds-bg); }
+.heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.heading h2 { font-size: 18px; font-weight: 600; color: var(--ds-strong); }
+.panel p,.help p { color: var(--ds-muted); font-size: 14px; line-height: 1.8; margin-top: 8px; }
+.details { display: grid; grid-template-columns: 110px minmax(0,1fr); gap: 12px; margin: 24px 0; font-size: 14px; }
+.details dt { color: var(--ds-muted); }.details dd { margin: 0; overflow-wrap: anywhere; }
+.footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--ds-border); padding-top: 16px; }.footer p { margin: 0; }.footer button { flex-shrink: 0; }
+.panel .error { color: var(--ds-danger); }.help { max-width: 760px; padding-top: 12px; }
+@media(max-width:640px) { .heading,.footer { align-items: flex-start; flex-direction: column; }.panel { padding: 16px; }.details { grid-template-columns: 1fr; gap: 8px; } }

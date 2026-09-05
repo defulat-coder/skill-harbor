@@ -1,0 +1,6 @@
+.panel { padding: 16px; }
+.layout { display: flex; align-items: start; flex-wrap: wrap; gap: 12px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.message { font-size: 13px; color: var(--ds-muted); line-height: 1.7; margin-top: 8px; }
+.message:empty { display: none; }
+.error { color: var(--ds-danger); font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; margin-top: 12px; }

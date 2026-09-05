@@ -1,0 +1,13 @@
+.page { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.header { display: flex; flex-direction: column; gap: 20px; }
+.header h1 { font-size: 24px; line-height: 1.4; font-weight: 600; color: var(--ds-strong); }
+.description { margin-top: 6px; font-size: 13px; line-height: 1.7; color: var(--ds-muted); }
+.toolbar { display: flex; width: 100%; flex-wrap: wrap; align-items: center; gap: 12px; padding-top: 16px; border-top: 1px solid var(--ds-border-soft); }
+.toolGrid { display: grid; grid-template-columns: repeat(auto-fill,minmax(250px,1fr)); gap: 14px; }
+.toolCard { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--ds-border); border-radius: var(--ds-radius); background: var(--ds-bg); text-align: left; min-width: 0; cursor: pointer; }
+.toolCard:hover { background: var(--ds-panel); border-color: var(--ds-border-selected); }
+.skillCard { border: 1px solid var(--ds-border); border-radius: var(--ds-radius); background: var(--ds-bg); }
+.skillCard:hover,.skillCard:focus-within { border-color: var(--ds-border-selected); }
+.skillRow { flex-wrap: wrap; border-bottom: 1px solid var(--ds-border-soft); background: var(--ds-bg); min-width: 0; }
+.skillRow:hover,.skillRow:focus-within { background: var(--ds-panel); }
+.titleButton { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; color: inherit; font: inherit; cursor: pointer; }

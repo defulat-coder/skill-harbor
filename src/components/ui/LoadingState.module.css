@@ -1,0 +1,5 @@
+.state { display:flex; align-items:center; justify-content:center; gap:10px; padding:24px; font:14px/1.7 var(--ds-font); color:var(--ds-muted); }
+.state small { display:block; font-size:13px; margin-top:6px; }
+.spinner { flex-shrink:0; animation:spin 1s linear 60; }
+@keyframes spin { to { transform:rotate(360deg); } }
+@media(prefers-reduced-motion:reduce) { .spinner { animation:none; } }

@@ -1,0 +1,59 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "SkillHarbor",
+  "version": "1.36.1",
+  "identifier": "local.skillharbor.desktop",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeDevCommand": "npm run search:prepare && npm run dev",
+    "beforeBuildCommand": "npm run search:prepare && npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "\u6280\u80fd\u6e2f",
+        "width": 1440,
+        "height": 860,
+        "minWidth": 1100,
+        "minHeight": 640,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: https://asset.localhost data: blob: https:; font-src 'self' data:; connect-src ipc: http://ipc.localhost https:"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERBRUYwMTBDOEQ3MDdEODAKUldTQWZYQ05EQUh2Mm0wNDZtNm5VYWJpbjRaZVJQRUhrQ2tkOXc3MHBWZ2VaREo0OVd3WEU3d0oK",
+      "endpoints": []
+    }
+  },
+  "bundle": {
+    "active": true,
+    "createUpdaterArtifacts": false,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "13.5",
+      "signingIdentity": "-"
+    },
+    "resources": {
+      "../search-runtime/search.mjs": "search-runtime/search.mjs",
+      "../search-runtime/package.json": "search-runtime/package.json",
+      "../search-runtime/node_modules/": "search-runtime/node_modules/",
+      "../search-runtime/bin/": "search-runtime/bin/"
+    }
+  }
+}

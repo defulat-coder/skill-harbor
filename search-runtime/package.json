@@ -1,0 +1,8 @@
+{
+  "name": "skillharbor-search-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "dependencies": { "@zvec/zvec-grep": "0.2.1" }
+}

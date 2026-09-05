@@ -1,0 +1,1 @@
+.viewer { --diff-remove-bg: color-mix(in srgb,var(--ds-danger) 9%,var(--ds-bg)); --diff-remove-gutter:color-mix(in srgb,var(--ds-danger) 16%,var(--ds-bg)); --diff-add-bg:color-mix(in srgb,var(--ds-brand) 9%,var(--ds-bg)); --diff-add-gutter:color-mix(in srgb,var(--ds-brand) 16%,var(--ds-bg)); }

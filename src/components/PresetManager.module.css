@@ -1,0 +1,10 @@
+.toolbar { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px; color:var(--ds-muted); font-size:13px; }
+.list { list-style:none; margin:0; padding:0; }
+.row { display:flex; align-items:center; gap:12px; padding:16px 0; border-top:1px solid var(--ds-border-soft); color:var(--ds-text); }
+.content { min-width:0; flex:1; }
+.content strong { display:block; color:var(--ds-strong); font-size:14px; overflow-wrap:anywhere; }
+.content p { margin:4px 0; font-size:13px; line-height:1.6; overflow-wrap:anywhere; }
+.content span,.status { color:var(--ds-muted); font-size:12px; }
+.empty { padding:24px 0; text-align:center; color:var(--ds-muted); line-height:1.7; }
+.error { color:var(--color-danger); font-size:13px; line-height:1.6; }
+@media (max-width:520px) { .row { flex-wrap:wrap; } .content { flex-basis:calc(100% - 40px); } }

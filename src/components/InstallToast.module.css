@@ -1,0 +1,8 @@
+.toast { display: flex; align-items: center; gap: 12px; }
+.icon { display: flex; flex: 0 0 20px; align-items: center; justify-content: center; }
+.spinner, .complete { width: 16px; height: 16px; }
+.spinner { color: var(--ds-muted); animation: turn 1s linear infinite; }
+.complete { color: var(--ds-brand); }
+.text { font-size: 13px; line-height: 1.7; color: var(--ds-text); overflow-wrap: anywhere; }
+@keyframes turn { to { transform: rotate(360deg); } }
+@media(prefers-reduced-motion: reduce) { .spinner { animation: none; } }

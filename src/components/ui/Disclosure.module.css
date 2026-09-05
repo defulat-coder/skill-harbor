@@ -1,0 +1,12 @@
+.disclosure { min-width:0; }
+.trigger { display:flex; justify-content:space-between; align-items:center; gap:12px; width:100%; padding:10px 0; background:transparent; border:0; color:var(--ds-text); font:500 13px/1.6 var(--ds-font); text-align:start; cursor:pointer; }
+.trigger:focus-visible { outline:2px solid var(--ds-accent); outline-offset:3px; border-radius:4px; }
+.trigger svg { flex-shrink:0; transition:transform 200ms var(--ds-ease-out); }
+.trigger .expanded { transform:rotate(180deg); }
+.collapse { display:grid; grid-template-rows:0fr; opacity:0; transition:grid-template-rows 140ms var(--ds-ease-out),opacity 140ms var(--ds-ease-out); }
+.collapse[data-open="true"] { grid-template-rows:1fr; opacity:1; transition-duration:200ms; }
+.inner { overflow:hidden; min-height:0; }
+@media(prefers-reduced-motion:reduce) { .collapse,.trigger svg { transition:none; } }
+
+/* Clip only while folding; opened sections must not cut off action menus. */
+.collapse[data-open="true"][data-settled="true"] > .inner { overflow: visible; }
