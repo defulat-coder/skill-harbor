@@ -8,7 +8,7 @@
 .empty { border-style: dashed; padding: 24px; }
 .loading { display: flex; align-items: center; gap: 8px; padding: 24px 0; font-size: 13px; color: var(--ds-muted); }
 .editor { display: grid; gap: 12px; }
-.textarea { width: 100%; min-height: 280px; resize: vertical; border: 1px solid var(--ds-border); border-radius: var(--ds-radius); padding: 12px; background: var(--ds-bg); color: var(--ds-text); font-size: 14px; line-height: 1.8; }
+.textarea { width: 100%; min-height: 280px; resize: vertical; border: 1px solid var(--ds-border); border-radius: var(--ds-radius); padding: 12px; background: var(--ds-panel); color: var(--ds-text); font-size: 14px; line-height: 1.8; }
 .textarea:disabled { opacity: .65; }
 .reading { max-width: 70ch; margin-inline: 0; font-size: 14px; line-height: 1.8; overflow-wrap: anywhere; }
 .draft { padding: 16px; border: 1px solid var(--ds-border); border-radius: var(--ds-radius); }

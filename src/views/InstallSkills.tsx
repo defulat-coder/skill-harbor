@@ -726,7 +726,7 @@ export function InstallSkills() {
                         setMarketSearchLimit(MARKET_SEARCH_STEP);
                       }}
                       placeholder="输入技能名或中文需求，再点击转换关键词"
-                      className="app-input w-full bg-background pl-9"
+                      className="app-input w-full pl-9"
                       autoCapitalize="none"
                       autoCorrect="off"
                       spellCheck={false}
@@ -1059,7 +1059,7 @@ export function InstallSkills() {
                                         (e.target as HTMLInputElement).blur();
                                       }
                                     }}
-                                    className="min-w-0 max-w-[220px] rounded border border-accent-border bg-surface px-1.5 py-0.5 text-[13px] font-semibold text-secondary outline-none focus:ring-1 focus:ring-accent"
+                                    className="min-w-0 max-w-[220px] rounded border border-border bg-surface px-1.5 py-0.5 text-[13px] font-semibold text-secondary"
                                   />
                                 ) : (
                                   <h3 className="truncate text-[13px] font-semibold text-secondary">
@@ -1167,7 +1167,7 @@ export function InstallSkills() {
                   onKeyDown={(e) => { if (e.key === "Enter" && !gitLoading && gitUrl.trim()) handleGitPreview(); }}
                   placeholder={t("install.repoUrlPlaceholder")}
                   disabled={gitLoading}
-                  className="app-input w-full bg-background"
+                  className="app-input w-full"
                 />
               </div>
               {gitError && <div role="alert"><StatusBanner compact tone="danger" title="Git 预览失败" description={gitError} actionLabel="重试预览" onAction={handleGitPreview} /></div>}
@@ -1271,7 +1271,7 @@ export function InstallSkills() {
                         }
                         disabled={!item.selected || gitConfirmLoading}
                         placeholder={t("install.gitPreview.namePlaceholder")}
-                        className="app-input w-full bg-background py-1 text-[13px]"
+                        className="app-input w-full py-1 text-[13px]"
                       />
                       {item.description ? (
                         <p className="mt-1 truncate text-[12px] text-muted">{item.description}</p>

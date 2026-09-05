@@ -133,7 +133,7 @@ function WorkspaceSkillCard({
           </span>
           {fileCount > 0 && (
             <span className="flex items-center gap-1 text-[12px] text-faint">
-              <FileText className="h-3 w-3" />
+              <FileText className="h-3.5 w-3.5" />
               {fileCount}
             </span>
           )}
@@ -181,7 +181,7 @@ function WorkspaceSkillCard({
         </h3>
         {fileCount > 0 && (
           <span className="flex shrink-0 items-center gap-1 text-[12px] text-faint">
-            <FileText className="h-3 w-3" />
+            <FileText className="h-3.5 w-3.5" />
             {fileCount}
           </span>
         )}
@@ -768,7 +768,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
                 onChange={(e) => setSearch(e.target.value)}
                 aria-label={t("globalWorkspace.localSkills.searchPlaceholder")}
                 placeholder={t("globalWorkspace.localSkills.searchPlaceholder")}
-                className="app-input h-9 w-full rounded-md pl-8 font-medium"
+                className="app-input w-full pl-8 font-medium"
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
@@ -848,7 +848,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
                   )}
                   title={t("mySkills.tags.untagged")}
                 >
-                  <CircleSlash className="h-3 w-3" />
+                  <CircleSlash className="h-3.5 w-3.5" />
                   {t("mySkills.tags.untagged")}
                 </button>
               );

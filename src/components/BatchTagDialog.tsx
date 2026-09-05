@@ -131,7 +131,7 @@ export function BatchTagDialog({ open, skills, allTags, onClose, onApply }: Prop
                       <span className="text-[10px] opacity-70">
                         {count}/{skills.length}
                       </span>
-                      <X className="h-2.5 w-2.5" />
+                      <X className="h-3.5 w-3.5" />
                     </button>
                   );
                 })}
@@ -154,7 +154,7 @@ export function BatchTagDialog({ open, skills, allTags, onClose, onApply }: Prop
                     aria-label={`${t("common.delete")} ${tag}`}
                     onClick={() => setAdds(adds.filter((a) => a !== tag))}
                   >
-                    <X className="h-2.5 w-2.5" />
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 </span>
               ))}
@@ -174,7 +174,7 @@ export function BatchTagDialog({ open, skills, allTags, onClose, onApply }: Prop
                     }
                   }}
                   placeholder={t("mySkills.tags.addTag")}
-                  className="h-9 w-40 rounded-lg border border-border-subtle bg-transparent px-2 text-[12px] text-secondary outline-none focus:border-accent"
+                  className="app-input w-40 px-2 text-[12px]"
                 />
                 {suggestions.length > 0 && input && (
                   <div className="mt-2 flex max-w-[280px] flex-wrap gap-1 rounded-md border border-border-subtle bg-surface p-1" role="group" aria-label="建议标签">
@@ -199,7 +199,7 @@ export function BatchTagDialog({ open, skills, allTags, onClose, onApply }: Prop
                 aria-label={t("mySkills.batchTagDialog.addButton")}
                 title={t("mySkills.batchTagDialog.addButton")}
               >
-                <Plus className="h-3 w-3" />
+                <Plus className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>

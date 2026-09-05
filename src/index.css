@@ -114,7 +114,9 @@
   }
 
   .app-input {
-    @apply h-10 rounded-lg border border-border-subtle bg-surface px-3 text-[13px] text-secondary outline-none transition-colors placeholder:text-faint focus:border-border;
+    /* Focus ring intentionally absent: the shared design-system.css rule
+       darkens the border on :focus (accent), no halo. */
+    @apply h-10 rounded-lg border border-border-subtle bg-surface px-3 text-[13px] text-secondary transition-colors placeholder:text-faint;
   }
 
   .app-segmented {

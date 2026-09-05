@@ -315,7 +315,7 @@ export function CommandPalette() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("commandPalette.placeholder")}
-            className="flex-1 bg-transparent text-[14px] text-primary outline-none placeholder:text-faint"
+            className="flex-1 bg-transparent text-[14px] text-primary placeholder:text-faint"
           />
           <span className="rounded border border-border-subtle bg-surface-hover px-1.5 py-0.5 font-mono text-[12px] text-faint">
             ESC

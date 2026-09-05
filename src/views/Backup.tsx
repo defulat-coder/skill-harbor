@@ -836,7 +836,7 @@ export function Backup() {
                             }}
                             autoFocus
                             maxLength={64}
-                            className="h-6 min-w-0 flex-1 rounded-lg border border-border-subtle bg-background px-1.5 text-[12px] text-secondary outline-none focus:border-border"
+                            className="app-input min-w-0 flex-1 px-1.5 text-[12px]"
                           />
                           <Button variant="ghost"
                             iconOnly
@@ -862,7 +862,7 @@ export function Backup() {
                             title={t("backup.device.rename")}
                             aria-label={t("backup.device.rename")}
                           >
-                            <Pencil className="h-3 w-3" />
+                            <Pencil className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       )}
@@ -1028,7 +1028,7 @@ export function Backup() {
                         } catch (error) { toast.error(mapGitError(error)); }
                       }}
                     >
-                      <Copy className="h-3 w-3" />
+                      <Copy className="h-3.5 w-3.5" />
                       {t("backup.github.deviceCopyCode")}
                     </Button>
                   </div>
@@ -1037,7 +1037,7 @@ export function Backup() {
                   </p>
                   <div className="flex items-center justify-between gap-2">
                     <span className="inline-flex items-center gap-1.5 text-[12px] text-muted">
-                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       {t("backup.github.deviceWaiting")}
                     </span>
                     <Button variant="ghost"
@@ -1070,7 +1070,7 @@ export function Backup() {
                       disabled={loading === "github"}
                       aria-label={t("backup.github.repoLabel")}
                       title={t("backup.github.repoLabel")}
-                      className="h-8 w-52 rounded-lg border border-border-subtle bg-background px-2.5 font-mono text-[13px] text-secondary outline-none transition-colors focus:border-border disabled:opacity-50"
+                      className="app-input w-52 font-mono disabled:opacity-50"
                       autoCapitalize="none"
                       autoCorrect="off"
                       spellCheck={false}
@@ -1093,7 +1093,7 @@ export function Backup() {
                           aria-label={t("backup.github.tokenPlaceholder")}
                           placeholder={t("backup.github.tokenPlaceholder")}
                           disabled={loading === "github"}
-                          className="h-8 min-w-0 flex-1 rounded-lg border border-border-subtle bg-background px-2.5 font-mono text-[13px] text-secondary outline-none transition-colors focus:border-border disabled:opacity-50"
+                          className="app-input min-w-0 flex-1 font-mono disabled:opacity-50"
                           autoCapitalize="none"
                           autoCorrect="off"
                           spellCheck={false}
@@ -1112,7 +1112,7 @@ export function Backup() {
                         type="button"
                         onClick={() => void openUrl(GITHUB_TOKEN_URL)}
                       >
-                        <ExternalLink className="h-3 w-3" />
+                        <ExternalLink className="h-3.5 w-3.5" />
                         {t("backup.github.tokenHint")}
                       </Button>
                     </>
@@ -1153,7 +1153,7 @@ export function Backup() {
                 aria-describedby={remoteError ? "backup-remote-error" : undefined}
                 aria-label={t("backup.connection.repository")}
                 placeholder={t("settings.gitRemoteUrlPlaceholder")}
-                className="h-8 min-w-0 flex-1 rounded-lg border border-border-subtle bg-background px-2.5 font-mono text-[13px] text-secondary outline-none transition-colors focus:border-border"
+                className="app-input min-w-0 flex-1 font-mono"
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
@@ -1183,7 +1183,7 @@ export function Backup() {
                 onClick={refreshVersions}
                 disabled={versionsLoading || !gitStatus?.is_repo}
               >
-                <RefreshCw className={cn("h-3 w-3", versionsLoading && "animate-spin")} />
+                <RefreshCw className={cn("h-3.5 w-3.5", versionsLoading && "animate-spin")} />
                 {t("settings.refresh")}
               </Button>
             </div>
@@ -1334,7 +1334,7 @@ export function Backup() {
                   type="button"
                   onClick={() => setDeleteRemoteConfirmOpen(true)}
                 >
-                  <ExternalLink className="h-3 w-3" />
+                  <ExternalLink className="h-3.5 w-3.5" />
                   {t("backup.disconnect.deleteRemoteAction")}
                 </Button>
               </div>

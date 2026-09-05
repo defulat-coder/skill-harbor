@@ -55,7 +55,7 @@ export function RenamePresetDialog({
     }
   };
 
-  const inputClass = "w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-[13px] text-secondary focus:outline-none focus:border-border transition-all placeholder-faint";
+  const inputClass = "app-input w-full";
 
   return (
     <DetailSheet open={open} title={t("common.rename")} onClose={() => { if (!pending.current) { setError(""); onClose(); } }} size="compact" closeDisabled={loading}>

@@ -144,10 +144,10 @@ export function PresetBar({
               )}
             >
               {isLoading
-                ? <Loader2 className="h-3 w-3 animate-spin" />
-                : <Icon className="h-3 w-3" />}
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : <Icon className="h-3.5 w-3.5" />}
               <span className="max-w-[140px] truncate">{preset.name}</span>
-              {s.status === "active" && <Check className="h-3 w-3 shrink-0" />}
+              {s.status === "active" && <Check className="h-3.5 w-3.5 shrink-0" />}
               {s.status === "partial" && (
                 <span className="rounded-full bg-[color-mix(in_srgb,var(--ds-warning)_20%,transparent)] px-1.5 py-px text-[10px] font-semibold">
                   {s.installed}/{s.total}

@@ -1,5 +1,5 @@
 .form { display:flex; flex-direction:column; gap:12px; min-width:0; }
 .form label { font-size:13px; font-weight:500; color:var(--ds-strong); }
-.form select { min-height:36px; width:100%; border:1px solid var(--ds-border); border-radius:var(--ds-radius); background-color:var(--ds-bg); color:var(--ds-text); padding:6px 32px 6px 10px; }
+.form select { min-height:36px; width:100%; border:1px solid var(--ds-border); border-radius:var(--ds-radius); background-color:var(--ds-panel); color:var(--ds-text); padding:6px 32px 6px 10px; }
 .selected { display:flex; flex-wrap:wrap; gap:8px; }
 .selected span { display:inline-flex; align-items:center; gap:6px; max-width:100%; overflow-wrap:anywhere; border:1px solid var(--ds-border-soft); padding:4px 8px; border-radius:var(--ds-radius-control); font-size:12px; }

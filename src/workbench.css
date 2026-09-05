@@ -65,9 +65,12 @@
   gap: 8px;
   border: 1px solid var(--wb-line);
   border-radius: 8px;
-  background: var(--wb-surface);
+  background: var(--wb-soft);
   padding: 8px 11px;
   color: var(--wb-muted);
+}
+.wb-search:focus-within {
+  border-color: var(--ds-accent);
 }
 .wb-search input {
   border: 0 !important;
@@ -85,7 +88,7 @@
   border: 1px solid var(--wb-line);
   border-radius: 8px;
   padding: 9px 10px;
-  background: var(--wb-surface);
+  background: var(--ds-panel);
   color: var(--wb-ink);
   font-size: 14px;
   min-width: 0;

@@ -292,7 +292,7 @@ export function Workbench() {
             <>
               <div className="wb-notice">
                 这里展示项目目录中的技能。CLI 还可能发现全局环境技能。
-                <Link to="/global-workspace">查看全局环境 <ArrowUpRight size={13} aria-hidden className="inline align-[-2px]" /></Link>
+                <Link to="/global-workspace">查看全局环境 <ArrowUpRight size={14} aria-hidden className="inline align-[-2px]" /></Link>
               </div>
               <div className={`wb-workspace ${styles.workspace}`}>
                 <section className="wb-skill-list">
@@ -395,7 +395,7 @@ export function Workbench() {
                             <div className="wb-notice">
                               这是项目本地技能。请先在高级管理中导入技能库，再生成中文说明。
                               <Link to={`/project/${id}/advanced`}>
-                                打开高级管理 <ArrowUpRight size={13} aria-hidden className="inline align-[-2px]" />
+                                打开高级管理 <ArrowUpRight size={14} aria-hidden className="inline align-[-2px]" />
                               </Link>
                             </div>
                           )
@@ -843,7 +843,7 @@ function RunPanel({
           <div className="wb-error">
             {runner.error ||
               "未找到 Codex CLI。请先安装并登录 Codex，或在设置中指定路径。"}
-            <Link to="/settings">打开设置 <ArrowUpRight size={13} aria-hidden className="inline align-[-2px]" /></Link>
+            <Link to="/settings">打开设置 <ArrowUpRight size={14} aria-hidden className="inline align-[-2px]" /></Link>
           </div>
         )}
         {runner?.available && (

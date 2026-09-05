@@ -867,7 +867,7 @@ export function ProjectDetail() {
                 onChange={(e) => setSearch(e.target.value)}
                 aria-label={t("project.searchPlaceholder")}
                 placeholder={t("project.searchPlaceholder")}
-                className="app-input h-9 w-full rounded-md pl-8 font-medium"
+                className="app-input w-full pl-8 font-medium"
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
@@ -968,7 +968,7 @@ export function ProjectDetail() {
                   )}
                   title={t("mySkills.tags.untagged")}
                 >
-                  <CircleSlash className="h-3 w-3" />
+                  <CircleSlash className="h-3.5 w-3.5" />
                   {t("mySkills.tags.untagged")}
                 </button>
               );

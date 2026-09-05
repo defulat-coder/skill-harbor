@@ -1283,9 +1283,9 @@ export function MySkills() {
             {skills.length === 0 ? t("mySkills.addFirst") : t("mySkills.noMatch")}
           </p>
           {hasActiveFilters && (
-            <button onClick={clearFilters} className="app-button-secondary mt-4">
+            <Button variant="secondary" className="mt-4" onClick={clearFilters}>
               {t("mySkills.clearFilters")}
-            </button>
+            </Button>
           )}
         </div>
       ) : (
@@ -1518,7 +1518,7 @@ export function MySkills() {
                               else { setTagEditSkillId(null); setTagInput(""); }
                             }}
                             placeholder={t("mySkills.tags.addTag")}
-                            className="h-5 w-28 rounded-full border border-border-subtle bg-transparent px-1.5 text-[11px] text-secondary outline-none focus:border-accent"
+                            className="h-5 w-28 rounded-full border border-border-subtle bg-transparent px-1.5 text-[11px] text-secondary"
                             autoCapitalize="none"
                             autoCorrect="off"
                             autoComplete="off"

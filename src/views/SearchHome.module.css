@@ -4,15 +4,40 @@
 .identity { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 16px; color: var(--ds-strong); font-size: 16px; font-weight: 600; }
 .hero h1 { margin: 0; text-align: center; font-size: 28px; line-height: 1.4; font-weight: 600; color: var(--ds-strong); letter-spacing: 0; }
 .subtitle { margin: 10px 0 24px; text-align: center; color: var(--ds-muted); font-size: 14px; line-height: 1.7; }
-.composer { overflow: hidden; border: 1px solid var(--ds-border); border-radius: var(--ds-radius-dialog); background: var(--ds-bg); box-shadow: var(--ds-shadow); }
-.composer:focus-within { border-color: var(--ds-border-selected); }
-.inputLabel { display: block; padding: 16px 20px 0; font-size: 12px; color: var(--ds-muted); }
-.composer textarea { display: block; resize: vertical; width: 100%; min-height: 120px; max-height: 360px; padding: 12px 20px; border: 0; background: transparent; color: var(--ds-text); font: inherit; font-size: 15px; line-height: 1.8; }
-.composer textarea:focus-visible { outline-offset: -3px; }
+/* Composer follows the OpenDesign home-hero pattern: a borderless neutral
+   tray (--ds-subtle) groups a white inner input card; the only stroke appears
+   on the inner card once the field is engaged (focus-within). Radii are
+   concentric: outer 20px = inner 16px + the tray's 4px inset. */
+.composer { overflow: hidden; display: flex; flex-direction: column; gap: 8px; padding: 4px 4px 8px; border: 0; border-radius: 20px; background: var(--ds-subtle); }
+.inputCard { position: relative; display: flex; flex-direction: column; border: 1px solid transparent; border-radius: 16px; background: var(--ds-bg); padding: 15px 15px 11px; transition: border-color 100ms; }
+.inputCard:focus-within { border-color: var(--ds-border-soft); }
+.inputLabel { display: block; padding: 0 4px; font-size: 12px; color: var(--ds-muted); }
+.composer textarea { display: block; resize: vertical; width: 100%; min-height: 120px; max-height: 360px; padding: 10px 4px; border: 0; background: transparent; color: var(--ds-text); font: inherit; font-size: 15px; line-height: 1.8; }
+.composer textarea:focus-visible { outline: none; }
 .composer textarea::placeholder { color: var(--ds-soft); }
-.composerActions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px 12px 20px; }
+.composerActions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 4px 0; }
 .composerActions > span { font-size: 12px; color: var(--ds-muted); }
-.directory { display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: var(--ds-panel); border-top: 1px solid var(--ds-border-soft); color: var(--ds-muted); font-size: 12px; }
+/* Send mark, ported from OpenDesign `.home-hero__submit`: a 36px near-black
+   squircle with the brand-green arrow; the pair carries its own contrast, so
+   it reads the same in both themes, and the disabled (nothing typed) state is
+   visually identical — the button never shifts color as you type. */
+.send { appearance: none; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: calc(36px * 14 / 32); background: #202020; color: #00ff08; box-shadow: none; cursor: pointer; }
+.send:hover:not(:disabled), .send:active:not(:disabled) { background: color-mix(in srgb, #202020 88%, #00ff08); }
+.send:disabled { opacity: 1; cursor: default; background: #202020; color: #00ff08; }
+.sendSpinner { animation: sendSpin 1s linear 60; }
+@keyframes sendSpin { to { transform: rotate(360deg); } }
+/* Border beam (ported from OpenDesign composer-beam.css, same ring-mask +
+   orbiting-bloom mechanics): a green→cyan light travels the input card's
+   border while focused; fades in 0.6s on focus, out 0.5s on blur. */
+.beam { position: absolute; inset: -1px; border: 1px solid transparent; border-radius: 16px; -webkit-mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0); -webkit-mask-clip: padding-box, border-box; -webkit-mask-composite: xor; mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0); mask-clip: padding-box, border-box; mask-composite: exclude; z-index: 3; pointer-events: none; opacity: 0; }
+.beam[data-active] { animation: beamFadeIn 0.6s ease forwards; }
+.beam[data-fading] { animation: beamFadeOut 0.5s ease forwards; }
+.beamBloom { position: absolute; inset: 0; width: 280px; aspect-ratio: 1; background: radial-gradient(ellipse at center, #00ff08, #00fbff, transparent, transparent); offset-path: var(--beam-path); offset-rotate: 0deg; animation: beamOrbit 8s linear infinite; }
+@keyframes beamOrbit { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+@keyframes beamFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes beamFadeOut { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .beam { display: none; } .sendSpinner { animation: none; } }
+.directory { display: flex; align-items: center; gap: 8px; padding: 2px 16px 4px; color: var(--ds-muted); font-size: 12px; }
 .directory > span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .directory > a { flex-shrink: 0; text-decoration: underline; text-underline-offset: 3px; }
 .indexRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; color: var(--ds-muted); font-size: 12px; }

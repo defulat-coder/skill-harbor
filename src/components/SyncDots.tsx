@@ -146,7 +146,7 @@ export function SyncDots({
                 e.stopPropagation();
                 onToggle(dot.key, dot.state === "available");
               }}
-              className="-m-1 inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-[4px] hover:ring-1 hover:ring-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-default disabled:hover:ring-0"
+              className="-m-1 inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-[4px] hover:ring-1 hover:ring-accent/60 disabled:cursor-default disabled:hover:ring-0"
             >
               <span className={baseClass}>{content}</span>
             </button>

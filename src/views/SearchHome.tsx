@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ArrowUp, BookOpen, Folder, Link2 } from "lucide-react";
+import { ArrowRight, ArrowUp, BookOpen, Folder, Link2, Loader2 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { Button } from "../components/ui/Button";
 import { LoadingState } from "../components/ui/LoadingState";
@@ -33,6 +33,27 @@ function SearchHomeContent({ index }: { index: ReturnType<typeof useSkillIndex> 
   const working = useRef(false);
   const mounted = useRef(true);
   const textarea = useRef<HTMLTextAreaElement>(null);
+  // Border beam on the input card, ported from OpenDesign's composer-beam:
+  // a light orbits the card's border while focused. idle → active → fading →
+  // idle mirrors the upstream animation-lifecycle so blur fades out over 0.5s
+  // instead of cutting the light.
+  const [beamPhase, setBeamPhase] = useState<"idle" | "active" | "fading">("idle");
+  const beamRef = useRef<HTMLDivElement | null>(null);
+  // `offset-path: path()` cannot reference the element's own size, so the beam
+  // path is measured in JS (ResizeObserver also catches the card growing as
+  // the prompt wraps) — same approach as upstream HomeHero.
+  useEffect(() => {
+    const node = beamRef.current;
+    if (!node) return;
+    const syncPath = () => {
+      node.style.setProperty("--beam-path", `path("M 0 0 H ${node.offsetWidth} V ${node.offsetHeight} H 0 V 0")`);
+    };
+    syncPath();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(syncPath);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [beamPhase]);
   const busy = phase !== "idle";
   const groups = Object.values((result?.hits ?? []).reduce<Record<string, { skillId: string; name: string; sources: { hit: SkillSearchResult["hits"][number]; index: number }[] }>>((all, hit, index) => {
     const group = all[hit.skill_id] ??= { skillId: hit.skill_id, name: hit.name, sources: [] };
@@ -83,9 +104,33 @@ function SearchHomeContent({ index }: { index: ReturnType<typeof useSkillIndex> 
       <h1 id="skill-question-title">想用技能做什么？</h1>
       <p className={styles.subtitle}>描述需求，找到技能和用法。</p>
       <form className={styles.composer} onSubmit={event => { event.preventDefault(); void search(); }}>
-        <label className={styles.inputLabel} htmlFor="skill-question">描述你的需求</label>
-        <textarea ref={textarea} id="skill-question" maxLength={2000} value={query} onChange={event => setQuery(event.target.value)} placeholder="例如：有哪些技能能帮我检查代码？应该怎么使用？" rows={4} disabled={phase === "search"} onKeyDown={event => { if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !event.nativeEvent.isComposing) { event.preventDefault(); void search(); } }} />
-        <div className={styles.composerActions}><span>⌘ / Ctrl + Enter 提问</span><Button type="submit" variant="primary" disabled={busy || !query.trim() || !status?.ready || building}><ArrowUp size={18} />{phase === "search" ? "检索中" : phase === "answer" ? "回答中" : "提问"}</Button></div>
+        <div
+          className={styles.inputCard}
+          onFocus={() => setBeamPhase("active")}
+          onBlur={event => {
+            // React blur bubbles (focusout); ignore focus moving BETWEEN the
+            // card's own controls (textarea → send button).
+            const next = event.relatedTarget;
+            if (next instanceof Node && event.currentTarget.contains(next)) return;
+            setBeamPhase(phase => (phase === "active" ? "fading" : phase));
+          }}
+        >
+          <label className={styles.inputLabel} htmlFor="skill-question">描述你的需求</label>
+          <textarea ref={textarea} id="skill-question" maxLength={2000} autoFocus value={query} onChange={event => setQuery(event.target.value)} placeholder="例如：有哪些技能能帮我检查代码？应该怎么使用？" rows={4} disabled={phase === "search"} onKeyDown={event => { if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !event.nativeEvent.isComposing) { event.preventDefault(); void search(); } }} />
+          <div className={styles.composerActions}><span>⌘ / Ctrl + Enter 提问</span><button type="submit" className={styles.send} aria-label="提问" disabled={busy || !query.trim() || !status?.ready || building}>{busy ? <Loader2 size={18} className={styles.sendSpinner} aria-hidden /> : <ArrowUp size={18} aria-hidden />}</button></div>
+          {beamPhase === "idle" ? null : (
+            <div
+              ref={beamRef}
+              className={styles.beam}
+              data-active={beamPhase === "active" ? "" : undefined}
+              data-fading={beamPhase === "fading" ? "" : undefined}
+              aria-hidden
+              onAnimationEnd={event => { if (event.animationName.includes("beamFadeOut")) setBeamPhase("idle"); }}
+            >
+              <div className={styles.beamBloom} />
+            </div>
+          )}
+        </div>
         <div className={styles.directory}><Folder size={14} aria-hidden /><span title={status?.root}>全局技能库</span><Link to="/library">浏览技能库</Link></div>
       </form>
       <div className={styles.indexRow}>

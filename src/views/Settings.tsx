@@ -942,7 +942,7 @@ export function Settings() {
 
   // Compose the shared control classes from index.css rather than a parallel
   // set — bg-background keeps fields readable against the surface-colored panel.
-  const fieldClass = "app-input bg-background";
+  const fieldClass = "app-input";
   const actionButtonClass = "ds-button ds-button-secondary gap-1.5";
   const segmentedButtonClass = "app-segmented-button flex items-center gap-1.5";
 
@@ -1096,7 +1096,7 @@ export function Settings() {
             className="mt-0.5 shrink-0 text-muted transition-opacity hover:text-[var(--ds-danger)]"
             title={t("settings.removeCustomAgent")}
           >
-            <Trash2 className="h-3 w-3" />
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         )}
 
@@ -1126,7 +1126,7 @@ export function Settings() {
               disabled={pathSaving}
               value={editingPathValue}
               onChange={(e) => setEditingPathValue(e.target.value)}
-              className="h-7 min-w-0 flex-1 rounded border border-border-subtle bg-background px-1.5 text-[12px] font-mono text-secondary focus:border-accent"
+              className="h-7 min-w-0 flex-1 rounded border border-border-subtle bg-background px-1.5 text-[12px] font-mono text-secondary"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSavePath();
@@ -1138,7 +1138,7 @@ export function Settings() {
               className="shrink-0 text-muted hover:text-accent"
               title={t("settings.selectFolder")}
             >
-              <FolderOpen className="h-3 w-3" />
+              <FolderOpen className="h-3.5 w-3.5" />
             </Button>
             <Button
               aria-label={t("common.save")}
@@ -1146,7 +1146,7 @@ export function Settings() {
               onClick={handleSavePath}
               className="shrink-0 text-[var(--ds-success)]"
             >
-              <Check className="h-3 w-3" />
+              <Check className="h-3.5 w-3.5" />
             </Button>
             <Button
               aria-label={t("common.cancel")}
@@ -1154,7 +1154,7 @@ export function Settings() {
               onClick={() => setEditingPathKey(null)}
               className="shrink-0 text-muted hover:text-secondary"
             >
-              <X className="h-3 w-3" />
+              <X className="h-3.5 w-3.5" />
             </Button>
           </div>
         ) : (
@@ -1171,7 +1171,7 @@ export function Settings() {
               className="shrink-0 text-muted hover:text-accent transition-opacity"
               title={t("settings.editPath")}
             >
-              <Pencil className="h-3 w-3" />
+              <Pencil className="h-3.5 w-3.5" />
             </Button>
             {agent.has_path_override && !agent.is_custom && (
               <Button
@@ -1180,7 +1180,7 @@ export function Settings() {
                 className="shrink-0 text-muted transition-opacity hover:text-[var(--ds-warning)]"
                 title={t("settings.resetPath")}
               >
-                <RotateCcw className="h-3 w-3" />
+                <RotateCcw className="h-3.5 w-3.5" />
               </Button>
             )}
           </div>
@@ -1197,7 +1197,7 @@ export function Settings() {
               value={editingProjectPathValue}
               onChange={(e) => setEditingProjectPathValue(e.target.value)}
               placeholder={t("settings.projectSkillsPathPlaceholder")}
-              className="h-7 min-w-0 flex-1 rounded border border-border-subtle bg-background px-1.5 text-[12px] font-mono text-secondary focus:border-accent"
+              className="h-7 min-w-0 flex-1 rounded border border-border-subtle bg-background px-1.5 text-[12px] font-mono text-secondary"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSaveProjectPath();
@@ -1210,7 +1210,7 @@ export function Settings() {
               onClick={handleSaveProjectPath}
               className="shrink-0 text-[var(--ds-success)]"
             >
-              <Check className="h-3 w-3" />
+              <Check className="h-3.5 w-3.5" />
             </Button>
             <Button
               aria-label={t("common.cancel")}
@@ -1218,7 +1218,7 @@ export function Settings() {
               onClick={() => setEditingProjectPathKey(null)}
               className="shrink-0 text-muted hover:text-secondary"
             >
-              <X className="h-3 w-3" />
+              <X className="h-3.5 w-3.5" />
             </Button>
           </div>
         ) : (
@@ -1251,7 +1251,7 @@ export function Settings() {
               className="shrink-0 text-muted hover:text-accent transition-opacity"
               title={t("settings.editPath")}
             >
-              <Pencil className="h-3 w-3" />
+              <Pencil className="h-3.5 w-3.5" />
             </Button>
             {!agent.is_custom && agent.has_project_path_override && (
               <Button
@@ -1260,7 +1260,7 @@ export function Settings() {
                 className="shrink-0 text-muted transition-opacity hover:text-[var(--ds-warning)]"
                 title={t("settings.resetPath")}
               >
-                <RotateCcw className="h-3 w-3" />
+                <RotateCcw className="h-3.5 w-3.5" />
               </Button>
             )}
           </div>
@@ -1448,7 +1448,7 @@ export function Settings() {
                         onClick={() => handleBrowsePath(setCustomPath)}
                         className={actionButtonClass}
                       >
-                        <FolderOpen className="w-3 h-3" />
+                        <FolderOpen className="w-3.5 h-3.5" />
                         {t("settings.selectFolder")}
                       </Button>
                     </div>
@@ -1481,9 +1481,9 @@ export function Settings() {
                       disabled={addingCustom}
                     >
                       {addingCustom ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
-                        <Plus className="w-3 h-3" />
+                        <Plus className="w-3.5 h-3.5" />
                       )}
                       {t("settings.addAgent")}
                     </Button>
@@ -1606,7 +1606,7 @@ export function Settings() {
                           disabled={savingCentralRepoPath}
                           className={actionButtonClass}
                         >
-                          <FolderOpen className="w-3 h-3" />
+                          <FolderOpen className="w-3.5 h-3.5" />
                           {t("settings.selectFolder")}
                         </Button>
                         <Button
@@ -1616,9 +1616,9 @@ export function Settings() {
                           className={actionButtonClass}
                         >
                           {savingCentralRepoPath ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           ) : (
-                            <Check className="w-3 h-3" />
+                            <Check className="w-3.5 h-3.5" />
                           )}
                           {t("common.save")}
                         </Button>
@@ -1633,12 +1633,12 @@ export function Settings() {
                           disabled={savingCentralRepoPath}
                           className={actionButtonClass}
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-3.5 h-3.5" />
                         </Button>
                       </div>
                     ) : (
                       <div className="flex min-w-0 items-center gap-1.5 rounded-lg border border-border-subtle bg-background px-3 py-2">
-                        <Folder className="w-3 h-3 text-muted" />
+                        <Folder className="w-3.5 h-3.5 text-muted" />
                         <span className="truncate text-[13px] font-mono text-tertiary">
                           {displayedRepoPath}
                         </span>
@@ -1650,7 +1650,7 @@ export function Settings() {
                         onClick={handleStartEditCentralRepoPath}
                         className={actionButtonClass}
                       >
-                        <Pencil className="w-3 h-3" />
+                        <Pencil className="w-3.5 h-3.5" />
                         {t("settings.changeDir")}
                       </Button>
                     )}
@@ -1662,9 +1662,9 @@ export function Settings() {
                         className={actionButtonClass}
                       >
                         {savingCentralRepoPath ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         ) : (
-                          <RotateCcw className="w-3 h-3" />
+                          <RotateCcw className="w-3.5 h-3.5" />
                         )}
                         {t("settings.resetPath")}
                       </Button>
@@ -1676,9 +1676,9 @@ export function Settings() {
                       className={actionButtonClass}
                     >
                       {openingRepo ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
-                        <ExternalLink className="w-3 h-3" />
+                        <ExternalLink className="w-3.5 h-3.5" />
                       )}
                       {t("settings.openInFinder")}
                     </Button>
@@ -1712,7 +1712,7 @@ export function Settings() {
                           : "text-muted hover:text-tertiary",
                       )}
                     >
-                      <LinkIcon className="w-3 h-3" /> {t("settings.symlink")}
+                      <LinkIcon className="w-3.5 h-3.5" /> {t("settings.symlink")}
                     </Button>
                     <Button
                       aria-pressed={syncMode === "copy"}
@@ -1724,7 +1724,7 @@ export function Settings() {
                           : "text-muted hover:text-tertiary",
                       )}
                     >
-                      <Copy className="w-3 h-3" /> {t("settings.copy")}
+                      <Copy className="w-3.5 h-3.5" /> {t("settings.copy")}
                     </Button>
                   </div>
                 </div>
@@ -1754,7 +1754,7 @@ export function Settings() {
                               : "text-muted hover:text-tertiary",
                           )}
                         >
-                          <Icon className="w-3 h-3" /> {opt.label}
+                          <Icon className="w-3.5 h-3.5" /> {opt.label}
                         </Button>
                       );
                     })}
@@ -1932,9 +1932,9 @@ export function Settings() {
                       className={actionButtonClass}
                     >
                       {proxySaving ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
-                        <LinkIcon className="w-3 h-3" />
+                        <LinkIcon className="w-3.5 h-3.5" />
                       )}
                       {t("common.save")}
                     </Button>
@@ -2036,7 +2036,7 @@ export function Settings() {
                       onClick={() => navigate("/backup")}
                       className={actionButtonClass}
                     >
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="w-3.5 h-3.5" />
                       {t("settings.openBackupPage")}
                     </Button>
                   </div>
@@ -2055,9 +2055,9 @@ export function Settings() {
                       className={actionButtonClass}
                     >
                       {gitRemoteSaving ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
-                        <LinkIcon className="w-3 h-3" />
+                        <LinkIcon className="w-3.5 h-3.5" />
                       )}
                       {t("common.save")}
                     </Button>
@@ -2067,9 +2067,9 @@ export function Settings() {
                       className={actionButtonClass}
                     >
                       {gitRemoteDisconnecting ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
-                        <Unlink className="w-3 h-3" />
+                        <Unlink className="w-3.5 h-3.5" />
                       )}
                       {t("settings.gitDisconnect")}
                     </Button>
@@ -2167,9 +2167,9 @@ export function Settings() {
                       disabled={reportingIssue}
                     >
                       {reportingIssue ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
-                        <Bug className="w-3 h-3" />
+                        <Bug className="w-3.5 h-3.5" />
                       )}
                       {t("settings.reportIssue")}
                     </Button>
@@ -2215,9 +2215,9 @@ export function Settings() {
                           disabled={installing}
                         >
                           {installing ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           ) : (
-                            <Download className="w-3 h-3" />
+                            <Download className="w-3.5 h-3.5" />
                           )}
                           {installing
                             ? t("settings.installing")
@@ -2230,7 +2230,7 @@ export function Settings() {
                           }}
                           className={actionButtonClass}
                         >
-                          <ExternalLink className="w-3 h-3" />{" "}
+                          <ExternalLink className="w-3.5 h-3.5" />{" "}
                           {t("settings.download")}
                         </Button>
                       </>
@@ -2242,7 +2242,7 @@ export function Settings() {
                           openUrl(appUpdate.release_url).catch(() => {});
                         }}
                       >
-                        <Download className="w-3 h-3" />{" "}
+                        <Download className="w-3.5 h-3.5" />{" "}
                         {t("settings.download")}
                       </Button>
                     )
@@ -2254,9 +2254,9 @@ export function Settings() {
                       className={actionButtonClass}
                     >
                       {checkingUpdate ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
-                        <RefreshCw className="w-3 h-3" />
+                        <RefreshCw className="w-3.5 h-3.5" />
                       )}
                       {checkingUpdate
                         ? t("settings.checking")
@@ -2268,7 +2268,7 @@ export function Settings() {
                     onClick={openHelp}
                     className={actionButtonClass}
                   >
-                    <BookOpen className="w-3 h-3" /> {t("settings.help")}
+                    <BookOpen className="w-3.5 h-3.5" /> {t("settings.help")}
                   </Button>
                   <Button
                     type="button"
@@ -2278,9 +2278,9 @@ export function Settings() {
                     className={actionButtonClass}
                   >
                     {reportingIssue ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
-                      <Bug className="w-3 h-3" />
+                      <Bug className="w-3.5 h-3.5" />
                     )}
                     {t("settings.reportIssue")}
                   </Button>
@@ -2292,9 +2292,9 @@ export function Settings() {
                     className={actionButtonClass}
                   >
                     {exportingLogs ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
-                      <FileArchive className="w-3 h-3" />
+                      <FileArchive className="w-3.5 h-3.5" />
                     )}
                     {t("settings.exportLogs")}
                   </Button>

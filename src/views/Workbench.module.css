@@ -27,8 +27,9 @@
 .wizard legend span { margin-left: 8px; font-size: 12px; font-weight: 400; }
 .wizard label:not(:global(.wb-check)):not(:global(.wb-pick-row)):not(:global(.wb-search)) { font-size: 13px; color: var(--ds-muted); }
 .wizard select { display: block; width: 100%; margin-top: 8px; }
-.wizard input:not([type="checkbox"]), .wizard select { min-width: 0; min-height: 36px; border: 1px solid var(--ds-border); border-radius: var(--ds-radius); background-color: var(--ds-bg); color: var(--ds-text); padding: 7px 10px; font-size: 13px; }
+.wizard input:not([type="checkbox"]), .wizard select { min-width: 0; min-height: 36px; border: 1px solid var(--ds-border); border-radius: var(--ds-radius); background-color: var(--ds-panel); color: var(--ds-text); padding: 7px 10px; font-size: 13px; }
 .wizard :global(.wb-search) input { border: 0; padding: 0; background: transparent; }
+.page :global(.wb-search):focus-within, .wizard :global(.wb-search):focus-within { border-color: var(--ds-accent); }
 .wizardFooter { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--ds-border-soft); }
 
 .projectOpen { display: flex; flex: 1; flex-direction: column; color: inherit; text-decoration: none; min-width: 0; }
