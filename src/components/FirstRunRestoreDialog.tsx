@@ -1,7 +1,7 @@
 import { LoadingState } from "./ui/LoadingState";
 import { DetailSheet } from "./DetailSheet";
 import { Button } from "./ui/Button";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CloudDownload } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -21,14 +21,14 @@ export function FirstRunRestoreDialog() {
   const { t } = useTranslation();
   const { managedSkills, loading: skillsLoading, refreshManagedSkills, refreshPresets } = useApp();
   const [open, setOpen] = useState(false);
-  const [checked, setChecked] = useState(false);
+  const checkedRef = useRef(false);
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (skillsLoading || checked) return;
-    setChecked(true);
+    if (skillsLoading || checkedRef.current) return;
+    checkedRef.current = true;
     if (managedSkills.length > 0) return;
     void (async () => {
       const dismissed = await api.getSettings(PROMPT_SETTING_KEY).catch(() => null);
@@ -39,7 +39,7 @@ export function FirstRunRestoreDialog() {
       if (!status || status.is_repo) return;
       setOpen(true);
     })();
-  }, [skillsLoading, checked, managedSkills.length]);
+  }, [skillsLoading, managedSkills.length]);
 
 
   const dismiss = async () => {

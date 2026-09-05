@@ -5,10 +5,10 @@ import { ChineseGuide } from "./ChineseGuide";
 import { useEffect, useRef, useState } from "react";
 import {
   Folder,
-  Github,
   HardDrive,
   Globe,
 } from "lucide-react";
+import { GithubIcon } from "./GithubIcon";
 import { useTranslation } from "react-i18next";
 import { cn } from "../utils";
 import {
@@ -191,7 +191,7 @@ function SkillDetailPanelContent({
     switch (type) {
       case "git":
       case "skillssh":
-        return <Github className="h-3.5 w-3.5" />;
+        return <GithubIcon className="h-3.5 w-3.5" />;
       case "local":
       case "import":
         return <HardDrive className="h-3.5 w-3.5" />;

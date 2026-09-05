@@ -18,10 +18,16 @@ export function ChineseGuide({ skillId, projectId, skillRelativePath, agent }: {
   const request = useRef(0);
   const lastAction = useRef<"load" | "generate" | "save">("load");
 
+  const scopeKey = `${skillId}${projectId ?? ""}${skillRelativePath ?? ""}${agent ?? ""}`;
+  const [prevScopeKey, setPrevScopeKey] = useState(scopeKey);
+  if (prevScopeKey !== scopeKey) {
+    setPrevScopeKey(scopeKey);
+    setGuide(null); setEditing(false); setDraft(""); setError(null); setBusy("load");
+  }
+
   useEffect(() => {
     const version = ++request.current;
     lastAction.current = "load";
-    setGuide(null); setEditing(false); setDraft(""); setError(null); setBusy("load");
     getSkillGuide(skillId, { projectId, skillRelativePath, agent }).then((value) => { if (request.current === version) setGuide(value); })
       .catch((e: unknown) => { if (request.current === version) setError(getErrorMessage(e, "读取中文说明失败")); })
       .finally(() => { if (request.current === version) setBusy(null); });

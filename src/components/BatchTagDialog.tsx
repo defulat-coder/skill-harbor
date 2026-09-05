@@ -1,7 +1,7 @@
 import { getErrorMessage } from "../lib/error";
 import { DetailSheet } from "./DetailSheet";
 import { Button } from "./ui/Button";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { X, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "../utils";
@@ -28,13 +28,15 @@ export function BatchTagDialog({ open, skills, allTags, onClose, onApply }: Prop
   const pending = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (prevOpen !== open) {
+    setPrevOpen(open);
     if (open) {
       setAdds([]);
       setRemoves([]);
       setInput("");
     }
-  }, [open]);
+  }
 
   const tagCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -184,7 +186,7 @@ export function BatchTagDialog({ open, skills, allTags, onClose, onApply }: Prop
                         type="button"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => addTag(suggestion)}
-                        className="w-full truncate rounded px-1.5 py-1 text-left text-[12px] text-secondary hover:bg-surface-hover"
+                        className="w-full truncate rounded-sm px-1.5 py-1 text-left text-[12px] text-secondary hover:bg-surface-hover"
                       >
                         {suggestion}
                       </button>

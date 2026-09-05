@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://127.0.0.1:1420",
-    "beforeDevCommand": "npm run search:prepare && npm run dev",
-    "beforeBuildCommand": "npm run search:prepare && npm run build"
+    "beforeDevCommand": "pnpm run search:prepare && pnpm run dev",
+    "beforeBuildCommand": "pnpm run search:prepare && pnpm run build"
   },
   "app": {
     "windows": [

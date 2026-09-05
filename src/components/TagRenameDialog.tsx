@@ -1,7 +1,7 @@
 import { getErrorMessage } from "../lib/error";
 import { DetailSheet } from "./DetailSheet";
 import { Button } from "./ui/Button";
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 interface Props {
@@ -18,9 +18,13 @@ export function TagRenameDialog({ open, currentName, onClose, onRename }: Props)
   const [error, setError] = useState("");
   const pending = useRef(false);
 
-  useEffect(() => {
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [prevCurrentName, setPrevCurrentName] = useState(currentName);
+  if (prevOpen !== open || prevCurrentName !== currentName) {
+    setPrevOpen(open);
+    setPrevCurrentName(currentName);
     if (open) setName(currentName);
-  }, [open, currentName]);
+  }
 
 
 

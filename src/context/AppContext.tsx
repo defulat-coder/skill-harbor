@@ -177,18 +177,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return activePreset ?? presets[0] ?? null;
   })();
 
-  useEffect(() => {
-    if (!viewedPreset) return;
-    if (viewedPreset.id !== viewedPresetId) {
-      // Persist the resolved fallback so subsequent reads are stable.
-      setViewedPresetIdState(viewedPreset.id);
-      try {
-        localStorage.setItem(VIEWED_PRESET_LS_KEY, viewedPreset.id);
-      } catch {
-        // ignore
-      }
+  if (viewedPreset && viewedPreset.id !== viewedPresetId) {
+    // Persist the resolved fallback so subsequent reads are stable.
+    // Adjusted during render (instead of an effect) so consumers never see a
+    // stale viewedPresetId for a frame; the localStorage write is idempotent.
+    setViewedPresetIdState(viewedPreset.id);
+    try {
+      localStorage.setItem(VIEWED_PRESET_LS_KEY, viewedPreset.id);
+    } catch {
+      // ignore
     }
-  }, [viewedPreset, viewedPresetId]);
+  }
 
   useEffect(() => {
     async function init() {

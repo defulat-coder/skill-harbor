@@ -33,7 +33,7 @@ pub struct SkillGuideDto {
     generated_source_hash: Option<String>,
 }
 
-fn hash(value: &str) -> String { format!("{:x}", Sha256::digest(value.as_bytes())) }
+fn hash(value: &str) -> String { hex::encode(Sha256::digest(value.as_bytes())) }
 fn cache_path(id: &str) -> PathBuf {
     central_repo::home_base_dir().join("local-workbench/guides").join(format!("{}.json", hash(id)))
 }
@@ -328,7 +328,7 @@ async fn market_document(source: &str, skill_id: &str, proxy: Option<String>) ->
     let content = bounded_response(client.get(format!("https://raw.githubusercontent.com/{source}/{revision}/{encoded_path}")).send().await.map_err(AppError::internal)?, 180_000).await?;
     if matching.is_empty() {
         let yaml = content.trim_start().strip_prefix("---").and_then(|s| s.split_once("---")).map(|(yaml, _)| yaml);
-        let name = yaml.and_then(|s| serde_yaml::from_str::<serde_yaml::Value>(s).ok()).and_then(|v| v.get("name").and_then(|v| v.as_str()).map(str::to_string));
+        let name = yaml.and_then(|s| serde_yaml_ng::from_str::<serde_yaml_ng::Value>(s).ok()).and_then(|v| v.get("name").and_then(|v| v.as_str()).map(str::to_string));
         if name.as_deref() != Some(skill_id) { return Err(AppError::not_found("仓库文档的技能名称与市场条目不匹配，未生成说明")); }
     }
     Ok(content)

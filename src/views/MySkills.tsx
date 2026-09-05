@@ -2,6 +2,7 @@ import { Disclosure } from "../components/ui/Disclosure";
 import { DetailSheet } from "../components/DetailSheet";
 import { Button } from "../components/ui/Button";
 import { PageHeader } from "../components/ui/PageHeader";
+import { GithubIcon } from "../components/GithubIcon";
 import styles from "./MySkills.module.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -9,7 +10,6 @@ import {
   LayoutGrid,
   List,
   CheckCircle2,
-  Github,
   HardDrive,
   Globe,
   Layers,
@@ -115,7 +115,7 @@ function SortableSkillItem({
       title={handleTitle}
       className={
         handleClassName ??
-        "flex cursor-grab items-center justify-center rounded p-1 text-faint transition-colors hover:bg-surface-hover hover:text-muted active:cursor-grabbing"
+        "flex cursor-grab items-center justify-center rounded-sm p-1 text-faint transition-colors hover:bg-surface-hover hover:text-muted active:cursor-grabbing"
       }
     >
       <GripVertical className="h-4 w-4" />
@@ -190,11 +190,14 @@ export function MySkills() {
   const viewedPresetName = viewedPreset?.name || t("mySkills.currentPresetFallback");
 
   // Fetch sort order whenever active preset changes
+  const [prevViewedPreset, setPrevViewedPreset] = useState(viewedPreset);
+  if (prevViewedPreset !== viewedPreset) {
+    setPrevViewedPreset(viewedPreset);
+    if (!viewedPreset) setPresetSkillOrder([]);
+  }
+
   useEffect(() => {
-    if (!viewedPreset) {
-      setPresetSkillOrder([]);
-      return;
-    }
+    if (!viewedPreset) return;
     api.getPresetSkillOrder(viewedPreset.id).then(setPresetSkillOrder).catch(() => {});
   }, [viewedPreset, skills]);
 
@@ -217,7 +220,9 @@ export function MySkills() {
   };
 
   useEffect(() => {
-    refreshAllTags();
+    // Defer so the state write inside refreshAllTags() runs after the fetch,
+    // not synchronously in the effect body.
+    void Promise.resolve().then(refreshAllTags);
   }, [skills]);
 
   // Prune tag filters whose pill disappeared (e.g. its last skill was deleted),
@@ -227,12 +232,11 @@ export function MySkills() {
   // missing from `allTags`: that list is refetched asynchronously and lags
   // `skills`, and in that window a rename would otherwise drop the filter that
   // `replaceTagInFilters` just moved onto the new name.
-  useEffect(() => {
-    if (skills.length === 0) return;
+  if (skills.length > 0) {
     const hasUntagged = skills.some((skill) => skill.tags.length === 0);
     const available = [...allTags, ...skills.flatMap((skill) => skill.tags)];
     setTagFilters((prev) => pruneStaleTagFilters(prev, available, hasUntagged));
-  }, [allTags, skills]);
+  }
 
 
 
@@ -1008,7 +1012,7 @@ export function MySkills() {
     switch (type) {
       case "git":
       case "skillssh":
-        return <Github className="h-3 w-3" />;
+        return <GithubIcon className="h-3 w-3" />;
       case "local":
       case "import":
         return <HardDrive className="h-3 w-3" />;
@@ -1329,7 +1333,7 @@ export function MySkills() {
                       : undefined
                   }
                   handleTitle={`${t("mySkills.dragToReorder")} · ${skill.name}`}
-                  handleClassName="absolute inset-0 min-h-6 min-w-6 focus-visible:opacity-100 flex cursor-grab items-center justify-center rounded text-faint opacity-0 transition-opacity hover:text-muted group-hover:opacity-100 active:cursor-grabbing"
+                  handleClassName="absolute inset-0 min-h-6 min-w-6 focus-visible:opacity-100 flex cursor-grab items-center justify-center rounded-sm text-faint opacity-0 transition-opacity hover:text-muted group-hover:opacity-100 active:cursor-grabbing"
                 >
                 {(dragHandle) => (
                 <div
@@ -1380,7 +1384,7 @@ export function MySkills() {
                       <button
                         onClick={(e) => { e.stopPropagation(); handleRefreshSkill(skill); }}
                         disabled={updatingSkillId === skill.id}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--ds-warning-bg)] px-2 py-0.5 text-[11px] font-medium text-[var(--ds-warning)] outline-none transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)] disabled:opacity-50"
+                        className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--ds-warning-bg)] px-2 py-0.5 text-[11px] font-medium text-[var(--ds-warning)] outline-hidden transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)] disabled:opacity-50"
                         title={refreshLabel(skill)}
                       >
                         <RotateCcw className={cn("h-2.5 w-2.5", updatingSkillId === skill.id && "animate-spin")} />
@@ -1533,7 +1537,7 @@ export function MySkills() {
                                   type="button"
                                   onMouseDown={(e) => e.preventDefault()}
                                   onClick={(e) => { e.stopPropagation(); handleAddTag(skill, tagOption); }}
-                                  className="w-full truncate rounded px-1.5 py-1 text-left text-[11px] text-secondary hover:bg-surface-hover"
+                                  className="w-full truncate rounded-sm px-1.5 py-1 text-left text-[11px] text-secondary hover:bg-surface-hover"
                                   title={tagOption}
                                 >
                                   {tagOption}
@@ -1595,7 +1599,7 @@ export function MySkills() {
                 disabled={!canDrag}
                 className={menuSkillId === skill.id ? "relative z-30" : undefined}
                 handleTitle={`${t("mySkills.dragToReorder")} · ${skill.name}`}
-                handleClassName="absolute inset-0 min-h-6 min-w-6 focus-visible:opacity-100 flex cursor-grab items-center justify-center rounded text-faint opacity-0 transition-opacity hover:text-muted group-hover:opacity-100 active:cursor-grabbing"
+                handleClassName="absolute inset-0 min-h-6 min-w-6 focus-visible:opacity-100 flex cursor-grab items-center justify-center rounded-sm text-faint opacity-0 transition-opacity hover:text-muted group-hover:opacity-100 active:cursor-grabbing"
               >
               {(dragHandle) => (
               <div
@@ -1674,7 +1678,7 @@ export function MySkills() {
                     <button
                       onClick={(e) => { e.stopPropagation(); handleRefreshSkill(skill); }}
                       disabled={updatingSkillId === skill.id}
-                      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--ds-warning-bg)] px-2 py-0.5 text-[11px] font-medium text-[var(--ds-warning)] outline-none transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)] disabled:opacity-50"
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--ds-warning-bg)] px-2 py-0.5 text-[11px] font-medium text-[var(--ds-warning)] outline-hidden transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)] disabled:opacity-50"
                       title={refreshLabel(skill)}
                     >
                       <RotateCcw className={cn("h-2.5 w-2.5", updatingSkillId === skill.id && "animate-spin")} />
@@ -1718,14 +1722,14 @@ export function MySkills() {
                     <button
                       onClick={(e) => { e.stopPropagation(); handleRelinkSource(skill); }}
                       disabled={updatingSkillId === skill.id}
-                      className="rounded px-2 py-0.5 text-[13px] font-medium text-secondary transition-colors hover:bg-surface-hover disabled:opacity-50"
+                      className="rounded-sm px-2 py-0.5 text-[13px] font-medium text-secondary transition-colors hover:bg-surface-hover disabled:opacity-50"
                     >
                       {t("mySkills.updateActions.relink")}
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDetachSource(skill); }}
                       disabled={updatingSkillId === skill.id}
-                      className="rounded px-2 py-0.5 text-[13px] font-medium text-muted transition-colors hover:bg-surface-hover hover:text-secondary disabled:opacity-50"
+                      className="rounded-sm px-2 py-0.5 text-[13px] font-medium text-muted transition-colors hover:bg-surface-hover hover:text-secondary disabled:opacity-50"
                     >
                       {t("mySkills.updateActions.detachSource")}
                     </button>

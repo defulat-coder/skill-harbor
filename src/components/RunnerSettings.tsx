@@ -32,7 +32,9 @@ export function RunnerSettings() {
     }
   }, []);
   useEffect(() => {
-    void load();
+    // Defer so the loading/error resets inside load() don't run synchronously
+    // in the effect body (both are no-ops on mount anyway).
+    void Promise.resolve().then(load);
   }, [load]);
   async function save() {
     if (busy || !loaded) return;

@@ -61,16 +61,16 @@ See [search-runtime/README.md](search-runtime/README.md) for the dev runtime, fi
 Prerequisites: Node.js 20.19+ or 22.12+, Rust 1.77.2+, and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS.
 
 ```bash
-npm install
-npm run lint    # frontend lint
-npm run build   # frontend build
-npm run tauri:dev
+pnpm install
+pnpm run lint    # frontend lint
+pnpm run build   # frontend build
+pnpm run tauri:dev
 ```
 
 Package the app with:
 
 ```bash
-npm run workbench:build
+pnpm run workbench:build
 ```
 
 ## License

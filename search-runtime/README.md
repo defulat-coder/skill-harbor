@@ -1,8 +1,8 @@
 # Local skill search runtime
 
-Node.js >=22. Production dependency is pinned `@zvec/zvec-grep@0.2.1` (Apache-2.0).
+Node.js >=24. Production dependency is pinned `@zvec/zvec-grep@0.2.1` (Apache-2.0).
 
-Install in this directory with `npm ci --ignore-scripts --no-audit --no-fund`. Keep optional dependencies: the native Zvec package is required. Do **not** use `--omit=optional`. Ignoring lifecycle scripts avoids the optional `node-llama-cpp` postinstall; the selected multilingual embedding uses Transformers/ONNX, not llama.cpp. This exact installation was tested on Node 24 / macOS arm64. Other OS/architectures need their own native installation.
+Install in this directory with `pnpm install --frozen-lockfile --ignore-scripts`. Keep optional dependencies: the native Zvec package is required (pnpm installs them by default). Ignoring lifecycle scripts avoids the optional `node-llama-cpp` postinstall; the selected multilingual embedding uses Transformers/ONNX, not llama.cpp. This exact installation was tested on Node 24 / macOS arm64. Other OS/architectures need their own native installation.
 
 Run `node search-runtime/search.mjs`, write exactly one JSON object to stdin, then close stdin:
 

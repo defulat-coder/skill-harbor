@@ -172,7 +172,9 @@ export function ProjectDetail() {
   }, [id]);
 
   useEffect(() => {
-    loadSkills();
+    // Defer so the loading/error resets inside loadSkills() don't run
+    // synchronously in the effect body.
+    void Promise.resolve().then(loadSkills);
   }, [loadSkills]);
 
   useEffect(() => {
@@ -246,18 +248,15 @@ export function ProjectDetail() {
       .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
   }, [skills]);
 
-  useEffect(() => {
-    if (!detailSkill) return;
+  if (detailSkill) {
     const refreshed = groupedSkills.find((skill) => skill.id === detailSkill.id) ?? null;
     if (!refreshed) {
       setDetailSkill(null);
       setDocContent(null);
-      return;
-    }
-    if (refreshed !== detailSkill) {
+    } else if (refreshed !== detailSkill) {
       setDetailSkill(refreshed);
     }
-  }, [detailSkill, groupedSkills]);
+  }
 
   const filtered = useMemo(() => {
     return groupedSkills.filter((skill) => {
@@ -410,11 +409,10 @@ export function ProjectDetail() {
   // Prune tag filters whose pill disappeared (e.g. its last skill was deleted),
   // otherwise a stale filter silently hides everything. An empty skill list
   // says nothing about which tags are valid, so wait for one before pruning.
-  useEffect(() => {
-    if (groupedSkills.length === 0) return;
+  if (groupedSkills.length > 0) {
     const hasUntagged = groupedSkills.some((skill) => skill.tags.length === 0);
     setTagFilters((prev) => pruneStaleTagFilters(prev, allTags, hasUntagged));
-  }, [allTags, groupedSkills]);
+  }
 
   const selectedSkills = useMemo(
     () => groupedSkills.filter((skill) => selectedIds.has(getSkillKey(skill))),
@@ -631,7 +629,7 @@ export function ProjectDetail() {
       toast.success(t("project.skillDeleted", { name: deleteTarget.name }));
       await Promise.all([loadSkills(), refreshProjects()]);
     } catch (error: unknown) {
-      throw new Error(getErrorMessage(error, t("common.error")));
+      throw new Error(getErrorMessage(error, t("common.error")), { cause: error });
     }
   };
 

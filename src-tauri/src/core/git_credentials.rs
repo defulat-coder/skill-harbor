@@ -223,7 +223,11 @@ pub fn credential_env_for_url(url: &str) -> Vec<(String, String)> {
 pub(crate) fn use_mock_keyring() {
     static INIT: std::sync::Once = std::sync::Once::new();
     INIT.call_once(|| {
-        keyring::set_default_credential_builder(keyring::mock::default_credential_builder());
+        // keyring 4 initializes its platform store lazily on first Entry use;
+        // force that one-time init, then replace the process-wide default
+        // store with the in-memory mock.
+        let _ = keyring::Entry::store_status();
+        keyring_core::set_default_store(keyring_core::mock::Store::new().expect("mock store"));
     });
 }
 

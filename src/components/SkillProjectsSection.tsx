@@ -37,8 +37,20 @@ export function SkillProjectsSection({ skill, projects, onChanged }: Props) {
   const [retry, setRetry] = useState(0);
   const [removeTarget, setRemoveTarget] = useState<{project: Project; target: ProjectAgentTarget} | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const [prevSync, setPrevSync] = useState<{
+    projects: Project[];
+    skillId: string;
+    skillName: string;
+    retry: number;
+  } | null>(null);
+  if (
+    !prevSync ||
+    prevSync.projects !== projects ||
+    prevSync.skillId !== skill.id ||
+    prevSync.skillName !== skill.name ||
+    prevSync.retry !== retry
+  ) {
+    setPrevSync({ projects, skillId: skill.id, skillName: skill.name, retry });
     setRows((prev) => {
       const next: Record<string, RowData> = {};
       for (const p of projects) {
@@ -52,6 +64,10 @@ export function SkillProjectsSection({ skill, projects, onChanged }: Props) {
       }
       return next;
     });
+  }
+
+  useEffect(() => {
+    let cancelled = false;
 
     const loadAll = async () => {
       const results = await Promise.all(

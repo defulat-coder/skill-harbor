@@ -1,7 +1,7 @@
 import { getErrorMessage } from "../lib/error";
 import { DetailSheet } from "./DetailSheet";
 import { Button } from "./ui/Button";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FolderOpen, Search, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { open as dialogOpen } from "@tauri-apps/plugin-dialog";
@@ -27,19 +27,22 @@ export function AddProjectDialog({ open, onClose, onAdded }: Props) {
   const [linkedName, setLinkedName] = useState("");
   const [linkedPath, setLinkedPath] = useState("");
 
-  useEffect(() => {
-    if (!open) return;
-    setError("");
-    setTab("manual");
-    setScanRoot("");
-    setScanning(false);
-    setScanResults([]);
-    setSelected(new Set());
-    setAdding(false);
-    setScanned(false);
-    setLinkedName("");
-    setLinkedPath("");
-  }, [open]);
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (prevOpen !== open) {
+    setPrevOpen(open);
+    if (open) {
+      setError("");
+      setTab("manual");
+      setScanRoot("");
+      setScanning(false);
+      setScanResults([]);
+      setSelected(new Set());
+      setAdding(false);
+      setScanned(false);
+      setLinkedName("");
+      setLinkedPath("");
+    }
+  }
 
 
   const handleSelectFolder = async () => {
@@ -148,7 +151,7 @@ export function AddProjectDialog({ open, onClose, onAdded }: Props) {
               className={cn(
                 "flex-1 py-1.5 text-[13px] font-medium rounded-md transition-all",
                 tab === key
-                  ? "bg-surface text-primary shadow-sm"
+                  ? "bg-surface text-primary shadow-xs"
                   : "text-muted hover:text-secondary"
               )}
             >
@@ -252,7 +255,7 @@ export function AddProjectDialog({ open, onClose, onAdded }: Props) {
                     >
                       <div
                         className={cn(
-                          "w-4 h-4 rounded border flex items-center justify-center shrink-0",
+                          "w-4 h-4 rounded-sm border flex items-center justify-center shrink-0",
                           selected.has(path)
                             ? "bg-accent-dark border-accent-border text-[var(--ds-on-accent)]"
                             : "border-border-subtle"

@@ -7,14 +7,14 @@ SkillHarbor 技能港：中文优先的个人全局技能管理平台。目标�
 需要 Node.js、Rust/Cargo、平台 Tauri 构建依赖；执行与中文生成另需已安装并登录的 Codex CLI。本次验证使用 macOS Apple Silicon、Node 24、Rust 1.98.1、Codex CLI 0.144.1。
 
 ```sh
-npm ci
-npm run workbench:dev
+pnpm install --frozen-lockfile
+pnpm run workbench:dev
 ```
 
 打开设置中的“本地执行与中文说明”，配置 Codex 可执行文件路径（留空自动查找）。可单独指定项目任务模型，留空沿用 CLI 配置；这不会修改全局 Codex 配置。若 CLI 报模型要求更新版本，升级 CLI 或填写一个当前 CLI 支持的模型。
 
 ```sh
-npm run workbench:build
+pnpm run workbench:build
 ```
 
 macOS 应用产物位于 `src-tauri/target/release/bundle/macos/SkillHarbor.app`。可加 `-- --debug` 生成开发构建，产物位于 `target/debug/bundle/macos`。应用使用独立应用标识，不启用自动二进制更新。
@@ -42,15 +42,15 @@ macOS 应用产物位于 `src-tauri/target/release/bundle/macos/SkillHarbor.app`
 ## 验证
 
 ```sh
-npm run lint
-npm run build
+pnpm run lint
+pnpm run build
 cargo test --manifest-path src-tauri/Cargo.toml --lib
 ```
 
 端到端验证用专门的临时目录运行开发构建：
 
 ```sh
-SKILLHARBOR_SANDBOX_DIR=/tmp/my-workbench-check npm run workbench:dev
+SKILLHARBOR_SANDBOX_DIR=/tmp/my-workbench-check pnpm run workbench:dev
 ```
 
 该变量仅开发构建支持，将应用数据与本机技能库隔开；Agent 检测仍会读取本机配置。不要在验收时点击全局批量部署。测试项目中的文件操作应限定在临时目录。

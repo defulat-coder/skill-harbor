@@ -92,7 +92,7 @@ export function SkillMarkdown({ content, className }: SkillMarkdownProps) {
             return (
               <code
                 className={cn(
-                  "rounded bg-surface-hover px-1.5 py-0.5 font-mono text-[13px] text-accent-light",
+                  "rounded-sm bg-surface-hover px-1.5 py-0.5 font-mono text-[13px] text-accent-light",
                   className
                 )}
                 {...props}

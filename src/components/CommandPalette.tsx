@@ -75,9 +75,14 @@ export function CommandPalette() {
     return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("workbench:search", show); };
   }, [open, close]);
 
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (prevOpen !== open) {
+    setPrevOpen(open);
+    if (open) setActiveIndex(0);
+  }
+
   useEffect(() => {
     if (open) {
-      setActiveIndex(0);
       requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [open]);
@@ -198,9 +203,7 @@ export function CommandPalette() {
     t,
   ]);
 
-  useEffect(() => {
-    if (activeIndex >= items.length) setActiveIndex(0);
-  }, [items.length, activeIndex]);
+  if (activeIndex > 0 && activeIndex >= items.length) setActiveIndex(0);
 
   // Scroll active item into view
   useEffect(() => {
@@ -289,7 +292,7 @@ export function CommandPalette() {
                   )}
                 </div>
                 {item.shortcut && (
-                  <span className="rounded border border-border-subtle bg-surface-hover px-1.5 py-0.5 font-mono text-[12px] text-faint">
+                  <span className="rounded-sm border border-border-subtle bg-surface-hover px-1.5 py-0.5 font-mono text-[12px] text-faint">
                     {item.shortcut}
                   </span>
                 )}
@@ -317,7 +320,7 @@ export function CommandPalette() {
             placeholder={t("commandPalette.placeholder")}
             className="flex-1 bg-transparent text-[14px] text-primary placeholder:text-faint"
           />
-          <span className="rounded border border-border-subtle bg-surface-hover px-1.5 py-0.5 font-mono text-[12px] text-faint">
+          <span className="rounded-sm border border-border-subtle bg-surface-hover px-1.5 py-0.5 font-mono text-[12px] text-faint">
             ESC
           </span>
         </div>
@@ -338,19 +341,19 @@ export function CommandPalette() {
 
         <div className="flex items-center gap-3 border-t border-border-subtle bg-bg-secondary px-4 py-2 text-[12px] text-muted">
           <span className="flex items-center gap-1">
-            <kbd className="rounded border border-border-subtle bg-surface px-1 font-mono text-[12px]">
+            <kbd className="rounded-sm border border-border-subtle bg-surface px-1 font-mono text-[12px]">
               ↑↓
             </kbd>
             {t("commandPalette.hints.navigate")}
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="rounded border border-border-subtle bg-surface px-1 font-mono text-[12px]">
+            <kbd className="rounded-sm border border-border-subtle bg-surface px-1 font-mono text-[12px]">
               ↵
             </kbd>
             {t("commandPalette.hints.open")}
           </span>
           <span className="ml-auto flex items-center gap-1">
-            <kbd className="rounded border border-border-subtle bg-surface px-1 font-mono text-[12px]">
+            <kbd className="rounded-sm border border-border-subtle bg-surface px-1 font-mono text-[12px]">
               ⌘K
             </kbd>
             {t("commandPalette.hints.toggle")}

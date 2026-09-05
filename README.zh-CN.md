@@ -60,16 +60,16 @@ SkillHarbor（技能港）是一个桌面应用：把所有 AI Agent 技能集�
 前置依赖：Node.js 20.19+ 或 22.12+、Rust 1.77.2 或更高，以及当前系统的 [Tauri 依赖](https://v2.tauri.app/start/prerequisites/)。
 
 ```bash
-npm install
-npm run lint    # 前端 lint
-npm run build   # 前端构建
-npm run tauri:dev
+pnpm install
+pnpm run lint    # 前端 lint
+pnpm run build   # 前端构建
+pnpm run tauri:dev
 ```
 
 打包应用：
 
 ```bash
-npm run workbench:build
+pnpm run workbench:build
 ```
 
 ## License

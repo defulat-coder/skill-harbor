@@ -2,6 +2,7 @@ import { Disclosure } from "../components/ui/Disclosure";
 import { LoadingState } from "../components/ui/LoadingState";
 import { Button } from "../components/ui/Button";
 import { PageHeader } from "../components/ui/PageHeader";
+import { GithubIcon } from "../components/GithubIcon";
 import styles from "./Backup.module.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -11,7 +12,6 @@ import {
   Cloud,
   Copy,
   ExternalLink,
-  Github,
   History,
   Loader2,
   Pencil,
@@ -285,11 +285,18 @@ export function Backup() {
     }
   };
 
+  const isRepo = gitStatus?.is_repo ?? false;
+  const [prevIsRepo, setPrevIsRepo] = useState(isRepo);
+  if (prevIsRepo !== isRepo) {
+    setPrevIsRepo(isRepo);
+    if (!isRepo) setVersions([]);
+  }
+
   useEffect(() => {
     if (gitStatus?.is_repo) {
-      void refreshVersions();
-    } else {
-      setVersions([]);
+      // Defer so the loading-flag resets inside refreshVersions() don't run
+      // synchronously in the effect body.
+      void Promise.resolve().then(refreshVersions);
     }
   }, [gitStatus?.is_repo, refreshVersions]);
 
@@ -700,7 +707,7 @@ export function Backup() {
       await Promise.all([refreshGitStatus(), refreshVersions(), refreshManagedSkills(), refreshPresets()]);
       setRestoreVersionTag(null);
     } catch (error) {
-      throw new Error(mapGitError(error));
+      throw new Error(mapGitError(error), { cause: error });
     } finally {
       setRestoringVersionTag(null);
     }
@@ -733,7 +740,7 @@ export function Backup() {
       toast.success(t("settings.gitDisconnected"));
       await refreshGitStatus();
     } catch (error) {
-      throw new Error(mapGitError(error));
+      throw new Error(mapGitError(error), { cause: error });
     } finally {
       setLoading(null);
     }
@@ -879,7 +886,7 @@ export function Backup() {
                     onClick={() => setReconnectMode(true)}
                     disabled={operationBusy}
                   >
-                    <Github className="h-3.5 w-3.5" />
+                    <GithubIcon className="h-3.5 w-3.5" />
                     {t("backup.github.reconnect")}
                   </Button>
                 )}
@@ -1005,7 +1012,7 @@ export function Backup() {
           {(reconnectMode || (!gitStatus?.remote_url && !remoteConfig)) && (
             <section className={styles.section}>
               <div className="mb-3 flex items-center gap-2">
-                <Github className="h-4 w-4 text-muted" />
+                <GithubIcon className="h-4 w-4 text-muted" />
                 <h2 className="text-[14px] font-semibold text-secondary">
                   {reconnectMode ? t("backup.github.reconnectTitle") : t("backup.github.title")}
                 </h2>
@@ -1058,7 +1065,7 @@ export function Backup() {
                       disabled={operationBusy}
                       variant="primary"
                     >
-                      {loading === "github" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Github className="h-3.5 w-3.5" />}
+                      {loading === "github" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GithubIcon className="h-3.5 w-3.5" />}
                       {loading === "github" ? t("backup.github.connecting") : t("backup.github.deviceSignIn")}
                     </Button>
                     <label htmlFor="backup-github-repo" className={styles.label}>{t("backup.github.repoLabel")}</label>

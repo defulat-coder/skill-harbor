@@ -6,13 +6,13 @@ import { createHash } from 'node:crypto';
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const runtime = join(root, 'search-runtime');
 if (Number(process.versions.node.split('.')[0]) < 22) throw new Error('Local search requires Node.js 22 or later to build.');
-const lock = await readFile(join(runtime, 'package-lock.json'));
+const lock = await readFile(join(runtime, 'pnpm-lock.yaml'));
 const fingerprint = `${process.platform}-${process.arch}-${createHash('sha256').update(lock).digest('hex')}`;
 const marker = join(runtime, 'node_modules/.workbench-runtime');
 let installed = false;
 try { installed = await readFile(marker, 'utf8') === fingerprint; } catch { /* First preparation. */ }
 if (!installed) {
-  const install = spawnSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund'], { cwd: runtime, stdio: 'inherit' });
+  const install = spawnSync(process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm', ['install', '--frozen-lockfile', '--ignore-scripts'], { cwd: runtime, stdio: 'inherit' });
   if (install.status !== 0) throw new Error('Could not install the local search runtime.');
   await writeFile(marker, fingerprint);
 }

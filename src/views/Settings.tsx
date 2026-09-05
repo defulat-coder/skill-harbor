@@ -127,7 +127,7 @@ function SortableAgentCard({
       {...attributes}
       {...listeners}
       onClick={(e) => e.stopPropagation()}
-      className="mt-0.5 flex min-h-6 min-w-6 shrink-0 cursor-grab items-center justify-center rounded text-faint transition-colors hover:text-muted active:cursor-grabbing"
+      className="mt-0.5 flex min-h-6 min-w-6 shrink-0 cursor-grab items-center justify-center rounded-sm text-faint transition-colors hover:text-muted active:cursor-grabbing"
       title={dragLabel}
       aria-label={dragLabel}
     >
@@ -434,8 +434,6 @@ export function Settings() {
   }, []);
 
   useEffect(() => {
-    setSettingsLoading(true);
-    setSettingsLoadError("");
     const reads: Promise<unknown>[] = [];
     const readSetting = (key: string) => {
       const request = api.getSettings(key).catch((e) => {
@@ -956,10 +954,9 @@ export function Settings() {
     () => tools.filter((tool) => tool.installed),
     [tools],
   );
-  const enabledTools = useMemo(
-    () => installedTools.filter((tool) => tool.enabled),
-    [installedTools],
-  );
+  // No manual memoization here: the compiler could not preserve this useMemo,
+  // and it memoizes the filter itself.
+  const enabledTools = installedTools.filter((tool) => tool.enabled);
   const autoUpdateIntervalOptions = [
     { value: "off", label: t("settings.autoUpdate.intervalOff") },
     { value: "1h", label: t("settings.autoUpdate.interval1h") },
@@ -1126,7 +1123,7 @@ export function Settings() {
               disabled={pathSaving}
               value={editingPathValue}
               onChange={(e) => setEditingPathValue(e.target.value)}
-              className="h-7 min-w-0 flex-1 rounded border border-border-subtle bg-background px-1.5 text-[12px] font-mono text-secondary"
+              className="h-7 min-w-0 flex-1 rounded-sm border border-border-subtle bg-background px-1.5 text-[12px] font-mono text-secondary"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSavePath();
@@ -1197,7 +1194,7 @@ export function Settings() {
               value={editingProjectPathValue}
               onChange={(e) => setEditingProjectPathValue(e.target.value)}
               placeholder={t("settings.projectSkillsPathPlaceholder")}
-              className="h-7 min-w-0 flex-1 rounded border border-border-subtle bg-background px-1.5 text-[12px] font-mono text-secondary"
+              className="h-7 min-w-0 flex-1 rounded-sm border border-border-subtle bg-background px-1.5 text-[12px] font-mono text-secondary"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSaveProjectPath();
@@ -1314,7 +1311,7 @@ export function Settings() {
           {activeSection !== "runner" && settingsLoadError && (
             <div role="alert" className={styles.error}>
               {settingsLoadError}
-              <Button onClick={() => setLoadAttempt((n) => n + 1)}>
+              <Button onClick={() => { setSettingsLoading(true); setSettingsLoadError(""); setLoadAttempt((n) => n + 1); }}>
                 重新读取
               </Button>
             </div>

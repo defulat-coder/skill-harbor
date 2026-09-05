@@ -1,7 +1,7 @@
 import { getErrorMessage } from "../lib/error";
 import { DetailSheet } from "./DetailSheet";
 import { Button } from "./ui/Button";
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { PresetIconPicker } from "./PresetIconPicker";
 import { PRESET_ICON_OPTIONS } from "../lib/presetIcons";
@@ -28,12 +28,18 @@ export function RenamePresetDialog({
   const [error, setError] = useState("");
   const pending = useRef(false);
 
-  useEffect(() => {
+  const [prevProps, setPrevProps] = useState({ open, currentName, currentIcon });
+  if (
+    prevProps.open !== open ||
+    prevProps.currentName !== currentName ||
+    prevProps.currentIcon !== currentIcon
+  ) {
+    setPrevProps({ open, currentName, currentIcon });
     if (open) {
       setName(currentName);
       setIcon(currentIcon || PRESET_ICON_OPTIONS[0].key);
     }
-  }, [open, currentIcon, currentName]);
+  }
 
 
 

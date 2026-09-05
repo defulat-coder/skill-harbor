@@ -15,10 +15,15 @@ export function MarketChinesePreview({ source, skillId }: { source: string; skil
   const [error, setError] = useState("");
   const request = useRef(0);
   const slowTimer = useRef<number | null>(null);
+  const scopeKey = `${source}${skillId}`;
+  const [prevScopeKey, setPrevScopeKey] = useState(scopeKey);
+  if (prevScopeKey !== scopeKey) {
+    setPrevScopeKey(scopeKey);
+    setContent(""); setError(""); setBusy(false); setSlow(false); setOpen(false);
+  }
   useEffect(() => {
     request.current += 1;
     if (slowTimer.current !== null) { window.clearTimeout(slowTimer.current); slowTimer.current = null; }
-    setContent(""); setError(""); setBusy(false); setSlow(false); setOpen(false);
     return () => {
       request.current += 1;
       if (slowTimer.current !== null) { window.clearTimeout(slowTimer.current); slowTimer.current = null; }

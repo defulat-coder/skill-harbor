@@ -523,7 +523,7 @@ pub async fn export_logs_zip(
 
         let file = std::fs::File::create(&zip_path).map_err(AppError::io)?;
         let mut zip = zip::ZipWriter::new(file);
-        let opts: zip::write::FileOptions<()> = zip::write::FileOptions::default()
+        let opts: zip::write::SimpleFileOptions = zip::write::SimpleFileOptions::default()
             .compression_method(zip::CompressionMethod::Deflated)
             .unix_permissions(0o644);
 

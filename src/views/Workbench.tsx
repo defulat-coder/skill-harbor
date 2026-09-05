@@ -90,20 +90,31 @@ export function Workbench() {
       if (request === projectRequest.current) setBusy(false);
     }
   }, [id]);
+  const wantsWizard = searchParams.get("new");
+  const [prevWantsWizard, setPrevWantsWizard] = useState(wantsWizard);
+  if (prevWantsWizard !== wantsWizard) {
+    setPrevWantsWizard(wantsWizard);
+    if (wantsWizard) setWizard(true);
+  }
   useEffect(() => {
     if (searchParams.get("new")) {
-      setWizard(true);
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
-  useEffect(() => {
+  const [prevId, setPrevId] = useState(id);
+  if (prevId !== id) {
+    setPrevId(id);
     setTab("skills");
     setSelected(null);
     setSkills([]);
     setBindings([]);
     setQuery("");
     setError("");
-    void refreshProject();
+  }
+  useEffect(() => {
+    // Defer so the busy-flag set inside refreshProject() doesn't run
+    // synchronously in the effect body.
+    void Promise.resolve().then(refreshProject);
     if (id)
       try {
         localStorage.setItem("workbench.recentProject", id);
@@ -117,10 +128,17 @@ export function Workbench() {
         /* optional preference */
       }
   }, [id, refreshProject]);
-  useEffect(() => {
-    let current = true;
+  const [prevDocSelection, setPrevDocSelection] = useState<{
+    id: string | undefined;
+    selected: ProjectSkill | null;
+  } | null>(null);
+  if (!prevDocSelection || prevDocSelection.id !== id || prevDocSelection.selected !== selected) {
+    setPrevDocSelection({ id, selected });
     setDocument("");
     setDocumentError("");
+  }
+  useEffect(() => {
+    let current = true;
     if (selected && id)
       api
         .getProjectSkillDocument(id, selected.relative_path, selected.agent)
@@ -755,9 +773,13 @@ function RunPanel({
     } finally { setHistoryLoading(false); }
   }, [projectId]);
   useEffect(() => {
-    void refresh()
-      .then((items) => setSelected(items[0]?.id || null))
-      .catch((e) => setError(errText(e)));
+    // Defer so the loading-flag set inside refresh() doesn't run
+    // synchronously in the effect body.
+    void Promise.resolve().then(() =>
+      refresh()
+        .then((items) => setSelected(items[0]?.id || null))
+        .catch((e) => setError(errText(e))),
+    );
     void wb
       .runnerStatus()
       .then(setRunner)
@@ -772,6 +794,15 @@ function RunPanel({
     }, 1500);
     return () => clearInterval(timer);
   }, [active, refresh]);
+  const logKey = selected ? `${selected}${active}${currentStatus ?? ""}` : null;
+  const [prevLogKey, setPrevLogKey] = useState(logKey);
+  if (prevLogKey !== logKey) {
+    setPrevLogKey(logKey);
+    if (logKey !== null) {
+      setLog("");
+      setLogLoading(true);
+    }
+  }
   useEffect(() => {
     if (!selected) return;
     let current = true;
@@ -784,8 +815,6 @@ function RunPanel({
         .catch((e) => {
           if (current) setError(errText(e));
         });
-    setLog("");
-    setLogLoading(true);
     void read().finally(() => { if (current) setLogLoading(false); });
     const timer = active ? setInterval(() => void read(), 1500) : undefined;
     return () => {

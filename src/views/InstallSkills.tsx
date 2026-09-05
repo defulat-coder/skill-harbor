@@ -8,11 +8,11 @@ import { DetailSheet } from "../components/DetailSheet";
 import { deployWorkbenchSkills } from "../lib/workbench";
 import { invoke } from "@tauri-apps/api/core";
 import { MarketChinesePreview } from "../components/MarketChinesePreview";
+import { GithubIcon } from "../components/GithubIcon";
 import { useState, useEffect, useCallback, useRef, useMemo, useDeferredValue } from "react";
 import {
   DownloadCloud,
   UploadCloud,
-  Github,
   Box,
   Plus,
   FolderUp,
@@ -119,7 +119,9 @@ export function InstallSkills() {
   const [debouncedMarketQuery, setDebouncedMarketQuery] = useState("");
   const deferredMarketQuery = useDeferredValue(marketQuery);
   const managedSkillsRef = useRef(managedSkills);
-  managedSkillsRef.current = managedSkills;
+  useEffect(() => {
+    managedSkillsRef.current = managedSkills;
+  }, [managedSkills]);
 
   const goToSkill = useCallback((skillName: string) => {
     // Use ref to get the latest managedSkills after refresh
@@ -186,12 +188,14 @@ export function InstallSkills() {
     marketSkillsLengthRef.current = marketSkills.length;
   }, [marketSkills.length]);
 
-  useEffect(() => {
+  const [prevSearchParams, setPrevSearchParams] = useState<URLSearchParams | null>(null);
+  if (prevSearchParams !== searchParams) {
+    setPrevSearchParams(searchParams);
     const tab = searchParams.get("tab");
     if (tab === "market" || tab === "local" || tab === "git") {
       setActiveTab(tab);
     }
-  }, [searchParams]);
+  }
 
   const switchTab = (tab: "market" | "local" | "git") => {
     setActiveTab(tab);
@@ -677,7 +681,7 @@ export function InstallSkills() {
           {[
             { id: "market" as const, label: t("install.browseMarket"), icon: Box },
             { id: "local" as const, label: t("install.localInstall"), icon: UploadCloud },
-            { id: "git" as const, label: t("install.gitInstall"), icon: Github },
+            { id: "git" as const, label: t("install.gitInstall"), icon: GithubIcon },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -830,7 +834,7 @@ export function InstallSkills() {
                         <div className="flex flex-wrap items-center gap-1">
                           <span className={styles.contributor}>@{skill.source}</span>
                           {marketTab === "alltime" && skill.installs > 0 && (
-                            <span className="inline-flex items-center gap-1 rounded border border-border-subtle bg-background px-1.5 py-0.5 text-[13px] leading-4 text-muted">
+                            <span className="inline-flex items-center gap-1 rounded-sm border border-border-subtle bg-background px-1.5 py-0.5 text-[13px] leading-4 text-muted">
                               <DownloadCloud className="h-3 w-3" />
                               {skill.installs >= 1_000_000
                                 ? `${(skill.installs / 1_000_000).toFixed(1)}M`
@@ -1059,7 +1063,7 @@ export function InstallSkills() {
                                         (e.target as HTMLInputElement).blur();
                                       }
                                     }}
-                                    className="min-w-0 max-w-[220px] rounded border border-border bg-surface px-1.5 py-0.5 text-[13px] font-semibold text-secondary"
+                                    className="min-w-0 max-w-[220px] rounded-sm border border-border bg-surface px-1.5 py-0.5 text-[13px] font-semibold text-secondary"
                                   />
                                 ) : (
                                   <h3 className="truncate text-[13px] font-semibold text-secondary">
@@ -1071,7 +1075,7 @@ export function InstallSkills() {
                                     onClick={() =>
                                       setRenameEditing((prev) => ({ ...prev, [group.name]: group.name }))
                                     }
-                                    className="shrink-0 rounded p-0.5 text-muted transition-colors hover:bg-surface-hover hover:text-secondary"
+                                    className="shrink-0 rounded-sm p-0.5 text-muted transition-colors hover:bg-surface-hover hover:text-secondary"
                                     title={t("install.scan.rename")}
                                   >
                                     <Pencil className="h-3 w-3" />
@@ -1094,7 +1098,7 @@ export function InstallSkills() {
 
                               {primaryLocation ? (
                                 <div className="flex min-w-0 items-center gap-2">
-                                  <span className="inline-flex shrink-0 rounded border border-border-subtle bg-surface px-1.5 py-px text-[13px] font-medium text-tertiary">
+                                  <span className="inline-flex shrink-0 rounded-sm border border-border-subtle bg-surface px-1.5 py-px text-[13px] font-medium text-tertiary">
                                     {primaryLocation.tool}
                                   </span>
                                   <code className="block min-w-0 truncate text-[13px] text-tertiary">
@@ -1123,7 +1127,7 @@ export function InstallSkills() {
                               <div className="space-y-1">
                                 {otherLocations.map((location) => (
                                   <div key={location.id} className="flex min-w-0 items-center gap-2">
-                                    <span className="inline-flex shrink-0 rounded border border-border-subtle bg-surface px-1.5 py-px text-[13px] font-medium text-tertiary">
+                                    <span className="inline-flex shrink-0 rounded-sm border border-border-subtle bg-surface px-1.5 py-px text-[13px] font-medium text-tertiary">
                                       {location.tool}
                                     </span>
                                     <code className="block min-w-0 truncate text-[13px] text-muted">
@@ -1149,7 +1153,7 @@ export function InstallSkills() {
         <div className={styles.sourceContent}>
           <div className={`app-panel p-5 ${styles.gitForm}`}>
             <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface-hover">
-              <Github className="h-5 w-5 text-tertiary" />
+              <GithubIcon className="h-5 w-5 text-tertiary" />
             </div>
             <h2 className="mb-1 text-[14px] font-semibold text-primary">{t("install.gitTitle")}</h2>
             <p className="mb-4 text-[13px] text-muted">{t("install.gitDesc")}</p>

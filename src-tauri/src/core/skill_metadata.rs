@@ -56,7 +56,7 @@ fn parse_frontmatter(content: &str) -> SkillMeta {
     let rest = &trimmed[3..];
     if let Some(end) = rest.find("---") {
         let yaml_str = &rest[..end];
-        if let Ok(yaml) = serde_yaml::from_str::<serde_yaml::Value>(yaml_str) {
+        if let Ok(yaml) = serde_yaml_ng::from_str::<serde_yaml_ng::Value>(yaml_str) {
             let name = yaml
                 .get("name")
                 .and_then(|v| v.as_str())

@@ -200,7 +200,7 @@ pub fn list_staging_refs(repo: &Repository) -> Vec<(String, String, Oid)> {
     for prefix in [STAGING_REF_PREFIX, LEGACY_STAGING_REF_PREFIX] {
         if let Ok(refs) = repo.references_glob(&format!("{prefix}*")) {
             for r in refs.flatten() {
-                let Some(name) = r.name() else { continue };
+                let Ok(name) = r.name() else { continue };
                 let Some(rest) = name.strip_prefix(prefix) else { continue };
                 let Some((attempt, skill_id)) = rest.split_once('/') else { continue };
                 if out.iter().any(|(a, s, _)| a == attempt && s == skill_id) {
@@ -222,7 +222,7 @@ pub fn list_conflict_refs(repo: &Repository) -> Vec<(String, Oid)> {
     for prefix in [CONFLICT_REF_PREFIX, LEGACY_CONFLICT_REF_PREFIX] {
         if let Ok(refs) = repo.references_glob(&format!("{prefix}*")) {
             for r in refs.flatten() {
-                let Some(name) = r.name() else { continue };
+                let Ok(name) = r.name() else { continue };
                 let Some(skill_id) = name.strip_prefix(prefix) else { continue };
                 if out.iter().any(|(id, _)| id == skill_id) {
                     continue;

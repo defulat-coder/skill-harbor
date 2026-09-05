@@ -99,7 +99,7 @@ fn parse_response(stdout: &[u8]) -> Result<Value, AppError> {
 async fn execute(app: &tauri::AppHandle, root: &Path, op: &str, query: Option<&str>) -> Result<Value, AppError> {
     let runtime = runtime_path(app)?;
     let executable = runtime.join("bin").join(if cfg!(windows) { "node.exe" } else { "node" });
-    if !executable.is_file() { return Err(AppError::not_found("本地检索运行环境缺失，请运行 npm run search:prepare 后重新构建")); }
+    if !executable.is_file() { return Err(AppError::not_found("本地检索运行环境缺失，请运行 pnpm run search:prepare 后重新构建")); }
     let mut command = tokio::process::Command::new(executable);
     command.arg(runtime.join("search.mjs")).current_dir(&runtime)
         .stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).kill_on_drop(true);

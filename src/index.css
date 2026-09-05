@@ -1,6 +1,36 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Tailwind 4 theme: maps utilities onto the runtime --ds-* and --color-* tokens
+   (design-system.css flips them for dark mode). Inline so utilities embed the
+   var() references instead of emitting resolved values. */
+@theme inline {
+  --color-background: var(--color-bg);
+  --color-bg-secondary: var(--color-bg-secondary);
+  --color-surface: var(--color-surface);
+  --color-surface-hover: var(--color-surface-hover);
+  --color-surface-active: var(--color-surface-active);
+  --color-border: var(--color-border);
+  --color-border-subtle: var(--color-border-subtle);
+  --color-border-faint: var(--color-border-faint);
+  --color-accent: var(--color-accent);
+  --color-accent-light: var(--color-accent-light);
+  --color-accent-dark: var(--color-accent-dark);
+  --color-accent-bg: var(--color-accent-bg);
+  --color-accent-border: var(--color-accent-border);
+  --color-danger: var(--color-danger);
+  --color-danger-bg: var(--color-danger-bg);
+  --color-primary: var(--color-text-primary);
+  --color-secondary: var(--color-text-secondary);
+  --color-tertiary: var(--color-text-tertiary);
+  --color-muted: var(--color-text-muted);
+  --color-faint: var(--color-text-faint);
+  --shadow-card: var(--shadow-card);
+  --shadow-card-hover: var(--shadow-card-hover);
+  --font-sans: "Albert Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "SF Mono", "Fira Code", "JetBrains Mono", Menlo, Monaco, monospace;
+}
 
 @layer base {
   /* Light theme (default): legacy palette converged onto the shared --ds-* tokens. */
@@ -124,7 +154,7 @@
   }
 
   .app-segmented-button {
-    @apply rounded-md px-3 py-2 text-[13px] font-medium text-muted transition-colors outline-none hover:text-tertiary;
+    @apply rounded-md px-3 py-2 text-[13px] font-medium text-muted transition-colors outline-hidden hover:text-tertiary;
   }
 
   .app-segmented-button-active {
@@ -132,7 +162,7 @@
   }
 
   .app-button-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-border-subtle bg-surface px-4 py-2.5 text-[13px] font-medium text-secondary transition-colors outline-none hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-border-subtle bg-surface px-4 py-2.5 text-[13px] font-medium text-secondary transition-colors outline-hidden hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .app-badge {

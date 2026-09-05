@@ -332,10 +332,14 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
   }, [currentToolKey, t]);
 
   const loadedAgentKeyRef = useRef<string | null>(null);
+  const [prevToolKey, setPrevToolKey] = useState(currentToolKey);
+  if (prevToolKey !== currentToolKey) {
+    setPrevToolKey(currentToolKey);
+    if (!currentToolKey) setLocalSkills([]);
+  }
   useEffect(() => {
     if (!currentToolKey) {
       loadedAgentKeyRef.current = null;
-      setLocalSkills([]);
       return;
     }
     if (loadedAgentKeyRef.current === currentToolKey) return;
@@ -350,12 +354,15 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
   // Load real on-disk skill counts for every installed agent while the overview
   // is shown (#287). Scoped to the overview (currentToolKey === null); the
   // detail view derives its own count from `localSkills`.
+  const overviewEmpty = !currentToolKey && installedTools.length === 0;
+  const [prevOverviewEmpty, setPrevOverviewEmpty] = useState(overviewEmpty);
+  if (prevOverviewEmpty !== overviewEmpty) {
+    setPrevOverviewEmpty(overviewEmpty);
+    if (overviewEmpty) setLocalCountByAgent({});
+  }
   useEffect(() => {
     if (currentToolKey) return;
-    if (installedTools.length === 0) {
-      setLocalCountByAgent({});
-      return;
-    }
+    if (installedTools.length === 0) return;
     const requestId = ++overviewCountsRef.current;
     void (async () => {
       const entries = await Promise.all(
@@ -387,13 +394,17 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     // the overview counts re-scan and stay accurate (#287).
   }, [currentToolKey, installedTools, managedSkills]);
 
-  useEffect(() => {
-    localDetailRequestRef.current += 1;
+  const [prevDetailKey, setPrevDetailKey] = useState(currentTool?.key);
+  if (prevDetailKey !== currentTool?.key) {
+    setPrevDetailKey(currentTool?.key);
     setLocalDetailSkill(null);
     setUploadConfirmSkill(null);
     setPullConfirmSkill(null);
     setDeleteLocalConfirmSkill(null);
     setTagFilters(new Set());
+  }
+  useEffect(() => {
+    localDetailRequestRef.current += 1;
   }, [currentTool?.key]);
 
   const agentSkills = useMemo(
@@ -420,11 +431,10 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
   // otherwise a stale filter silently hides everything. An empty list is also
   // what a failed load and the overview leave behind (`setLocalSkills([])`), and
   // that says nothing about which tags are valid — wait for a real list.
-  useEffect(() => {
-    if (localSkills.length === 0) return;
+  if (localSkills.length > 0) {
     const hasUntagged = localSkills.some((skill) => skill.tags.length === 0);
     setTagFilters((prev) => pruneStaleTagFilters(prev, allLocalTags, hasUntagged));
-  }, [allLocalTags, localSkills]);
+  }
 
   const visibleLocalSkills = useMemo(() => {
     const q = search.trim().toLowerCase();
