@@ -128,8 +128,8 @@ export function PresetBar({
               key={preset.id}
               onClick={() => {
                 if (busy) return;
-                if (s.status === "active") handleDeactivate(preset);
-                else handleActivate(preset);
+                if (s.status === "active") void handleDeactivate(preset);
+                else void handleActivate(preset);
               }}
               disabled={busy}
               title={preset.name}

@@ -23,7 +23,7 @@ export function DetailSheet({ open, title, description, meta, onClose, children,
   const titleId = useId();
   useEffect(() => {
     const dialog = ref.current;
-    if (!dialog) return;
+    if (!dialog) return undefined;
     let cancelled = false;
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (open) {

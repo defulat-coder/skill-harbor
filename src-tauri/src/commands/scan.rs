@@ -105,7 +105,7 @@ pub async fn import_existing_skill(
                 return Ok(());
             }
 
-            let now = chrono::Utc::now().timestamp_millis();
+            let now = jiff::Timestamp::now().as_millisecond();
             let id = uuid::Uuid::new_v4().to_string();
 
             let record = crate::core::skill_store::SkillRecord {
@@ -166,7 +166,7 @@ pub async fn import_all_discovered(store: State<'_, Arc<SkillStore>>) -> Result<
                             continue;
                         }
 
-                        let now = chrono::Utc::now().timestamp_millis();
+                        let now = jiff::Timestamp::now().as_millisecond();
                         let id = uuid::Uuid::new_v4().to_string();
                         let record = crate::core::skill_store::SkillRecord {
                             id: id.clone(),

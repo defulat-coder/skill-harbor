@@ -87,6 +87,15 @@ function formatBytes(bytes: number) {
   return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
+function isSyncConflictError(error: unknown) {
+  const message = getErrorMessage(error, "");
+  return message.includes("SYNC_CONFLICT") || message.includes("CONFLICT");
+}
+
+function sleep(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
 export function Backup() {
   const { t } = useTranslation();
   const { managedSkills, refreshManagedSkills, refreshPresets } = useApp();
@@ -142,11 +151,6 @@ export function Backup() {
     (error: unknown) => mapGitErrorMessage(error, t),
     [t],
   );
-
-  const isSyncConflictError = (error: unknown) => {
-    const message = getErrorMessage(error, "");
-    return message.includes("SYNC_CONFLICT") || message.includes("CONFLICT");
-  };
 
   const isRecoverableSetupError = (error: unknown) => {
     const message = getErrorMessage(error, "");
@@ -329,6 +333,7 @@ export function Backup() {
     }
     switch (mode) {
       case "loading":
+      default:
         return {
           icon: Loader2,
           title: t("backup.status.loading"),
@@ -645,8 +650,6 @@ export function Backup() {
       setLoading(null);
     }
   };
-
-  const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
   const handleDeviceFlow = async () => {
     if (operationBusy) return;

@@ -3,7 +3,8 @@
 //! crash-safe ref choreography and the startup recovery protocol.
 
 use anyhow::{Context, Result, bail};
-use git2::{Oid, Repository, Sort};
+use gix::ObjectId;
+use gix::bstr::ByteSlice;
 use std::collections::BTreeMap;
 use std::path::Path;
 
@@ -17,7 +18,7 @@ use super::treebuild::{TreeEdit, apply_tree_edits};
 use super::validate::{self, validate_merged_tree};
 use crate::core::skill_store::{PendingConflictRow, SkillStore};
 use crate::core::sync_metadata;
-use crate::core::{git_backup, repo_lock::RepoLock};
+use crate::core::{git_backup, gix_repo, repo_lock::RepoLock};
 
 /// Human-readable outcome of a sync merge (§4.5/§8). Returned to the
 /// frontend by the pull command; commit messages only carry the count line.
@@ -73,14 +74,9 @@ pub fn object_merge_pull_unlocked(store: &SkillStore, skills_dir: &Path) -> Resu
     let branch = git_backup::current_branch(skills_dir);
     git_backup::fetch_branch(skills_dir, &branch)?;
 
-    let repo = Repository::open(skills_dir).context("failed to open skills repository")?;
-    let ours = repo
-        .head()
-        .ok()
-        .and_then(|h| h.target())
-        .context("repository has no HEAD commit")?;
-    let theirs = repo
-        .refname_to_id(&format!("refs/remotes/origin/{branch}"))
+    let repo = gix_repo::open(skills_dir).context("failed to open skills repository")?;
+    let ours = gix_repo::head_oid(&repo)?;
+    let theirs = gix_repo::ref_oid(&repo, &format!("refs/remotes/origin/{branch}"))
         .with_context(|| format!("origin/{branch} not found after fetch"))?;
 
     if theirs == ours {
@@ -88,7 +84,8 @@ pub fn object_merge_pull_unlocked(store: &SkillStore, skills_dir: &Path) -> Resu
     }
     let base = repo
         .merge_base(ours, theirs)
-        .context("no common history with the remote (unrelated histories)")?;
+        .context("no common history with the remote (unrelated histories)")?
+        .detach();
     if base == theirs {
         return Ok(up_to_date_summary(&repo, store));
     }
@@ -236,19 +233,17 @@ pub fn object_merge_pull_unlocked(store: &SkillStore, skills_dir: &Path) -> Resu
         message.push('\n');
         message.push_str(line);
     }
-    let sig = repo
-        .signature()
-        .or_else(|_| git2::Signature::now("SkillHarbor", "skillharbor@local"))?;
-    let ours_commit = repo.find_commit(ours)?;
-    let theirs_commit = repo.find_commit(theirs)?;
-    let merge_commit = repo.commit(
-        None,
-        &sig,
-        &sig,
-        &message,
-        &merged_tree,
-        &[&ours_commit, &theirs_commit],
-    )?;
+    let sig = gix_repo::signature_or_fallback(&repo);
+    let merge_commit = repo
+        .new_commit_as(
+            sig.to_ref(&mut gix::date::parse::TimeBuf::default()),
+            sig.to_ref(&mut gix::date::parse::TimeBuf::default()),
+            &message,
+            merged_tree_oid,
+            [ours, theirs],
+        )?
+        .id()
+        .detach();
 
     // §5 steps 7'–11: applying marker, branch CAS, checkout, promote.
     finish_apply(&repo, &branch, ours, merge_commit, &merged_tree, &attempt_id)?;
@@ -277,48 +272,36 @@ pub fn object_merge_pull_unlocked(store: &SkillStore, skills_dir: &Path) -> Resu
 /// head), force the working tree onto the new commit (pre-checked — clean
 /// tree, no blockers), then promote staging refs and clear the marker.
 fn finish_apply(
-    repo: &Repository,
+    repo: &gix::Repository,
     branch: &str,
-    old_head: Oid,
-    new_head: Oid,
-    new_tree: &git2::Tree,
+    old_head: ObjectId,
+    new_head: ObjectId,
+    new_tree: &gix::Tree,
     attempt_id: &str,
 ) -> Result<()> {
     pending::write_ref(repo, REF_APPLYING, new_head, "object merge applying")?;
 
     let branch_ref = format!("refs/heads/{branch}");
-    repo.reference_matching(
-        &branch_ref,
-        new_head,
-        true,
-        old_head,
-        "skillharbor: object merge",
-    )
-    .context("branch moved while merging; aborting with no changes")?;
+    gix_repo::cas_ref(repo, &branch_ref, new_head, old_head, "skillharbor: object merge")
+        .context("branch moved while merging; aborting with no changes")?;
 
-    let mut checkout = git2::build::CheckoutBuilder::new();
-    checkout.force();
-    if let Err(e) = repo.checkout_tree(new_tree.as_object(), Some(&mut checkout)) {
+    if let Err(e) = gix_repo::checkout_tree_force(repo, new_tree.id().detach()) {
         // Roll the ref back and restore the (possibly partially checked-out)
         // working tree. The applying marker is only cleared once the
         // rollback checkout succeeded — otherwise it stays so the startup
         // recovery settles the working tree (§5 恢复协议).
-        let _ = repo.reference(&branch_ref, old_head, true, "object merge rollback");
-        let rolled_back = repo
-            .find_commit(old_head)
-            .and_then(|c| c.tree())
-            .and_then(|old_tree| {
-                let mut co = git2::build::CheckoutBuilder::new();
-                co.force();
-                repo.checkout_tree(old_tree.as_object(), Some(&mut co))
-            });
+        let _ = gix_repo::write_ref(repo, &branch_ref, old_head, "object merge rollback");
+        let rolled_back: Result<()> = (|| {
+            let old_tree = repo.find_commit(old_head)?.tree()?;
+            gix_repo::checkout_tree_force(repo, old_tree.id().detach())
+        })();
         match rolled_back {
             Ok(()) => pending::delete_ref(repo, REF_APPLYING),
             Err(rollback_err) => log::error!(
-                "object merge: rollback checkout also failed, leaving applying marker for startup recovery: {rollback_err}"
+                "object merge: rollback checkout also failed, leaving applying marker for startup recovery: {rollback_err:#}"
             ),
         }
-        return Err(anyhow::Error::from(e).context("checkout of merged tree failed; rolled back"));
+        return Err(e.context("checkout of merged tree failed; rolled back"));
     }
 
     pending::promote_staging(repo, attempt_id)?;
@@ -329,10 +312,10 @@ fn finish_apply(
 #[allow(clippy::too_many_arguments)]
 fn apply_fast_forward(
     store: &SkillStore,
-    repo: &Repository,
+    repo: &gix::Repository,
     branch: &str,
-    ours: Oid,
-    theirs: Oid,
+    ours: ObjectId,
+    theirs: ObjectId,
     ours_snap: &Snapshot,
     theirs_snap: &Snapshot,
     old_client_warning: Option<String>,
@@ -395,7 +378,7 @@ fn apply_fast_forward(
     })
 }
 
-fn up_to_date_summary(repo: &Repository, store: &SkillStore) -> MergeSummary {
+fn up_to_date_summary(repo: &gix::Repository, store: &SkillStore) -> MergeSummary {
     let pending_total = rebuild_pending_projection(repo, store).unwrap_or(0);
     MergeSummary {
         engine: "object".to_string(),
@@ -415,10 +398,10 @@ struct Violation {
 }
 
 fn check_old_client_writes(
-    repo: &Repository,
-    base: Oid,
-    ours: Oid,
-    theirs: Oid,
+    repo: &gix::Repository,
+    base: ObjectId,
+    ours: ObjectId,
+    theirs: ObjectId,
 ) -> Result<Option<String>> {
     let ours_violations = scan_old_client(repo, base, ours)?;
     let theirs_violations = scan_old_client(repo, base, theirs)?;
@@ -484,46 +467,59 @@ fn check_old_client_writes(
 
 /// Whether a tree carries the protocol marker, at either the current or the
 /// pre-rebrand path.
-fn tree_has_protocol_marker(tree: &git2::Tree) -> bool {
-    tree.get_path(Path::new(protocol::PROTOCOL_FILE_REL)).is_ok()
+fn tree_has_protocol_marker(tree: &gix::Tree) -> bool {
+    tree.lookup_entry_by_path(Path::new(protocol::PROTOCOL_FILE_REL))
+        .ok()
+        .flatten()
+        .is_some()
         || tree
-            .get_path(Path::new(protocol::LEGACY_PROTOCOL_FILE_REL))
-            .is_ok()
+            .lookup_entry_by_path(Path::new(protocol::LEGACY_PROTOCOL_FILE_REL))
+            .ok()
+            .flatten()
+            .is_some()
 }
 
-fn scan_old_client(repo: &Repository, base: Oid, tip: Oid) -> Result<Vec<Violation>> {
-    let mut walk = repo.revwalk()?;
-    walk.push(tip)?;
-    walk.hide(base)?;
+fn scan_old_client(repo: &gix::Repository, base: ObjectId, tip: ObjectId) -> Result<Vec<Violation>> {
     let mut out = Vec::new();
-    for oid in walk {
-        let commit = repo.find_commit(oid?)?;
+    for node in gix_repo::revwalk_topo(repo, tip, Some(base))? {
+        let commit = repo.find_commit(node.id)?;
         let tree = commit.tree()?;
         let has_marker = tree_has_protocol_marker(&tree);
-        let has_trailer = protocol::has_protocol_trailer(commit.message().unwrap_or_default());
+        let has_trailer =
+            protocol::has_protocol_trailer(commit.message_raw_sloppy().to_str().unwrap_or_default());
         if has_marker && !has_trailer {
             out.push(Violation {
-                sha: commit.id().to_string()[..7].to_string(),
-                author: commit.author().name().unwrap_or("unknown").to_string(),
-                time: chrono::DateTime::from_timestamp(commit.time().seconds(), 0)
-                    .map(|t| t.format("%Y-%m-%d %H:%M").to_string())
+                sha: node.id.to_string()[..7].to_string(),
+                author: commit
+                    .author()
+                    .ok()
+                    .and_then(|a| a.name.to_str().ok())
+                    .unwrap_or("unknown")
+                    .to_string(),
+                time: jiff::Timestamp::new(commit.time()?.seconds, 0)
+                    .ok()
+                    .map(|t| {
+                        t.to_zoned(jiff::tz::TimeZone::UTC)
+                            .strftime("%Y-%m-%d %H:%M")
+                            .to_string()
+                    })
                     .unwrap_or_default(),
-                double_parent: commit.parent_count() > 1,
+                double_parent: node.parents.len() > 1,
             });
         }
     }
     Ok(out)
 }
 
-fn scan_conflict_markers(repo: &Repository, snap: &Snapshot) -> Result<Vec<String>> {
+fn scan_conflict_markers(repo: &gix::Repository, snap: &Snapshot) -> Result<Vec<String>> {
     let mut hits = Vec::new();
     for skill in snap.skills.values() {
         let Some(content) = skill.content else { continue };
         let tree = repo.find_tree(content)?;
         for marker in snapshot::SKILL_DIR_MARKERS {
-            if let Some(entry) = tree.get_name(marker) {
-                if let Ok(blob) = repo.find_blob(entry.id()) {
-                    let content = blob.content();
+            if let Some(entry) = tree.find_entry(*marker) {
+                if let Ok(blob) = repo.find_blob(entry.object_id()) {
+                    let content = blob.data.as_slice();
                     if content.starts_with(b"<<<<<<< ")
                         || content
                             .windows(9)
@@ -543,24 +539,31 @@ fn scan_conflict_markers(repo: &Repository, snap: &Snapshot) -> Result<Vec<Strin
 /// Newest-first per-path info over `hide..tip`: which commit last touched a
 /// path, when, and by whom. Merge commits are diffed against their first
 /// parent (attribution approximation).
-fn touch_info_map(repo: &Repository, tip: Oid, hide: Oid) -> Result<BTreeMap<String, TouchInfo>> {
-    let mut walk = repo.revwalk()?;
-    walk.push(tip)?;
-    walk.hide(hide)?;
-    walk.set_sorting(Sort::TOPOLOGICAL)?;
+fn touch_info_map(
+    repo: &gix::Repository,
+    tip: ObjectId,
+    hide: ObjectId,
+) -> Result<BTreeMap<String, TouchInfo>> {
     let mut out: BTreeMap<String, TouchInfo> = BTreeMap::new();
-    for oid in walk {
-        let commit = repo.find_commit(oid?)?;
+    for node in gix_repo::revwalk_topo(repo, tip, Some(hide))? {
+        let commit = repo.find_commit(node.id)?;
         let tree = commit.tree()?;
-        let parent_tree = commit.parent(0).ok().and_then(|p| p.tree().ok());
-        let diff = repo.diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), None)?;
-        for delta in diff.deltas() {
-            for file in [delta.new_file(), delta.old_file()] {
-                let Some(path) = file.path().and_then(|p| p.to_str()) else { continue };
-                out.entry(path.to_string()).or_insert_with(|| TouchInfo {
-                    time: commit.time().seconds(),
-                    commit: commit.id().to_string(),
-                    author: commit.author().name().unwrap_or("").to_string(),
+        let parent_tree = node
+            .parents
+            .first()
+            .and_then(|p| repo.find_commit(*p).ok())
+            .and_then(|p| p.tree().ok());
+        for delta in gix_repo::tree_diff_paths(repo, parent_tree.as_ref(), &tree)? {
+            for path in [delta.new_path, delta.old_path].into_iter().flatten() {
+                out.entry(path).or_insert_with(|| TouchInfo {
+                    time: node.time,
+                    commit: node.id.to_string(),
+                    author: commit
+                        .author()
+                        .ok()
+                        .and_then(|a| a.name.to_str().ok())
+                        .unwrap_or("")
+                        .to_string(),
                 });
             }
         }
@@ -595,7 +598,7 @@ fn device_for_skill(
 // ── plan → tree edits ──
 
 fn plan_to_edits(
-    repo: &Repository,
+    repo: &gix::Repository,
     ours: &Snapshot,
     theirs: &Snapshot,
     plan: &MergePlan,
@@ -631,7 +634,7 @@ fn plan_to_edits(
             edits.insert(planned.meta.path.clone(), TreeEdit::PutTree { oid: content });
         }
         let bytes = sync_metadata::canonical_json_bytes(&planned.meta)?;
-        let blob = repo.blob(&bytes)?;
+        let blob = repo.write_blob(&bytes)?.detach();
         let unchanged = ours_skill.map(|o| o.meta_entry.oid == blob).unwrap_or(false);
         if !unchanged {
             edits.insert(
@@ -672,7 +675,7 @@ fn plan_to_edits(
         }
         None => {
             let bytes = protocol::protocol_file_bytes(&ProtocolFile::default())?;
-            let blob = repo.blob(&bytes)?;
+            let blob = repo.write_blob(&bytes)?.detach();
             edits.insert(
                 protocol::PROTOCOL_FILE_REL.to_string(),
                 TreeEdit::PutBlob { oid: blob, mode: 0o100644 },
@@ -742,20 +745,19 @@ fn pick_versioned(
 /// (necessarily untracked or ignored — tracked paths live in `ours`). A
 /// FORCE checkout would silently overwrite them, so the merge refuses.
 fn blocking_workdir_paths(
-    repo: &Repository,
+    repo: &gix::Repository,
     skills_dir: &Path,
-    ours_tree: &git2::Tree,
-    target_tree: &git2::Tree,
+    ours_tree: &gix::Tree,
+    target_tree: &gix::Tree,
 ) -> Result<Vec<String>> {
-    let diff = repo.diff_tree_to_tree(Some(ours_tree), Some(target_tree), None)?;
     let mut blockers = Vec::new();
-    for delta in diff.deltas() {
-        if delta.status() != git2::Delta::Added {
+    for delta in gix_repo::tree_diff_paths(repo, Some(ours_tree), target_tree)? {
+        if delta.kind != gix_repo::DiffKind::Added {
             continue;
         }
-        let Some(path) = delta.new_file().path() else { continue };
-        if skills_dir.join(path).exists() {
-            blockers.push(path.to_string_lossy().to_string());
+        let Some(path) = delta.new_path else { continue };
+        if skills_dir.join(&path).exists() {
+            blockers.push(path);
         }
     }
     Ok(blockers)
@@ -765,12 +767,8 @@ fn blocking_workdir_paths(
 
 /// Rebuild the pending_conflicts table from HEAD's trailer state plus the
 /// conflict refs. Returns the number of active pendings.
-pub fn rebuild_pending_projection(repo: &Repository, store: &SkillStore) -> Result<usize> {
-    let head = repo
-        .head()
-        .ok()
-        .and_then(|h| h.target())
-        .context("repository has no HEAD commit")?;
+pub fn rebuild_pending_projection(repo: &gix::Repository, store: &SkillStore) -> Result<usize> {
+    let head = gix_repo::head_oid(repo)?;
     let active: Vec<String> = pending::replay_trailers(repo, head, None)?
         .into_iter()
         .filter(|(_, s)| *s == TrailerState::Active)
@@ -795,7 +793,7 @@ pub fn rebuild_pending_projection(repo: &Repository, store: &SkillStore) -> Resu
                 detected_at: existing
                     .get(&id)
                     .map(|r| r.detected_at)
-                    .unwrap_or_else(|| chrono::Utc::now().timestamp_millis()),
+                    .unwrap_or_else(|| jiff::Timestamp::now().as_millisecond()),
             });
             continue;
         };
@@ -807,7 +805,7 @@ pub fn rebuild_pending_projection(repo: &Repository, store: &SkillStore) -> Resu
             detected_at: existing
                 .get(&id)
                 .map(|r| r.detected_at)
-                .unwrap_or_else(|| chrono::Utc::now().timestamp_millis()),
+                .unwrap_or_else(|| jiff::Timestamp::now().as_millisecond()),
         });
     }
     let total = rows.len();
@@ -826,16 +824,12 @@ pub fn remote_touches_pending(store: &SkillStore, skills_dir: &Path) -> Result<b
     if pending.is_empty() {
         return Ok(false);
     }
-    let repo = Repository::open(skills_dir)?;
+    let repo = gix_repo::open(skills_dir)?;
     let branch = git_backup::current_branch(skills_dir);
-    let Ok(theirs) = repo.refname_to_id(&format!("refs/remotes/origin/{branch}")) else {
+    let Ok(theirs) = gix_repo::ref_oid(&repo, &format!("refs/remotes/origin/{branch}")) else {
         return Ok(false); // no remote branch — nothing to touch anything
     };
-    let head = repo
-        .head()
-        .ok()
-        .and_then(|h| h.target())
-        .context("repository has no HEAD commit")?;
+    let head = gix_repo::head_oid(&repo)?;
     if theirs == head {
         return Ok(false);
     }
@@ -857,14 +851,15 @@ pub fn remote_touches_pending(store: &SkillStore, skills_dir: &Path) -> Result<b
 }
 
 /// The skill's path inside a pinned theirs commit, for display.
-pub(crate) fn theirs_skill_path(repo: &Repository, commit: Oid, skill_id: &str) -> Option<String> {
+pub(crate) fn theirs_skill_path(repo: &gix::Repository, commit: ObjectId, skill_id: &str) -> Option<String> {
     let tree = repo.find_commit(commit).ok()?.tree().ok()?;
     let entry = tree
-        .get_path(Path::new(&skill_meta_path(skill_id)))
-        .ok()?;
-    let blob = repo.find_blob(entry.id()).ok()?;
+        .lookup_entry_by_path(Path::new(&skill_meta_path(skill_id)))
+        .ok()
+        .flatten()?;
+    let blob = repo.find_blob(entry.object_id()).ok()?;
     let meta: crate::core::sync_metadata::SkillMetaFile =
-        serde_json::from_slice(blob.content()).ok()?;
+        serde_json::from_slice(&blob.data).ok()?;
     Some(meta.path)
 }
 
@@ -922,12 +917,8 @@ pub fn recover_on_startup(store: &SkillStore, skills_dir: &Path) {
 }
 
 fn recover_locked(store: &SkillStore, skills_dir: &Path) -> Result<()> {
-    let repo = Repository::open(skills_dir)?;
-    let head = repo
-        .head()
-        .ok()
-        .and_then(|h| h.target())
-        .context("repository has no HEAD commit")?;
+    let repo = gix_repo::open(skills_dir)?;
+    let head = gix_repo::head_oid(&repo)?;
 
     if let Some(applying) = pending::ref_target(&repo, REF_APPLYING) {
         let old_head = pending::ref_target(&repo, REF_PRE_MERGE);
@@ -966,7 +957,7 @@ fn recover_locked(store: &SkillStore, skills_dir: &Path) -> Result<()> {
         if let Some(pre) = pending::ref_target(&repo, REF_PRE_MERGE) {
             if let Ok(commit) = repo.find_commit(pre) {
                 let age_days =
-                    (chrono::Utc::now().timestamp() - commit.time().seconds()) / 86_400;
+                    (jiff::Timestamp::now().as_second() - commit.time()?.seconds) / 86_400;
                 if age_days > pending::PRE_MERGE_RETENTION_DAYS {
                     pending::delete_ref(&repo, REF_PRE_MERGE);
                 }
@@ -982,7 +973,7 @@ fn recover_locked(store: &SkillStore, skills_dir: &Path) -> Result<()> {
 /// the old one (§5 v3-R3 finding 2/3): if the tree was touched since the
 /// crash, snapshot it to a rescue commit + user-visible tag first; then
 /// finish checkout and step-11 cleanup.
-fn replay_interrupted_apply(repo: &Repository, old_head: Oid, head: Oid) -> Result<()> {
+fn replay_interrupted_apply(repo: &gix::Repository, old_head: ObjectId, head: ObjectId) -> Result<()> {
     settle_worktree_from(repo, old_head, head)?;
     pending::heal_conflict_refs(repo, head)?;
     pending::delete_ref(repo, REF_APPLYING);
@@ -994,42 +985,57 @@ fn replay_interrupted_apply(repo: &Repository, old_head: Oid, head: Oid) -> Resu
 /// force-checked-out directly; anything else — user edits or debris from a
 /// partial checkout — is preserved first in a rescue commit + user-visible
 /// snapshot tag. Never silently overwrites (§5 恢复不吞用户数据).
-fn settle_worktree_from(repo: &Repository, expected_clean: Oid, target: Oid) -> Result<()> {
+fn settle_worktree_from(repo: &gix::Repository, expected_clean: ObjectId, target: ObjectId) -> Result<()> {
     let expected_tree = repo.find_commit(expected_clean)?.tree()?;
-    let target_commit = repo.find_commit(target)?;
-    let target_tree = target_commit.tree()?;
+    let target_tree = repo.find_commit(target)?.tree()?;
 
     if !worktree_matches_tree(repo, &expected_tree, &target_tree)? {
-        let sig = repo
-            .signature()
-            .or_else(|_| git2::Signature::now("SkillHarbor", "skillharbor@local"))?;
-        let mut index = repo.index()?;
-        index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)?;
-        let rescue_tree = repo.find_tree(index.write_tree()?)?;
-        let rescue = repo.commit(
-            None,
-            &sig,
-            &sig,
-            &protocol::app_commit_message("rescue: working tree changed during interrupted sync"),
-            &rescue_tree,
-            &[&target_commit],
-        )?;
+        let sig = gix_repo::signature_or_fallback(repo);
+        // `git add -A && git write-tree` equivalent: every non-ignored file
+        // of the working tree, built from scratch.
+        let files = gix_repo::tree_from_workdir(repo)?;
+        let edits: BTreeMap<String, TreeEdit> = files
+            .into_iter()
+            .map(|(path, (mode, oid))| {
+                (path, TreeEdit::PutBlob { oid, mode: i32::from(mode) })
+            })
+            .collect();
+        let rescue_tree = apply_tree_edits(repo, None, &edits)?;
+        // `git add -A` also staged these files into the on-disk index; the
+        // force checkout below computes its deletions against that baseline,
+        // so a file that exists only in the workdir gets removed as well.
+        repo.index_from_tree(&rescue_tree)?
+            .write(Default::default())?;
+        let rescue = repo
+            .new_commit_as(
+                sig.to_ref(&mut gix::date::parse::TimeBuf::default()),
+                sig.to_ref(&mut gix::date::parse::TimeBuf::default()),
+                protocol::app_commit_message("rescue: working tree changed during interrupted sync"),
+                rescue_tree,
+                [target],
+            )?
+            .id()
+            .detach();
         let tag = format!(
             "sm-v-{}-{}",
-            chrono::Utc::now().format("%Y%m%d-%H%M%S"),
+            jiff::Timestamp::now()
+                .to_zoned(jiff::tz::TimeZone::UTC)
+                .strftime("%Y%m%d-%H%M%S"),
             &rescue.to_string()[..7]
         );
-        repo.tag_lightweight(&tag, &repo.find_object(rescue, None)?, true)?;
+        repo.tag_reference(
+            &tag,
+            rescue,
+            gix::refs::transaction::PreviousValue::Any,
+        )?;
         log::warn!("merge recovery: working tree preserved in rescue snapshot {tag}");
     }
 
-    let mut checkout = git2::build::CheckoutBuilder::new();
-    checkout.force();
-    repo.checkout_tree(target_tree.as_object(), Some(&mut checkout))?;
+    gix_repo::checkout_tree_force(repo, target_tree.id().detach())?;
     Ok(())
 }
 
-fn settle_worktree(repo: &Repository, target: Oid) -> Result<()> {
+fn settle_worktree(repo: &gix::Repository, target: ObjectId) -> Result<()> {
     settle_worktree_from(repo, target, target)
 }
 
@@ -1037,23 +1043,9 @@ fn settle_worktree(repo: &Repository, target: Oid) -> Result<()> {
 /// paths that the replayed checkout would touch (union of both trees, §11-6)
 /// so unrelated untracked/ignored files don't trigger a rescue snapshot.
 fn worktree_matches_tree(
-    repo: &Repository,
-    expected: &git2::Tree,
-    target: &git2::Tree,
+    repo: &gix::Repository,
+    expected: &gix::Tree,
+    target: &gix::Tree,
 ) -> Result<bool> {
-    let mut opts = git2::DiffOptions::new();
-    opts.include_untracked(true)
-        .recurse_untracked_dirs(true)
-        .include_ignored(true)
-        .recurse_ignored_dirs(true);
-    let diff = repo.diff_tree_to_workdir(Some(expected), Some(&mut opts))?;
-    for delta in diff.deltas() {
-        for file in [delta.new_file(), delta.old_file()] {
-            let Some(path) = file.path() else { continue };
-            if expected.get_path(path).is_ok() || target.get_path(path).is_ok() {
-                return Ok(false);
-            }
-        }
-    }
-    Ok(true)
+    gix_repo::worktree_matches_tree(repo, expected, target)
 }

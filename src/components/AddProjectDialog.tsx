@@ -52,7 +52,7 @@ export function AddProjectDialog({ open, onClose, onAdded }: Props) {
     try {
       const dir = await dialogOpen({ directory: true, multiple: false });
       if (!dir) return;
-      await api.addProject(dir as string);
+      await api.addProject(dir);
       await onAdded();
       onClose();
     } catch (error) {
@@ -118,7 +118,7 @@ export function AddProjectDialog({ open, onClose, onAdded }: Props) {
   const handleSelectBrowse = async () => {
     try {
       const dir = await dialogOpen({ directory: true, multiple: false });
-      if (dir) setScanRoot(dir as string);
+      if (dir) setScanRoot(dir);
     } catch (error) { setError(getErrorMessage(error, t("common.error"))); }
   };
 
@@ -307,7 +307,7 @@ export function AddProjectDialog({ open, onClose, onAdded }: Props) {
                 onClick={async () => {
                   try {
                     const dir = await dialogOpen({ directory: true, multiple: false });
-                    if (dir) setLinkedPath(dir as string);
+                    if (dir) setLinkedPath(dir);
                   } catch (error) { setError(getErrorMessage(error, t("common.error"))); }
                 }}
                 iconOnly aria-label={t("project.selectSkillsDir")} title={t("project.selectSkillsDir")}

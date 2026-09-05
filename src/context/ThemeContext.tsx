@@ -1,4 +1,4 @@
-/* eslint-disable react-refresh/only-export-components */
+/* oxlint-disable react/only-export-components -- context files export the provider and its hook together */
 import { createContext, useContext } from "react";
 import { useTheme, type Theme, type ResolvedTheme } from "../hooks/useTheme";
 

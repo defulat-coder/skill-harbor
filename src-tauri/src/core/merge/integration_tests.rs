@@ -16,7 +16,7 @@ use crate::core::merge::protocol;
 use crate::core::merge::resolve::{ResolveAction, resolve_conflict_unlocked};
 use crate::core::skill_store::SkillStore;
 use crate::core::sync_metadata::{self, SkillMetaFile, SourceMeta};
-use crate::core::{central_repo, git_backup};
+use crate::core::{central_repo, git_backup, gix_repo};
 
 struct Device {
     base: PathBuf,
@@ -287,7 +287,7 @@ fn true_conflict_keeps_ours_declares_trailer_and_pins_theirs() {
     assert!(protocol::has_protocol_trailer(&head_msg));
 
     // The theirs version is pinned via the durable ref and the projection.
-    let repo = git2::Repository::open(&a.skills).unwrap();
+    let repo = gix_repo::open(&a.skills).unwrap();
     let pinned = pending::ref_target(&repo, &conflict_ref("skill-1")).unwrap();
     let rows = a.store.list_pending_conflicts().unwrap();
     assert_eq!(rows.len(), 1);
@@ -307,12 +307,15 @@ fn true_conflict_keeps_ours_declares_trailer_and_pins_theirs() {
     assert!(summary_b.fast_forward);
     assert_eq!(b.skill_md("alpha"), "edited on A");
     assert_eq!(summary_b.pending_total, 1);
-    let repo_b = git2::Repository::open(&b.skills).unwrap();
+    let repo_b = gix_repo::open(&b.skills).unwrap();
     let pinned_b = pending::ref_target(&repo_b, &conflict_ref("skill-1")).unwrap();
     let theirs_tree = repo_b.find_commit(pinned_b).unwrap().tree().unwrap();
-    let entry = theirs_tree.get_path(Path::new("alpha/SKILL.md")).unwrap();
-    let blob = repo_b.find_blob(entry.id()).unwrap();
-    assert_eq!(blob.content(), b"edited on B");
+    let entry = theirs_tree
+        .lookup_entry_by_path(Path::new("alpha/SKILL.md"))
+        .unwrap()
+        .unwrap();
+    let blob = repo_b.find_blob(entry.object_id()).unwrap();
+    assert_eq!(blob.data, b"edited on B");
 }
 
 #[test]
@@ -335,7 +338,7 @@ fn resolve_keep_local_closes_pending_across_devices() {
     assert_eq!(a.skill_md("alpha"), "edited on A");
     assert!(a.head_message().contains("Skills-Manager-Resolved: skill-1"));
     assert!(a.store.list_pending_conflicts().unwrap().is_empty());
-    let repo = git2::Repository::open(&a.skills).unwrap();
+    let repo = gix_repo::open(&a.skills).unwrap();
     assert!(pending::ref_target(&repo, &conflict_ref("skill-1")).is_none());
 
     // B follows: fast-forward onto the resolution, pending cleared there too.
@@ -517,12 +520,15 @@ fn ff_guard_blocks_when_remote_touches_pending_skill() {
     assert_eq!(a.skill_md("gamma"), "new skill");
     assert_eq!(summary.pending_total, 1);
     // The theirs pointer advanced to B's new tip.
-    let repo = git2::Repository::open(&a.skills).unwrap();
+    let repo = gix_repo::open(&a.skills).unwrap();
     let pinned = pending::ref_target(&repo, &conflict_ref("skill-1")).unwrap();
     let tree = repo.find_commit(pinned).unwrap().tree().unwrap();
-    let entry = tree.get_path(Path::new("alpha/SKILL.md")).unwrap();
+    let entry = tree
+        .lookup_entry_by_path(Path::new("alpha/SKILL.md"))
+        .unwrap()
+        .unwrap();
     assert_eq!(
-        repo.find_blob(entry.id()).unwrap().content(),
+        repo.find_blob(entry.object_id()).unwrap().data,
         b"edited on B again"
     );
 }
@@ -697,15 +703,18 @@ fn commit_never_picks_up_tmp_metadata_leftovers() {
 /// Builds a repo state crashed between branch-move (step 9) and checkout
 /// (step 10): HEAD points at a commit whose tree is not in the working
 /// tree, with applying/pre-merge refs still set.
-fn crash_between_ref_move_and_checkout(dev: &Device) -> (git2::Oid, git2::Oid) {
+fn crash_between_ref_move_and_checkout(dev: &Device) -> (gix::ObjectId, gix::ObjectId) {
     dev.activate();
-    let repo = git2::Repository::open(&dev.skills).unwrap();
-    let old_head = repo.head().unwrap().target().unwrap();
+    let repo = gix_repo::open(&dev.skills).unwrap();
+    let old_head = gix_repo::head_oid(&repo).unwrap();
 
     // Simulated merge result: a commit adding a file, created without
     // touching the working tree.
     let old_commit = repo.find_commit(old_head).unwrap();
-    let blob = repo.blob(b"from the interrupted merge").unwrap();
+    let blob = repo
+        .write_blob(b"from the interrupted merge")
+        .unwrap()
+        .detach();
     let mut edits = std::collections::BTreeMap::new();
     edits.insert(
         "incoming/SKILL.md".to_string(),
@@ -714,22 +723,26 @@ fn crash_between_ref_move_and_checkout(dev: &Device) -> (git2::Oid, git2::Oid) {
     let tree_oid =
         super::treebuild::apply_tree_edits(&repo, Some(&old_commit.tree().unwrap()), &edits)
             .unwrap();
-    let tree = repo.find_tree(tree_oid).unwrap();
-    let sig = git2::Signature::now("Device A", "a@test").unwrap();
+    let sig = gix::actor::Signature {
+        name: "Device A".into(),
+        email: "a@test".into(),
+        time: gix::date::Time::now_local_or_utc(),
+    };
     let merge_commit = repo
-        .commit(
-            None,
-            &sig,
-            &sig,
-            &protocol::app_commit_message("sync: merge remote skill changes (1 updated, 0 kept local, 0 conflicts)"),
-            &tree,
-            &[&old_commit],
+        .new_commit_as(
+            sig.to_ref(&mut gix::date::parse::TimeBuf::default()),
+            sig.to_ref(&mut gix::date::parse::TimeBuf::default()),
+            protocol::app_commit_message("sync: merge remote skill changes (1 updated, 0 kept local, 0 conflicts)"),
+            tree_oid,
+            [old_head],
         )
-        .unwrap();
+        .unwrap()
+        .id()
+        .detach();
 
     pending::write_ref(&repo, REF_PRE_MERGE, old_head, "test").unwrap();
     pending::write_ref(&repo, REF_APPLYING, merge_commit, "test").unwrap();
-    repo.reference("refs/heads/main", merge_commit, true, "test").unwrap();
+    gix_repo::write_ref(&repo, "refs/heads/main", merge_commit, "test").unwrap();
     (old_head, merge_commit)
 }
 
@@ -746,9 +759,9 @@ fn recovery_replays_checkout_after_crash() {
     recover_on_startup(&a.store, &a.skills);
 
     assert!(a.skills.join("incoming/SKILL.md").exists());
-    let repo = git2::Repository::open(&a.skills).unwrap();
+    let repo = gix_repo::open(&a.skills).unwrap();
     assert!(pending::ref_target(&repo, REF_APPLYING).is_none());
-    assert_eq!(repo.head().unwrap().target().unwrap(), merge_commit);
+    assert_eq!(gix_repo::head_oid(&repo).unwrap(), merge_commit);
     assert!(!git_backup::has_uncommitted_changes(&a.skills).unwrap());
 }
 
@@ -786,8 +799,8 @@ fn recovery_settles_partial_rollback_debris_back_onto_head() {
     a.commit("seed");
 
     a.activate();
-    let repo = git2::Repository::open(&a.skills).unwrap();
-    let head = repo.head().unwrap().target().unwrap();
+    let repo = gix_repo::open(&a.skills).unwrap();
+    let head = gix_repo::head_oid(&repo).unwrap();
     pending::write_ref(&repo, REF_PRE_MERGE, head, "test").unwrap();
     pending::write_ref(&repo, REF_APPLYING, head, "test").unwrap();
     drop(repo);
@@ -802,7 +815,7 @@ fn recovery_settles_partial_rollback_debris_back_onto_head() {
     assert!(!a.skills.join("stray-from-merge.md").exists());
     assert!(!git_backup::has_uncommitted_changes(&a.skills).unwrap());
     // …markers gone, debris preserved in a rescue snapshot.
-    let repo = git2::Repository::open(&a.skills).unwrap();
+    let repo = gix_repo::open(&a.skills).unwrap();
     assert!(pending::ref_target(&repo, REF_APPLYING).is_none());
     let tags = git(&a.skills, &["tag", "--list", "sm-v-*"]);
     let tag = tags.lines().last().expect("rescue tag expected");
@@ -851,13 +864,13 @@ fn heal_rewrites_stale_conflict_ref_after_re_declaration() {
         "side2",
     ]);
 
-    let repo = git2::Repository::open(&a.skills).unwrap();
-    let head = repo.head().unwrap().target().unwrap();
+    let repo = gix_repo::open(&a.skills).unwrap();
+    let head = gix_repo::head_oid(&repo).unwrap();
     // Stale ref from the first (since resolved) declaration.
     pending::write_ref(
         &repo,
         &conflict_ref("skill-1"),
-        git2::Oid::from_str(&p1).unwrap(),
+        gix_repo::parse_oid(&p1).unwrap(),
         "stale",
     )
     .unwrap();
@@ -880,8 +893,8 @@ fn recovery_before_ref_move_treats_merge_as_not_happened() {
     a.commit("seed");
 
     a.activate();
-    let repo = git2::Repository::open(&a.skills).unwrap();
-    let head = repo.head().unwrap().target().unwrap();
+    let repo = gix_repo::open(&a.skills).unwrap();
+    let head = gix_repo::head_oid(&repo).unwrap();
     // Crash between 7' and 9: applying exists, branch never moved.
     pending::write_ref(&repo, REF_PRE_MERGE, head, "test").unwrap();
     pending::write_ref(&repo, REF_APPLYING, head, "test").unwrap();
@@ -895,11 +908,11 @@ fn recovery_before_ref_move_treats_merge_as_not_happened() {
     drop(repo);
 
     recover_on_startup(&a.store, &a.skills);
-    let repo = git2::Repository::open(&a.skills).unwrap();
+    let repo = gix_repo::open(&a.skills).unwrap();
     assert!(pending::ref_target(&repo, REF_APPLYING).is_none());
     assert!(pending::ref_target(&repo, REF_PRE_MERGE).is_none());
     assert!(pending::list_staging_refs(&repo).is_empty());
-    assert_eq!(repo.head().unwrap().target().unwrap(), head);
+    assert_eq!(gix_repo::head_oid(&repo).unwrap(), head);
 }
 
 // ── old-client detection (§6) ──

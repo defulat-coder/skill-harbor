@@ -549,7 +549,7 @@ function ProjectWizard({
         setResult({ projectId: res.project_id, results: res.results });
       else {
         onClose();
-        navigate(`/project/${res.project_id}`);
+        void navigate(`/project/${res.project_id}`);
       }
     } catch (e) {
       setError(errText(e));
@@ -708,7 +708,7 @@ function ProjectWizard({
               variant="primary"
               onClick={() => {
                 onClose();
-                navigate(`/project/${result.projectId}`);
+                void navigate(`/project/${result.projectId}`);
               }}
             >
               查看项目
@@ -788,7 +788,7 @@ function RunPanel({
   const active = runs.some((r) => r.status === "running");
   const currentStatus = runs.find((r) => r.id === selected)?.status;
   useEffect(() => {
-    if (!active) return;
+    if (!active) return undefined;
     const timer = setInterval(() => {
       void refresh().catch((e) => setError(errText(e)));
     }, 1500);
@@ -804,7 +804,7 @@ function RunPanel({
     }
   }
   useEffect(() => {
-    if (!selected) return;
+    if (!selected) return undefined;
     let current = true;
     const read = () =>
       wb

@@ -5,6 +5,8 @@ import { NavLink, useLocation } from "react-router-dom";
 import { Database, Home, Library, FolderOpen, Compass, Settings, Archive, Terminal, SlidersHorizontal, Layers } from "lucide-react";
 import { useApp } from "../context/AppContext";
 
+const row = ({ isActive }: { isActive: boolean }) => `ds-nav-row ${isActive ? "is-active" : ""}`;
+
 export function WorkbenchSidebar() {
   const { projects, tools } = useApp();
   const { pathname } = useLocation();
@@ -17,7 +19,6 @@ export function WorkbenchSidebar() {
     { to: "/install", label: "发现技能", Icon: Compass },
   ];
   const recent = projects.filter(p => p.workspace_type === "project").slice(0, 4);
-  const row = ({ isActive }: { isActive: boolean }) => `ds-nav-row ${isActive ? "is-active" : ""}`;
   return <aside className="ds-sidebar" id="workspace-navigation" aria-label="工作台导航">
     <div className="ds-sidebar-panel">
       <div className="ds-sidebar-content">

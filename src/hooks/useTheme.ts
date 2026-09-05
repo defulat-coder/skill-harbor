@@ -48,7 +48,7 @@ export function useTheme() {
 
   // Load from Tauri settings on mount
   useEffect(() => {
-    api.getSettings("theme").then((v) => {
+    void api.getSettings("theme").then((v) => {
       if (v === "light" || v === "dark" || v === "system") {
         setThemeState(v);
         localStorage.setItem(STORAGE_KEY, v);
@@ -59,7 +59,7 @@ export function useTheme() {
   const setTheme = useCallback((next: Theme) => {
     setThemeState(next);
     localStorage.setItem(STORAGE_KEY, next);
-    api.setSettings("theme", next);
+    void api.setSettings("theme", next);
   }, []);
 
   return { theme, setTheme, resolvedTheme };

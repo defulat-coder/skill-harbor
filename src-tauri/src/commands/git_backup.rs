@@ -1,5 +1,5 @@
 use crate::core::{
-    central_repo, error::AppError, git2_engine, git_backup, git_credentials, git_fetcher,
+    central_repo, error::AppError, git_backup, git_credentials, git_fetcher, gix_engine,
     github_api, merge, skill_metadata, sync_metadata,
 };
 use anyhow::Context;
@@ -20,17 +20,19 @@ fn classify_git_chain(e: anyhow::Error) -> AppError {
     AppError::classify_git_error(format!("{e:#}"))
 }
 
-/// Push the persisted engine choice (`git_backup_engine` = "git2" | "system")
-/// and proxy setting into the core layer, which has no store access. Called
-/// at the entry of every command that can touch the network.
+/// Push the persisted engine choice (`git_backup_engine`) and proxy setting
+/// into the core layer, which has no store access. Called at the entry of
+/// every command that can touch the network. Only an explicit "system"
+/// disables the gix engine; the historic enabled value persisted by older
+/// versions keeps working untouched.
 pub(crate) fn sync_engine_pref(store: &SkillStore) {
-    let git2_enabled = store
+    let gix_enabled = store
         .get_setting("git_backup_engine")
         .ok()
         .flatten()
-        .map(|v| v.trim() == "git2")
+        .map(|v| v.trim() != "system")
         .unwrap_or(false);
-    git2_engine::set_preference(git2_enabled, store.proxy_url());
+    gix_engine::set_preference(gix_enabled, store.proxy_url());
 }
 
 /// Resolve the device name (§4.3 设备命名): the persisted setting, or a
@@ -1104,7 +1106,7 @@ pub(crate) fn reconcile_skills_index_unlocked(store: &SkillStore) -> anyhow::Res
             .name
             .filter(|s| !s.trim().is_empty())
             .unwrap_or(inferred_name);
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
 
         let record = crate::core::skill_store::SkillRecord {
             id: uuid::Uuid::new_v4().to_string(),

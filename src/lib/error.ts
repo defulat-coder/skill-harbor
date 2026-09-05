@@ -36,14 +36,10 @@ const validKinds: ReadonlySet<string> = new Set(ERROR_KINDS);
 
 /** Type-guard: check if an unknown error is a structured `AppError`. */
 export function isAppError(error: unknown): error is AppError {
-  if (
-    typeof error !== "object" ||
-    error === null ||
-    typeof (error as AppError).message !== "string"
-  ) {
-    return false;
-  }
-  return validKinds.has((error as AppError).kind);
+  if (typeof error !== "object" || error === null) return false;
+  if (!("message" in error) || typeof error.message !== "string") return false;
+  if (!("kind" in error) || typeof error.kind !== "string") return false;
+  return validKinds.has(error.kind);
 }
 
 /**

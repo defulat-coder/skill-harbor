@@ -14,13 +14,13 @@ export function CloseActionGuard() {
         return !(normalized === "false" || normalized === "0" || normalized === "no" || normalized === "off");
       })();
       if (!trayEnabled) {
-        api.appExit();
+        void api.appExit();
         return;
       }
 
       const pref = await api.getSettings("close_action");
       if (pref === "close") {
-        api.appExit();
+        void api.appExit();
       } else if (pref === "hide") {
         await api.hideToTray();
       } else {
@@ -28,14 +28,14 @@ export function CloseActionGuard() {
       }
     });
     return () => {
-      unlisten.then((fn) => fn());
+      void unlisten.then((fn) => fn());
     };
   }, []);
 
   const handleClose = async (remember: boolean) => {
     setDialogOpen(false);
     if (remember) await api.setSettings("close_action", "close");
-    api.appExit();
+    void api.appExit();
   };
 
   const handleHide = async (remember: boolean) => {

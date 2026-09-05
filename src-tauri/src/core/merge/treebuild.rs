@@ -1,7 +1,7 @@
 //! Recursive tree construction (design §5): apply a set of path-addressed
 //! edits to a base tree, rebuilding the ancestor chain bottom-up with
-//! per-level `TreeBuilder`s. `TreeUpdateBuilder` is deliberately not used —
-//! its handling of remove-then-upsert on one path and of blob↔tree type
+//! per-level entry maps. Path-based tree editors are deliberately not used —
+//! their handling of remove-then-upsert on one path and of blob↔tree type
 //! changes is incomplete; type changes are handled explicitly here by
 //! removing the old entry before inserting the new one.
 //!
@@ -11,7 +11,8 @@
 //! subtree's former siblings do not leak through).
 
 use anyhow::{Context, Result, bail};
-use git2::{ObjectType, Oid, Repository, Tree};
+use gix::ObjectId;
+use gix::bstr::BString;
 use std::collections::BTreeMap;
 
 pub const FILEMODE_TREE: i32 = 0o040000;
@@ -19,11 +20,17 @@ pub const FILEMODE_TREE: i32 = 0o040000;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TreeEdit {
     /// Put a blob at this path (file mode from the source entry).
-    PutBlob { oid: Oid, mode: i32 },
+    PutBlob { oid: ObjectId, mode: i32 },
     /// Attach a whole subtree at this path.
-    PutTree { oid: Oid },
+    PutTree { oid: ObjectId },
     /// Remove whatever is at this path (blob or subtree).
     Remove,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum EntryKind {
+    Tree,
+    Blob,
 }
 
 struct DirNode {
@@ -42,10 +49,10 @@ enum Node {
 /// returning the OID of the new root tree. Directories that end up empty are
 /// pruned (git does not represent empty trees in a commit).
 pub fn apply_tree_edits(
-    repo: &Repository,
-    base: Option<&Tree>,
+    repo: &gix::Repository,
+    base: Option<&gix::Tree>,
     edits: &BTreeMap<String, TreeEdit>,
-) -> Result<Oid> {
+) -> Result<ObjectId> {
     let mut root: BTreeMap<String, Node> = BTreeMap::new();
     for (path, edit) in edits {
         insert_edit(&mut root, path, *edit)
@@ -54,7 +61,7 @@ pub fn apply_tree_edits(
     match build_level(repo, base, &root)? {
         Some(oid) => Ok(oid),
         // A fully-emptied root is still a valid (empty) tree.
-        None => Ok(repo.treebuilder(None)?.write()?),
+        None => write_tree(repo, BTreeMap::new()),
     }
 }
 
@@ -97,91 +104,137 @@ fn insert_edit(level: &mut BTreeMap<String, Node>, path: &str, edit: TreeEdit) -
     }
 }
 
+/// `(name → (kind, mode, oid))` of one tree level.
+fn level_entries(tree: &gix::Tree) -> Result<BTreeMap<BString, (EntryKind, u16, ObjectId)>> {
+    let mut out = BTreeMap::new();
+    for entry in tree.iter() {
+        let entry = entry?;
+        let mode = entry.mode();
+        let kind = if mode.is_tree() { EntryKind::Tree } else { EntryKind::Blob };
+        out.insert(
+            entry.filename().to_owned(),
+            (kind, mode.value(), entry.object_id()),
+        );
+    }
+    Ok(out)
+}
+
 fn build_level(
-    repo: &Repository,
-    base: Option<&Tree>,
+    repo: &gix::Repository,
+    base: Option<&gix::Tree>,
     nodes: &BTreeMap<String, Node>,
-) -> Result<Option<Oid>> {
-    let mut builder = repo.treebuilder(base)?;
+) -> Result<Option<ObjectId>> {
+    let mut entries: BTreeMap<BString, (EntryKind, u16, ObjectId)> = match base {
+        Some(tree) => level_entries(tree)?,
+        None => BTreeMap::new(),
+    };
     for (name, node) in nodes {
-        let existing_kind = builder.get(name)?.and_then(|e| e.kind());
+        let name_b: BString = name.clone().into();
+        let existing_kind = entries.get(&name_b).map(|(kind, _, _)| *kind);
         match node {
             Node::Leaf(TreeEdit::Remove) => {
-                if existing_kind.is_some() {
-                    builder.remove(name)?;
-                }
+                entries.remove(&name_b);
             }
             Node::Leaf(TreeEdit::PutBlob { oid, mode }) => {
-                if existing_kind == Some(ObjectType::Tree) {
-                    builder.remove(name)?; // tree → blob type change
+                if existing_kind == Some(EntryKind::Tree) {
+                    entries.remove(&name_b); // tree → blob type change
                 }
-                builder.insert(name, *oid, *mode)?;
+                entries.insert(name_b, (EntryKind::Blob, *mode as u16, *oid));
             }
             Node::Leaf(TreeEdit::PutTree { oid }) => {
-                if existing_kind == Some(ObjectType::Blob) {
-                    builder.remove(name)?; // blob → tree type change
+                if existing_kind == Some(EntryKind::Blob) {
+                    entries.remove(&name_b); // blob → tree type change
                 }
-                builder.insert(name, *oid, FILEMODE_TREE)?;
+                entries.insert(name_b, (EntryKind::Tree, FILEMODE_TREE as u16, *oid));
             }
             Node::Dir(dir) => {
-                let existing = builder.get(name)?.map(|e| (e.kind(), e.id()));
-                let child_base = match existing {
+                let existing = entries.get(&name_b).copied();
+                let child_base_tree;
+                let child_base: Option<&gix::Tree> = match existing {
                     _ if dir.fresh => None,
-                    Some((Some(ObjectType::Tree), id)) => Some(repo.find_tree(id)?),
+                    Some((EntryKind::Tree, _, id)) => {
+                        child_base_tree = repo.find_tree(id)?;
+                        Some(&child_base_tree)
+                    }
                     Some(_) => {
                         // A blob where the plan needs a directory: explicit
                         // type change — drop the blob, build from empty.
-                        builder.remove(name)?;
+                        entries.remove(&name_b);
                         None
                     }
                     None => None,
                 };
-                match build_level(repo, child_base.as_ref(), &dir.children)? {
+                match build_level(repo, child_base, &dir.children)? {
                     Some(oid) => {
-                        if dir.fresh && existing_kind == Some(ObjectType::Blob) {
-                            builder.remove(name)?;
+                        if dir.fresh && existing_kind == Some(EntryKind::Blob) {
+                            entries.remove(&name_b);
                         }
-                        builder.insert(name, oid, FILEMODE_TREE)?;
+                        entries.insert(name_b, (EntryKind::Tree, FILEMODE_TREE as u16, oid));
                     }
                     None => {
-                        if builder.get(name)?.is_some() {
-                            builder.remove(name)?;
-                        }
+                        entries.remove(&name_b);
                     }
                 }
             }
         }
     }
-    let oid = builder.write()?;
-    if repo.find_tree(oid)?.len() == 0 {
+    if entries.is_empty() {
         return Ok(None);
     }
-    Ok(Some(oid))
+    Ok(Some(write_tree(repo, entries)?))
+}
+
+/// Serialize one tree level: entries sorted the way git orders tree entries
+/// (directories compare with a trailing `/`), then written to the object
+/// database.
+fn write_tree(
+    repo: &gix::Repository,
+    entries: BTreeMap<BString, (EntryKind, u16, ObjectId)>,
+) -> Result<ObjectId> {
+    let mut list: Vec<gix::objs::tree::Entry> = Vec::with_capacity(entries.len());
+    for (name, (_, mode, oid)) in entries {
+        let mode = gix::objs::tree::EntryMode::try_from(u32::from(mode))
+            .map_err(|m| anyhow::anyhow!("invalid tree entry mode {m:o}"))?;
+        list.push(gix::objs::tree::Entry { mode, filename: name, oid });
+    }
+    list.sort_by(|a, b| {
+        gix::objs::tree::name_order(
+            a.filename.as_ref(),
+            a.mode.is_tree(),
+            b.filename.as_ref(),
+            b.mode.is_tree(),
+        )
+    });
+    let tree = gix::objs::Tree { entries: list };
+    Ok(repo.write_object(&tree)?.detach())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gix::objs::tree::EntryKind as TreeEntryKind;
 
-    fn test_repo() -> (tempfile::TempDir, Repository) {
+    fn test_repo() -> (tempfile::TempDir, gix::Repository) {
         let tmp = tempfile::tempdir().unwrap();
-        let repo = Repository::init(tmp.path()).unwrap();
+        let repo = gix::init(tmp.path()).unwrap();
         (tmp, repo)
     }
 
-    fn blob(repo: &Repository, content: &str) -> Oid {
-        repo.blob(content.as_bytes()).unwrap()
+    fn blob(repo: &gix::Repository, content: &str) -> ObjectId {
+        repo.write_blob(content.as_bytes()).unwrap().detach()
     }
 
-    fn tree_of(repo: &Repository, entries: &[(&str, TreeEdit)]) -> Oid {
+    fn tree_of(repo: &gix::Repository, entries: &[(&str, TreeEdit)]) -> ObjectId {
         let edits: BTreeMap<String, TreeEdit> =
             entries.iter().map(|(p, e)| (p.to_string(), *e)).collect();
         apply_tree_edits(repo, None, &edits).unwrap()
     }
 
-    fn entry_kind(repo: &Repository, root: Oid, path: &str) -> Option<ObjectType> {
+    fn entry_kind(repo: &gix::Repository, root: ObjectId, path: &str) -> Option<TreeEntryKind> {
         let tree = repo.find_tree(root).unwrap();
-        tree.get_path(std::path::Path::new(path)).ok()?.kind()
+        tree.lookup_entry_by_path(std::path::Path::new(path))
+            .unwrap()
+            .map(|e| e.mode().kind())
     }
 
     #[test]
@@ -192,14 +245,14 @@ mod tests {
             &repo,
             &[("a/b/c.txt", TreeEdit::PutBlob { oid: b, mode: 0o100644 })],
         );
-        assert_eq!(entry_kind(&repo, root, "a/b/c.txt"), Some(ObjectType::Blob));
+        assert_eq!(entry_kind(&repo, root, "a/b/c.txt"), Some(TreeEntryKind::Blob));
 
         // Removing the only file prunes the whole empty chain.
         let mut edits = BTreeMap::new();
         edits.insert("a/b/c.txt".to_string(), TreeEdit::Remove);
         let base = repo.find_tree(root).unwrap();
         let new_root = apply_tree_edits(&repo, Some(&base), &edits).unwrap();
-        assert_eq!(repo.find_tree(new_root).unwrap().len(), 0);
+        assert_eq!(repo.find_tree(new_root).unwrap().iter().count(), 0);
     }
 
     #[test]
@@ -215,7 +268,7 @@ mod tests {
         let root = tree_of(&repo, &[("group/my-skill", TreeEdit::PutTree { oid: inner })]);
         assert_eq!(
             entry_kind(&repo, root, "group/my-skill/SKILL.md"),
-            Some(ObjectType::Blob)
+            Some(TreeEntryKind::Blob)
         );
     }
 
@@ -233,8 +286,8 @@ mod tests {
             TreeEdit::PutBlob { oid: blob(&repo, "now a dir"), mode: 0o100644 },
         );
         let root2 = apply_tree_edits(&repo, Some(&base), &edits).unwrap();
-        assert_eq!(entry_kind(&repo, root2, "thing"), Some(ObjectType::Tree));
-        assert_eq!(entry_kind(&repo, root2, "thing/SKILL.md"), Some(ObjectType::Blob));
+        assert_eq!(entry_kind(&repo, root2, "thing"), Some(TreeEntryKind::Tree));
+        assert_eq!(entry_kind(&repo, root2, "thing/SKILL.md"), Some(TreeEntryKind::Blob));
 
         // tree → blob via PutBlob at the old dir path
         let base2 = repo.find_tree(root2).unwrap();
@@ -244,7 +297,7 @@ mod tests {
             TreeEdit::PutBlob { oid: blob(&repo, "file again"), mode: 0o100644 },
         );
         let root3 = apply_tree_edits(&repo, Some(&base2), &edits).unwrap();
-        assert_eq!(entry_kind(&repo, root3, "thing"), Some(ObjectType::Blob));
+        assert_eq!(entry_kind(&repo, root3, "thing"), Some(TreeEntryKind::Blob));
     }
 
     #[test]
@@ -271,7 +324,7 @@ mod tests {
         // Both key orders through insert_edit are covered because the flat
         // map sorts "spot" before "spot/readme.txt".
         let new_root = apply_tree_edits(&repo, Some(&base), &edits).unwrap();
-        assert_eq!(entry_kind(&repo, new_root, "spot/readme.txt"), Some(ObjectType::Blob));
+        assert_eq!(entry_kind(&repo, new_root, "spot/readme.txt"), Some(TreeEntryKind::Blob));
         assert_eq!(entry_kind(&repo, new_root, "spot/SKILL.md"), None);
         assert_eq!(entry_kind(&repo, new_root, "spot/extra.md"), None);
     }
@@ -300,8 +353,11 @@ mod tests {
         flat.insert("spot".to_string(), TreeEdit::PutTree { oid: incoming });
         let root = apply_tree_edits(&repo, Some(&base), &flat).unwrap();
         let tree = repo.find_tree(root).unwrap();
-        let entry = tree.get_path(std::path::Path::new("spot/SKILL.md")).unwrap();
-        assert_eq!(repo.find_blob(entry.id()).unwrap().content(), b"new");
+        let entry = tree
+            .lookup_entry_by_path(std::path::Path::new("spot/SKILL.md"))
+            .unwrap()
+            .unwrap();
+        assert_eq!(repo.find_blob(entry.object_id()).unwrap().data, b"new");
     }
 
     #[test]
@@ -319,8 +375,30 @@ mod tests {
         let mut edits = BTreeMap::new();
         edits.insert("dir/a.txt".to_string(), TreeEdit::Remove);
         let new_root = apply_tree_edits(&repo, Some(&base), &edits).unwrap();
-        assert_eq!(entry_kind(&repo, new_root, "keep.txt"), Some(ObjectType::Blob));
-        assert_eq!(entry_kind(&repo, new_root, "dir/b.txt"), Some(ObjectType::Blob));
+        assert_eq!(entry_kind(&repo, new_root, "keep.txt"), Some(TreeEntryKind::Blob));
+        assert_eq!(entry_kind(&repo, new_root, "dir/b.txt"), Some(TreeEntryKind::Blob));
         assert_eq!(entry_kind(&repo, new_root, "dir/a.txt"), None);
+    }
+
+    #[test]
+    fn written_trees_match_system_git_layout() {
+        // The on-disk format is user data: a tree written here must be
+        // byte-identical to what git itself produces for the same content.
+        let (_tmp, repo) = test_repo();
+        let root = tree_of(
+            &repo,
+            &[
+                ("a.txt", TreeEdit::PutBlob { oid: blob(&repo, "a"), mode: 0o100644 }),
+                ("a/b.txt", TreeEdit::PutBlob { oid: blob(&repo, "b"), mode: 0o100644 }),
+                ("a-b/c.txt", TreeEdit::PutBlob { oid: blob(&repo, "c"), mode: 0o100644 }),
+            ],
+        );
+        let out = std::process::Command::new("git")
+            .arg("-C")
+            .arg(repo.workdir().unwrap())
+            .args(["cat-file", "-t", &root.to_string()])
+            .output()
+            .unwrap();
+        assert!(out.status.success(), "git must read the tree: {root}");
     }
 }

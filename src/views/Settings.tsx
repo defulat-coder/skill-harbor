@@ -184,6 +184,15 @@ function AgentGroupDnd({
   );
 }
 
+async function handleBrowsePath(setter: (v: string) => void) {
+  try {
+    const selected = await dialogOpen({ directory: true, multiple: false });
+    if (selected && typeof selected === "string") setter(selected);
+  } catch (e) {
+    toast.error(getErrorMessage(e, "无法打开目录选择器，请直接输入路径。"));
+  }
+}
+
 export function Settings() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -349,15 +358,6 @@ export function Settings() {
     }
   };
 
-  const handleBrowsePath = async (setter: (v: string) => void) => {
-    try {
-      const selected = await dialogOpen({ directory: true, multiple: false });
-      if (selected && typeof selected === "string") setter(selected);
-    } catch (e) {
-      toast.error(getErrorMessage(e, "无法打开目录选择器，请直接输入路径。"));
-    }
-  };
-
   const generateCustomAgentKey = useCallback(
     (name: string) => {
       const base = name
@@ -445,16 +445,16 @@ export function Settings() {
       reads.push(request);
       return request;
     };
-    readSetting("sync_mode").then((v) => {
+    void readSetting("sync_mode").then((v) => {
       if (v) setSyncMode(v);
     });
-    readSetting("proxy_url").then((v) => {
+    void readSetting("proxy_url").then((v) => {
       setProxyInput(v ?? "");
     });
-    readSetting("close_action").then((v) => {
+    void readSetting("close_action").then((v) => {
       setCloseAction(v ?? "");
     });
-    readSetting("show_tray_icon").then((v) => {
+    void readSetting("show_tray_icon").then((v) => {
       const normalized = (v ?? "true").trim().toLowerCase();
       setShowTrayIcon(
         !(
@@ -465,21 +465,21 @@ export function Settings() {
         ),
       );
     });
-    readSetting("text_size").then((v) => {
+    void readSetting("text_size").then((v) => {
       if (v) {
         setTextSize(v);
         applyTextSize(v);
       }
     });
-    readSetting("auto_update_check_interval").then((v) => {
+    void readSetting("auto_update_check_interval").then((v) => {
       if (v) setAutoUpdateInterval(v);
     });
-    readSetting("auto_update_apply").then((v) => {
+    void readSetting("auto_update_apply").then((v) => {
       if (v) setAutoUpdateApply(v);
     });
     // The `skills-auto-updated` listener may populate this concurrently, so
     // keep whichever timestamp is newer rather than blindly overwriting.
-    readSetting("auto_update_last_run_at").then((v) => {
+    void readSetting("auto_update_last_run_at").then((v) => {
       if (!v) return;
       setAutoUpdateLastRun((prev) =>
         prev && Date.parse(prev) >= Date.parse(v) ? prev : v,
@@ -511,17 +511,17 @@ export function Settings() {
 
     // The saved setting is the single source of truth. Do not backfill from
     // `.git/config` — that made a cleared URL reappear on reopen (#260).
-    readSetting("git_backup_remote_url")
+    void readSetting("git_backup_remote_url")
       .then((v) => {
         setGitRemoteInput(v?.trim() || "");
       })
       .catch(() => {});
-    readSetting("git_backup_engine")
+    void readSetting("git_backup_engine")
       .then((v) => {
         setGitEngineGit2(v?.trim() === "git2");
       })
       .catch(() => {});
-    readSetting("merge_engine")
+    void readSetting("merge_engine")
       .then((v) => {
         setGitMergeEngineObject((v ?? "").trim() !== "system");
       })
@@ -1105,10 +1105,10 @@ export function Settings() {
           onChange={() => handleToggleTool(agent.key, !agent.enabled)}
           title={
             !agent.installed
-              ? (t("settings.notInstalled") as string)
+              ? t("settings.notInstalled")
               : agent.enabled
-                ? (t("settings.disableAgent") as string)
-                : (t("settings.enableAgent") as string)
+                ? t("settings.disableAgent")
+                : t("settings.enableAgent")
           }
         />
       </div>
@@ -1126,7 +1126,7 @@ export function Settings() {
               className="h-7 min-w-0 flex-1 rounded-sm border border-border-subtle bg-background px-1.5 text-[12px] font-mono text-secondary"
               autoFocus
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleSavePath();
+                if (e.key === "Enter") void handleSavePath();
                 if (e.key === "Escape") setEditingPathKey(null);
               }}
             />
@@ -1197,7 +1197,7 @@ export function Settings() {
               className="h-7 min-w-0 flex-1 rounded-sm border border-border-subtle bg-background px-1.5 text-[12px] font-mono text-secondary"
               autoFocus
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleSaveProjectPath();
+                if (e.key === "Enter") void handleSaveProjectPath();
                 if (e.key === "Escape") setEditingProjectPathKey(null);
               }}
             />

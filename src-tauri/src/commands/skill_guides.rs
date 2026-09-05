@@ -176,7 +176,7 @@ fn manual_guide(content: String, reviewed_source_hash: Option<String>, previous:
     let source_hash = reviewed_source_hash.or_else(|| previous.map(|g| g.source_hash.clone()))
         .unwrap_or_else(|| current_hash.to_string());
     CachedGuide { content, source_hash, manually_edited: true,
-        updated_at: chrono::Utc::now().timestamp(), ..Default::default() }
+        updated_at: jiff::Timestamp::now().as_second(), ..Default::default() }
 }
 
 pub(crate) fn codex_path(store: &SkillStore) -> Result<PathBuf, AppError> {
@@ -205,7 +205,7 @@ fn merge_generated(previous: Option<CachedGuide>, content: String, source_hash: 
         guide.generated_source_hash = Some(source_hash);
         return guide;
     }
-    CachedGuide { content, source_hash, manually_edited: false, updated_at: chrono::Utc::now().timestamp(), ..Default::default() }
+    CachedGuide { content, source_hash, manually_edited: false, updated_at: jiff::Timestamp::now().as_second(), ..Default::default() }
 }
 
 pub(crate) async fn generate_text(executable: PathBuf, prompt: String) -> Result<String, AppError> {

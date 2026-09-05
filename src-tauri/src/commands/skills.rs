@@ -2408,7 +2408,7 @@ pub fn store_installed_skill_unlocked(
     metadata: &InstallSourceMetadata,
     active_scenario_id: Option<&str>,
 ) -> Result<String, AppError> {
-    let now = chrono::Utc::now().timestamp_millis();
+    let now = jiff::Timestamp::now().as_millisecond();
     let central_path = result.central_path.to_string_lossy().to_string();
 
     if let Some(existing) = store
@@ -2655,7 +2655,7 @@ fn should_skip_update_check(
     Ok(stable_status
         && skill
             .last_checked_at
-            .map(|checked| chrono::Utc::now().timestamp_millis() - checked < ttl_ms)
+            .map(|checked| jiff::Timestamp::now().as_millisecond() - checked < ttl_ms)
             .unwrap_or(false))
 }
 
@@ -2937,7 +2937,7 @@ pub fn resync_copy_targets(store: &SkillStore, skill_id: &str) -> Result<(), App
         .map_err(AppError::io)?;
 
         let updated_target = SkillTargetRecord {
-            synced_at: Some(chrono::Utc::now().timestamp_millis()),
+            synced_at: Some(jiff::Timestamp::now().as_millisecond()),
             status: "ok".to_string(),
             last_error: None,
             // Refresh the hash so the startup freshness check (#153)

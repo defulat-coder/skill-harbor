@@ -9,7 +9,7 @@ export function TaskOutput({ log, running, loading = false, createdAt, onStop, s
   const [now, setNow] = useState(() => Date.now());
   const startedAt = createdAt === undefined ? mountedAt : createdAt < 1e12 ? createdAt * 1000 : createdAt;
   useEffect(() => {
-    if (!running) return;
+    if (!running) return undefined;
     const timer = setTimeout(() => setNow(Date.now()), Math.max(0, startedAt + 60_000 - Date.now()));
     return () => clearTimeout(timer);
   }, [running, startedAt]);

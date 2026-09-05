@@ -290,7 +290,7 @@ fn import_agent_local_skill_to_center(
 
     let result =
         installer::install_from_local(&source_path, Some(&skill.name)).map_err(AppError::io)?;
-    let now = chrono::Utc::now().timestamp_millis();
+    let now = jiff::Timestamp::now().as_millisecond();
     let id = uuid::Uuid::new_v4().to_string();
     let skill_record = SkillRecord {
         id,
@@ -726,7 +726,7 @@ mod tests {
             )
             .unwrap();
 
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         store
             .insert_scenario(&ScenarioRecord {
                 id: "active".to_string(),
@@ -845,7 +845,7 @@ mod tests {
         )
         .unwrap();
         let existing = installer::install_from_local(&center_source, Some("local-tool")).unwrap();
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         store
             .insert_skill(&SkillRecord {
                 id: "existing-center".to_string(),
@@ -929,7 +929,7 @@ mod tests {
         // so the import resolves to a *verified* match (the existing-match
         // branch) rather than creating a duplicate.
         let existing = installer::install_from_local(&skill_dir, Some("local-tool")).unwrap();
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         store
             .insert_skill(&SkillRecord {
                 id: "existing-center".to_string(),
@@ -1008,7 +1008,7 @@ mod tests {
         // A center skill that was uploaded before targets were registered:
         // source_ref points at the agent dir, content matches, but NO target.
         let existing = installer::install_from_local(&skill_dir, Some("local-tool")).unwrap();
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         store
             .insert_skill(&SkillRecord {
                 id: "stranded".to_string(),
@@ -1170,7 +1170,7 @@ mod tests {
         .unwrap();
 
         let existing = installer::install_from_local(&skill_dir, Some("local-tool")).unwrap();
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         store
             .insert_skill(&SkillRecord {
                 id: "stranded".to_string(),
@@ -1275,7 +1275,7 @@ mod tests {
         .unwrap();
 
         let existing = installer::install_from_local(&skill_dir, Some("local-tool")).unwrap();
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         store
             .insert_skill(&SkillRecord {
                 id: "stranded".to_string(),

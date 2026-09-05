@@ -49,7 +49,7 @@ static CONSECUTIVE_FAILURES: AtomicU32 = AtomicU32::new(0);
 /// Called by the file watcher whenever something outside `.git` changes in the
 /// central repository. Re-arms the debounce window.
 pub fn notify_central_change() {
-    LAST_CHANGE_MS.store(chrono::Utc::now().timestamp_millis(), Ordering::Release);
+    LAST_CHANGE_MS.store(jiff::Timestamp::now().as_millisecond(), Ordering::Release);
     DIRTY.store(true, Ordering::Release);
 }
 
@@ -98,13 +98,13 @@ pub fn start<R: Runtime>(app: AppHandle<R>, store: Arc<SkillStore>) {
         // Startup round: push whatever the exit-time commit captured. Backdate
         // the change stamp so the round is due on the first tick.
         LAST_CHANGE_MS.store(
-            chrono::Utc::now().timestamp_millis() - DEBOUNCE.as_millis() as i64,
+            jiff::Timestamp::now().as_millisecond() - DEBOUNCE.as_millis() as i64,
             Ordering::Release,
         );
         DIRTY.store(true, Ordering::Release);
 
         loop {
-            let now_ms = chrono::Utc::now().timestamp_millis();
+            let now_ms = jiff::Timestamp::now().as_millisecond();
             if is_due(
                 DIRTY.load(Ordering::Acquire),
                 LAST_CHANGE_MS.load(Ordering::Acquire),

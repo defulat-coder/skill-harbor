@@ -164,7 +164,7 @@ pub(crate) fn reindex_from_metadata_unlocked(store: &SkillStore) -> Result<()> {
     } else {
         Vec::new()
     };
-    let now = chrono::Utc::now().timestamp_millis();
+    let now = jiff::Timestamp::now().as_millisecond();
     let skills_root = central_repo::skills_dir();
 
     let metadata_ids: HashSet<String> = skills.iter().map(|m| m.skill_id.clone()).collect();

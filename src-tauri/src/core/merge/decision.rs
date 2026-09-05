@@ -40,7 +40,7 @@ pub struct DecisionInput<'a> {
 #[derive(Debug, Clone)]
 pub struct PlannedSkill {
     pub meta: SkillMetaFile,
-    pub content: Option<git2::Oid>,
+    pub content: Option<gix::ObjectId>,
     /// True when the collision pass had to move this skill to a fresh path.
     pub renamed_for_collision: bool,
     /// Where the surviving components came from, for the summary.
@@ -495,8 +495,8 @@ mod tests {
     use super::*;
     use crate::core::sync_metadata::SourceMeta;
 
-    fn oid(n: u8) -> git2::Oid {
-        git2::Oid::from_str(&format!("{:040x}", n)).unwrap()
+    fn oid(n: u8) -> gix::ObjectId {
+        gix::ObjectId::from_hex(format!("{n:040x}").as_bytes()).unwrap()
     }
 
     fn skill(id: &str, path: &str, content: u8, enabled: bool, tags: &[&str]) -> SkillObj {

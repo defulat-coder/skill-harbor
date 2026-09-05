@@ -112,7 +112,7 @@ function AgentToggle({
   loading: boolean;
   onToggle: (key: string, enabled: boolean) => void;
 }) {
-  const disabled = Boolean(item.disabled || loading);
+  const disabled = item.disabled || loading;
   return (
     <Button
       type="button"

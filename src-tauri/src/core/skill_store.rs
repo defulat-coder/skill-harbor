@@ -283,7 +283,7 @@ impl SkillStore {
         source_revision: Option<&str>,
     ) -> Result<()> {
         let conn = self.conn.lock().unwrap();
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         conn.execute(
             "UPDATE skills
              SET source_ref_resolved = ?1, source_subpath = ?2, source_branch = ?3, source_revision = ?4, updated_at = ?5
@@ -308,7 +308,7 @@ impl SkillStore {
         last_check_error: Option<&str>,
     ) -> Result<()> {
         let conn = self.conn.lock().unwrap();
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         conn.execute(
             "UPDATE skills
              SET remote_revision = ?1, update_status = ?2, last_checked_at = ?3, last_check_error = ?4
@@ -329,7 +329,7 @@ impl SkillStore {
 
     pub fn update_skill_enabled(&self, id: &str, enabled: bool) -> Result<()> {
         let conn = self.conn.lock().unwrap();
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         conn.execute(
             "UPDATE skills SET enabled = ?1, updated_at = ?2 WHERE id = ?3",
             params![enabled, now, id],
@@ -349,7 +349,7 @@ impl SkillStore {
         update_status: &str,
     ) -> Result<()> {
         let conn = self.conn.lock().unwrap();
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         conn.execute(
             "UPDATE skills
              SET name = ?1, description = ?2, source_revision = ?3, remote_revision = ?4, content_hash = ?5,
@@ -395,7 +395,7 @@ impl SkillStore {
         update_status: &str,
     ) -> Result<()> {
         let conn = self.conn.lock().unwrap();
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         conn.execute(
             "UPDATE skills
              SET name = ?1, description = ?2, source_type = ?3, source_ref = ?4, source_ref_resolved = ?5,
@@ -564,7 +564,7 @@ impl SkillStore {
 
     pub fn get_cache(&self, key: &str, ttl_secs: i64) -> Result<Option<String>> {
         let conn = self.conn.lock().unwrap();
-        let now = chrono::Utc::now().timestamp();
+        let now = jiff::Timestamp::now().as_second();
         let mut stmt = conn
             .prepare("SELECT data FROM skillssh_cache WHERE cache_key = ?1 AND fetched_at > ?2")?;
         let cutoff = now - ttl_secs;
@@ -574,7 +574,7 @@ impl SkillStore {
 
     pub fn set_cache(&self, key: &str, data: &str) -> Result<()> {
         let conn = self.conn.lock().unwrap();
-        let now = chrono::Utc::now().timestamp();
+        let now = jiff::Timestamp::now().as_second();
         conn.execute(
             "INSERT OR REPLACE INTO skillssh_cache (cache_key, data, fetched_at) VALUES (?1, ?2, ?3)",
             params![key, data, now],
@@ -785,7 +785,7 @@ impl SkillStore {
         icon: Option<&str>,
     ) -> Result<()> {
         let conn = self.conn.lock().unwrap();
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         conn.execute(
             "UPDATE scenarios SET name = ?1, description = ?2, icon = ?3, updated_at = ?4 WHERE id = ?5",
             params![name, description, icon, now, id],
@@ -829,7 +829,7 @@ impl SkillStore {
 
     pub fn add_skill_to_scenario(&self, scenario_id: &str, skill_id: &str) -> Result<()> {
         let conn = self.conn.lock().unwrap();
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         conn.execute(
             "INSERT OR IGNORE INTO scenario_skills (scenario_id, skill_id, added_at) VALUES (?1, ?2, ?3)",
             params![scenario_id, skill_id, now],
@@ -934,7 +934,7 @@ impl SkillStore {
         }
 
         let tx = conn.unchecked_transaction()?;
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
 
         for tool in missing_tools {
             tx.execute(
@@ -956,7 +956,7 @@ impl SkillStore {
         enabled: bool,
     ) -> Result<()> {
         let conn = self.conn.lock().unwrap();
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         conn.execute(
             "INSERT INTO scenario_skill_tools (scenario_id, skill_id, tool, enabled, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5)
@@ -986,7 +986,7 @@ impl SkillStore {
                 }
             }
         }
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         for scenario in scenarios {
             tx.execute(
                 "INSERT INTO scenarios (id, name, description, icon, sort_order, created_at, updated_at)
@@ -1035,7 +1035,7 @@ impl SkillStore {
             ids?
         };
 
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         for member in memberships {
             if !valid_skill_ids.contains(&member.skill_id)
                 || !valid_scenario_ids.contains(&member.scenario_id)

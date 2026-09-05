@@ -39,11 +39,11 @@ export function CardActionMenu({ actions, label, className = "", onOpenChange }:
     if (rect.left < 12) node.style.right = `${rect.left - 12}px`;
   }, [open]);
   useEffect(() => {
-    if (!open) return;
+    if (!open) return undefined;
     const node = menu.current;
     node?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
     if (node && !matchMedia('(prefers-reduced-motion: reduce)').matches) node.animate([{opacity:0,transform:'translateY(-4px)'},{opacity:1,transform:'translateY(0)'}],{duration:200,easing:'cubic-bezier(.23,1,.32,1)'});
-    const outside = (e: PointerEvent) => { if (!container.current?.contains(e.target as Node)) void close(false); };
+    const outside = (e: PointerEvent) => { if (!(e.target instanceof Node) || !container.current?.contains(e.target)) void close(false); };
     document.addEventListener('pointerdown', outside);
     return () => { document.removeEventListener('pointerdown', outside); node?.getAnimations().forEach(a => a.cancel()); };
   }, [open, close]);
@@ -51,7 +51,7 @@ export function CardActionMenu({ actions, label, className = "", onOpenChange }:
   if (!actions.length) return null;
   return <div className={`${styles.container} ${className}`} ref={container} onClick={e => e.stopPropagation()}><div ref={trigger}><Button variant="ghost" iconOnly aria-label={label} title={label} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? id : undefined} onClick={() => { if (open) void close(); else change(true); }} onKeyDown={e => { if (e.key === 'ArrowDown') { e.preventDefault(); change(true); } }}><MoreHorizontal size={16}/></Button></div>
     {open && <div id={id} ref={menu} role="menu" aria-label={label} className={styles.menu} onKeyDown={e => {
-      const nodes=Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));const index=nodes.indexOf(document.activeElement as HTMLButtonElement);
+      const nodes=Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));const active=document.activeElement;const index=active instanceof HTMLButtonElement?nodes.indexOf(active):-1;
       if (e.key==='Escape') { e.preventDefault(); e.stopPropagation(); void close(); }
       if (e.key==='Tab') { void close(false); }
       if (['ArrowDown','ArrowUp','Home','End'].includes(e.key)) { e.preventDefault(); const next=e.key==='Home'?0:e.key==='End'?nodes.length-1:(index+(e.key==='ArrowDown'?1:-1)+nodes.length)%nodes.length; nodes[next]?.focus(); }

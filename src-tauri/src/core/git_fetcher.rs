@@ -1,8 +1,7 @@
 use crate::core::central_repo;
+use crate::core::gix_repo;
 use crate::core::skill_metadata;
 use anyhow::{bail, Context, Result};
-use fs2::FileExt;
-use git2::{Direction, Repository};
 use sha2::{Digest, Sha256};
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, Read};
@@ -13,6 +12,15 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 const CLONE_TIMEOUT_SECS: u64 = 300;
+
+/// Why the clone watchdog stopped, distinguishing user cancellation and
+/// timeout from an ordinary (failed) clone.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CloneWatchdogStop {
+    Done,
+    Cancelled,
+    TimedOut,
+}
 
 /// Filename prefix shared by isolated install checkouts under `std::env::temp_dir()`.
 /// Used by both `materialize_cached_repo` (writer) and `validate_clone_temp_path` (reader).
@@ -138,11 +146,11 @@ fn lock_repo_cache(
         .with_context(|| format!("Failed to open repo cache lock {}", lock_path.display()))?;
 
     // Try non-blocking first; if contended, surface a progress message before blocking.
-    if file.try_lock_exclusive().is_err() {
+    if file.try_lock().is_err() {
         if let Some(cb) = on_progress {
             cb("Waiting for another install of this repository to finish…");
         }
-        file.lock_exclusive()
+        file.lock()
             .with_context(|| format!("Failed to lock repo cache {}", lock_path.display()))?;
     }
     Ok(RepoCacheLock { _file: file })
@@ -213,7 +221,7 @@ fn materialize_cached_repo(
     let source = cached
         .to_str()
         .ok_or_else(|| anyhow::anyhow!("Cached repo path is not valid UTF-8"))?;
-    match git2::build::RepoBuilder::new().clone(source, &temp_dir) {
+    match gix_clone(source, &temp_dir, None, false, None, None, None) {
         Ok(_) => Ok(temp_dir),
         Err(err) => {
             let _ = std::fs::remove_dir_all(&temp_dir);
@@ -500,7 +508,7 @@ pub fn clone_repo_ref_with_progress(
                     system_git_stderr = Some(collected);
                     // Clean up failed clone.
                     let _ = std::fs::remove_dir_all(&cached_dir);
-                    break; // fall through to git2
+                    break; // fall through to gix
                 }
                 Ok(None) => {
                     if Instant::now() > deadline {
@@ -522,67 +530,75 @@ pub fn clone_repo_ref_with_progress(
         }
     }
 
-    // Fallback to git2 with timeout and shallow clone.
+    // Fallback to gix with timeout and shallow clone.
     if let Some(ref cb) = on_progress {
         cb("Trying alternative clone method…");
     }
 
-    let mut builder = git2::build::RepoBuilder::new();
-    if let Some(branch) = branch {
-        builder.branch(branch);
-    }
-
-    let cancel_clone = cancel.cloned();
-    let clone_deadline = Instant::now() + Duration::from_secs(CLONE_TIMEOUT_SECS);
-    let mut callbacks = git2::RemoteCallbacks::new();
+    let interrupt = Arc::new(AtomicBool::new(false));
+    let done = Arc::new(AtomicBool::new(false));
+    let watchdog = {
+        let interrupt = interrupt.clone();
+        let done = done.clone();
+        let cancel = cancel.cloned();
+        std::thread::spawn(move || {
+            let deadline = Instant::now() + Duration::from_secs(CLONE_TIMEOUT_SECS);
+            
+            loop {
+                if done.load(Ordering::SeqCst) {
+                    return CloneWatchdogStop::Done;
+                }
+                if cancel.as_ref().is_some_and(|c| c.load(Ordering::SeqCst)) {
+                    interrupt.store(true, Ordering::SeqCst);
+                    return CloneWatchdogStop::Cancelled;
+                }
+                if Instant::now() > deadline {
+                    interrupt.store(true, Ordering::SeqCst);
+                    return CloneWatchdogStop::TimedOut;
+                }
+                std::thread::sleep(Duration::from_millis(100));
+            }
+        })
+    };
 
     let progress_for_cb: Option<Arc<std::sync::Mutex<ProgressCallback>>> =
         on_progress.map(|cb| Arc::new(std::sync::Mutex::new(cb)));
-    let progress_for_transfer = progress_for_cb.clone();
 
-    callbacks.transfer_progress(move |stats| {
-        if let Some(ref c) = cancel_clone {
-            if c.load(Ordering::SeqCst) {
-                return false;
-            }
-        }
-        if Instant::now() > clone_deadline {
-            return false;
-        }
-        if let Some(ref cb) = progress_for_transfer {
-            if let Ok(cb) = cb.lock() {
-                let msg = format!(
-                    "Receiving objects: {}/{} ({:.1} KB)",
-                    stats.received_objects(),
-                    stats.total_objects(),
-                    stats.received_bytes() as f64 / 1024.0
-                );
-                cb(&msg);
-            }
-        }
-        true
-    });
+    let clone_result = gix_clone(
+        url,
+        &cached_dir,
+        branch,
+        true,
+        proxy_url,
+        Some(&interrupt),
+        progress_for_cb,
+    );
+    done.store(true, Ordering::SeqCst);
+    let stop = watchdog.join().unwrap_or(CloneWatchdogStop::Done);
 
-    let mut fetch_opts = git2::FetchOptions::new();
-    fetch_opts.remote_callbacks(callbacks);
-    fetch_opts.depth(1);
-    if let Some(proxy) = proxy_url.filter(|s| !s.is_empty()) {
-        let mut proxy_opts = git2::ProxyOptions::new();
-        proxy_opts.url(proxy);
-        fetch_opts.proxy_options(proxy_opts);
-    }
-    builder.fetch_options(fetch_opts);
-
-    match builder.clone(url, &cached_dir) {
+    match clone_result {
         Ok(_) => materialize_cached_repo(&cached_dir, cancel),
-        Err(git2_err) => {
+        Err(gix_err) => {
             let _ = std::fs::remove_dir_all(&cached_dir);
-            // Include system git stderr in the error if available.
-            let detail = system_git_stderr
-                .filter(|s| !s.trim().is_empty())
-                .map(|s| format!(" (system git: {})", s.trim()))
-                .unwrap_or_default();
-            anyhow::bail!("Failed to clone {}: {}{}", url, git2_err, detail)
+            match stop {
+                CloneWatchdogStop::Cancelled => {
+                    anyhow::bail!("Installation cancelled")
+                }
+                CloneWatchdogStop::TimedOut => {
+                    anyhow::bail!(
+                        "Git clone timed out after {}s — check your network connection",
+                        CLONE_TIMEOUT_SECS
+                    )
+                }
+                CloneWatchdogStop::Done => {
+                    // Include system git stderr in the error if available.
+                    let detail = system_git_stderr
+                        .filter(|s| !s.trim().is_empty())
+                        .map(|s| format!(" (system git: {})", s.trim()))
+                        .unwrap_or_default();
+                    anyhow::bail!("Failed to clone {}: {}{}", url, gix_err, detail)
+                }
+            }
         }
     }
 }
@@ -600,9 +616,8 @@ pub fn get_head_revision(repo_dir: &Path) -> Result<String> {
         }
     }
 
-    let repo = Repository::open(repo_dir)?;
-    let head = repo.head()?.peel_to_commit()?;
-    Ok(head.id().to_string())
+    let repo = gix_repo::open(repo_dir)?;
+    Ok(repo.head_id()?.detach().to_string())
 }
 
 pub fn resolve_remote_revision(
@@ -614,24 +629,48 @@ pub fn resolve_remote_revision(
         return Ok(revision);
     }
 
-    let repo = Repository::init_bare(
-        std::env::temp_dir().join(format!("skillharbor-remote-{}", uuid::Uuid::new_v4())),
-    )?;
-    let mut remote = repo.remote_anonymous(url)?;
-    let mut proxy_opts = git2::ProxyOptions::new();
-    if let Some(proxy) = proxy_url.filter(|s| !s.is_empty()) {
-        proxy_opts.url(proxy);
-    }
-    remote.connect_auth(Direction::Fetch, None, Some(proxy_opts))?;
-    let refs = remote.list()?;
+    // A gix remote is always tied to a repository; a scratch bare one
+    // carries the (in-memory) proxy configuration.
+    let scratch = std::env::temp_dir().join(format!("skillharbor-remote-{}", uuid::Uuid::new_v4()));
+    let result = resolve_remote_revision_with_gix(&scratch, url, branch, proxy_url);
+    let _ = std::fs::remove_dir_all(&scratch);
+    result
+}
 
+fn resolve_remote_revision_with_gix(
+    scratch: &Path,
+    url: &str,
+    branch: Option<&str>,
+    proxy_url: Option<&str>,
+) -> Result<String> {
+    let mut repo = gix::init_bare(scratch)?;
+    if let Some(proxy) = proxy_url.filter(|s| !s.is_empty()) {
+        repo.config_snapshot_mut()
+            .append_config([format!("http.proxy={proxy}")], gix::config::Source::Api)?;
+    }
+    let remote = repo.remote_at(url)?;
+    let conn = remote.connect(gix::remote::Direction::Fetch)?;
+    // The anonymous remote's only refspec is the implicit tag spec; left as
+    // a server-side filter it would hide all heads, so list everything.
+    let options = gix::remote::ref_map::Options {
+        prefix_from_spec_as_filter_on_remote: false,
+        ..Default::default()
+    };
+    let (ref_map, _handshake) = conn.ref_map(gix::progress::Discard, options)?;
+
+    let lookup = |name: &str| {
+        ref_map
+            .remote_refs
+            .iter()
+            .find(|r| r.unpack().0 == name)
+            .and_then(|r| r.unpack().1.map(|oid| oid.to_string()))
+    };
     if let Some(branch) = branch {
-        let target = format!("refs/heads/{branch}");
-        if let Some(head) = refs.iter().find(|head| head.name() == target) {
-            return Ok(head.oid().to_string());
+        if let Some(revision) = lookup(&format!("refs/heads/{branch}")) {
+            return Ok(revision);
         }
-    } else if let Some(head) = refs.iter().find(|head| head.name() == "HEAD") {
-        return Ok(head.oid().to_string());
+    } else if let Some(revision) = lookup("HEAD") {
+        return Ok(revision);
     }
 
     anyhow::bail!("Unable to resolve remote revision for {}", url)
@@ -652,10 +691,11 @@ pub fn checkout_revision(repo_dir: &Path, revision: &str) -> Result<()> {
         }
     }
 
-    let repo = Repository::open(repo_dir)?;
-    let oid = git2::Oid::from_str(revision)?;
-    repo.set_head_detached(oid)?;
-    repo.checkout_head(Some(git2::build::CheckoutBuilder::new().force()))?;
+    let repo = gix_repo::open(repo_dir)?;
+    let oid = gix_repo::parse_oid(revision)?;
+    gix_repo::write_ref(&repo, "HEAD", oid, "checkout: moving to detached revision")?;
+    let tree = repo.find_commit(oid)?.tree()?;
+    gix_repo::checkout_tree_force(&repo, tree.id().detach())?;
     Ok(())
 }
 
@@ -938,6 +978,170 @@ fn resolve_remote_revision_with_git(
         .ok_or_else(|| anyhow::anyhow!("No remote revision found"))?;
 
     Ok(revision)
+}
+
+// ── gix clone fallback ──
+
+/// Clone `url` into `dest` via gix. Used as the fallback when system git is
+/// unavailable or fails, so it deliberately runs without credentials or
+/// progress of its own — the same scope the old C-binding fallback had.
+#[allow(clippy::too_many_arguments)]
+fn gix_clone(
+    url: &str,
+    dest: &Path,
+    branch: Option<&str>,
+    shallow: bool,
+    proxy_url: Option<&str>,
+    interrupt: Option<&AtomicBool>,
+    on_progress: Option<Arc<std::sync::Mutex<ProgressCallback>>>,
+) -> Result<()> {
+    let mut prep = gix::prepare_clone(url, dest)?;
+    if let Some(proxy) = proxy_url.filter(|s| !s.is_empty()) {
+        prep = prep.with_in_memory_config_overrides([format!("http.proxy={proxy}")]);
+    }
+    if shallow {
+        prep = prep.with_shallow(gix::remote::fetch::Shallow::DepthAtRemote(
+            std::num::NonZeroU32::new(1).expect("one is not zero"),
+        ));
+    }
+    if let Some(branch) = branch {
+        prep = prep
+            .with_ref_name(Some(branch))
+            .map_err(|e| anyhow::anyhow!("invalid branch name {branch}: {e}"))?;
+    }
+    let interrupt_owned;
+    let interrupt = match interrupt {
+        Some(i) => i,
+        None => {
+            interrupt_owned = AtomicBool::new(false);
+            &interrupt_owned
+        }
+    };
+    let progress = match on_progress {
+        Some(cb) => gix::progress::Either::Left(FetchProgress::root(cb)),
+        None => gix::progress::Either::Right(gix::progress::Discard),
+    };
+    let (mut checkout, _outcome) = prep.fetch_then_checkout(progress, interrupt)?;
+    checkout.main_worktree(gix::progress::Discard, interrupt)?;
+    Ok(())
+}
+
+/// NestedProgress adapter forwarding gix clone progress to the UI callback.
+/// The remote's sideband progress arrives as named sub-tasks ("Receiving
+/// objects" and friends) with max/step updates; emit them throttled.
+struct FetchProgress {
+    shared: Arc<FetchProgressShared>,
+    name: Option<String>,
+    max: Option<gix::progress::Step>,
+    step: gix::progress::StepShared,
+    id: gix::progress::Id,
+}
+
+struct FetchProgressShared {
+    cb: Arc<std::sync::Mutex<ProgressCallback>>,
+    last_emit: std::sync::Mutex<Instant>,
+}
+
+impl FetchProgress {
+    fn root(cb: Arc<std::sync::Mutex<ProgressCallback>>) -> Self {
+        Self {
+            shared: Arc::new(FetchProgressShared {
+                cb,
+                last_emit: std::sync::Mutex::new(Instant::now()),
+            }),
+            name: None,
+            max: None,
+            step: Default::default(),
+            id: gix::progress::UNKNOWN,
+        }
+    }
+
+    fn child(&self, name: impl Into<String>, id: gix::progress::Id) -> Self {
+        Self {
+            shared: self.shared.clone(),
+            name: Some(name.into()),
+            max: None,
+            step: Default::default(),
+            id,
+        }
+    }
+
+    fn emit(&self, finished: bool) {
+        let (Some(name), Some(max)) = (self.name.as_ref(), self.max) else {
+            return;
+        };
+        let step = self.step.load(Ordering::Relaxed);
+        {
+            let mut last = self
+                .shared
+                .last_emit
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            if !finished && last.elapsed() < Duration::from_millis(200) {
+                return;
+            }
+            *last = Instant::now();
+        }
+        if let Ok(cb) = self.shared.cb.lock() {
+            cb(&format!("{name}: {step}/{max}"));
+        }
+    }
+}
+
+impl gix::progress::Count for FetchProgress {
+    fn set(&self, step: gix::progress::Step) {
+        self.step.store(step, Ordering::Relaxed);
+        self.emit(self.max.is_some_and(|max| step >= max));
+    }
+
+    fn step(&self) -> gix::progress::Step {
+        self.step.load(Ordering::Relaxed)
+    }
+
+    fn inc_by(&self, step: gix::progress::Step) {
+        let next = self.step.fetch_add(step, Ordering::Relaxed) + step;
+        self.emit(self.max.is_some_and(|max| next >= max));
+    }
+
+    fn counter(&self) -> gix::progress::StepShared {
+        self.step.clone()
+    }
+}
+
+impl gix::progress::Progress for FetchProgress {
+    fn init(&mut self, max: Option<gix::progress::Step>, _unit: Option<gix::progress::Unit>) {
+        self.max = max;
+    }
+
+    fn set_name(&mut self, name: String) {
+        self.name = Some(name);
+    }
+
+    fn name(&self) -> Option<String> {
+        self.name.clone()
+    }
+
+    fn id(&self) -> gix::progress::Id {
+        self.id
+    }
+
+    fn message(&self, _level: gix::progress::MessageLevel, message: String) {
+        if let Ok(cb) = self.shared.cb.lock() {
+            cb(&message);
+        }
+    }
+}
+
+impl gix::progress::NestedProgress for FetchProgress {
+    type SubProgress = Self;
+
+    fn add_child(&mut self, name: impl Into<String>) -> Self {
+        self.child(name, gix::progress::UNKNOWN)
+    }
+
+    fn add_child_with_id(&mut self, name: impl Into<String>, id: gix::progress::Id) -> Self {
+        self.child(name, id)
+    }
 }
 
 #[cfg(test)]

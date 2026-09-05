@@ -29,6 +29,17 @@ interface RowData {
   error?: string;
 }
 
+function getAgentState(row: RowData | undefined, target: ProjectAgentTarget) {
+  if (!row || row.state === "loading") return "loading";
+  if (row.state === "error") return "error";
+  if (!target.installed || !target.enabled) return "unavailable";
+  if (row.installedAgents.includes(target.key)) return "installed";
+  if (row.dirName && (row.dirNamesByAgent[target.key] ?? []).includes(row.dirName)) {
+    return "conflict";
+  }
+  return "available";
+}
+
 export function SkillProjectsSection({ skill, projects, onChanged }: Props) {
   const { t } = useTranslation();
   const [rows, setRows] = useState<Record<string, RowData>>({});
@@ -125,17 +136,6 @@ export function SkillProjectsSection({ skill, projects, onChanged }: Props) {
     () => Object.values(rows).filter((r) => r.state === "installed").length,
     [rows],
   );
-
-  const getAgentState = (row: RowData | undefined, target: ProjectAgentTarget) => {
-    if (!row || row.state === "loading") return "loading";
-    if (row.state === "error") return "error";
-    if (!target.installed || !target.enabled) return "unavailable";
-    if (row.installedAgents.includes(target.key)) return "installed";
-    if (row.dirName && (row.dirNamesByAgent[target.key] ?? []).includes(row.dirName)) {
-      return "conflict";
-    }
-    return "available";
-  };
 
   const handleAdd = async (project: Project, target: ProjectAgentTarget) => {
     const row = rows[project.id];

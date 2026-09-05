@@ -1,0 +1,9 @@
+# This directory is a standalone project: it is bundled into the app as a
+# resource and installed per-arch by scripts/prepare-search-runtime.mjs.
+# The empty workspace root marker stops pnpm from treating it as part of the
+# repository-root workspace (which would redirect installs to ../pnpm-lock.yaml).
+packages: []
+# Hoisted (npm-like flat) layout: Tauri resource bundling does not follow the
+# symlinks pnpm's default isolated layout creates, and the bundled app would
+# fail to resolve @zvec/zvec-grep at runtime.
+nodeLinker: hoisted

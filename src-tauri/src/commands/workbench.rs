@@ -192,7 +192,7 @@ pub fn create(
     let id = if let Some(p) = existing {
         p.id
     } else {
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         let record = ProjectRecord {
             id: uuid::Uuid::new_v4().to_string(),
             name: canonical

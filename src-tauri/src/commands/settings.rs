@@ -270,8 +270,13 @@ pub async fn check_last_panic(app: tauri::AppHandle) -> Result<Option<PanicInfo>
             .modified()
             .map_err(AppError::io)
             .unwrap_or(std::time::SystemTime::now());
-        let datetime: chrono::DateTime<chrono::Local> = modified.into();
-        let timestamp = datetime.format("%Y-%m-%d %H:%M:%S").to_string();
+        let timestamp = jiff::Timestamp::try_from(modified)
+            .map(|ts| {
+                ts.to_zoned(jiff::tz::TimeZone::system())
+                    .strftime("%Y-%m-%d %H:%M:%S")
+                    .to_string()
+            })
+            .unwrap_or_default();
         let content = std::fs::read_to_string(&panic_path).unwrap_or_default();
         let first_lines: Vec<&str> = content.lines().take(3).collect();
         let message = log_sanitize::sanitize(&first_lines.join("\n"));
@@ -467,7 +472,7 @@ pub async fn export_logs_zip(
             .ok_or_else(|| AppError::io("Failed to resolve Downloads directory"))?;
         std::fs::create_dir_all(&downloads).map_err(AppError::io)?;
 
-        let timestamp = chrono::Local::now().format("%Y%m%d-%H%M%S").to_string();
+        let timestamp = jiff::Zoned::now().strftime("%Y%m%d-%H%M%S").to_string();
         let zip_path = downloads.join(format!("{app_name}-log-{timestamp}.zip"));
 
         let mut log_files: Vec<std::path::PathBuf> = Vec::new();
@@ -510,7 +515,7 @@ pub async fn export_logs_zip(
 
         let diagnostics = format!(
             "# Diagnostics\n\nExported: {ts}\n\n- App version: `{ver}`\n- OS: `{os} {osver} ({arch})`\n- Central repo: `{repo}`{custom}\n- Log files included: {count}\n- Audit entries included: {audit}\n",
-            ts = chrono::Local::now().to_rfc3339(),
+            ts = jiff::Zoned::now().strftime("%Y-%m-%dT%H:%M:%S%.f%:z"),
             ver = app_version,
             os = os,
             osver = os_version,

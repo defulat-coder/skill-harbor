@@ -1,5 +1,4 @@
 use anyhow::{Context, Result};
-use fs2::FileExt;
 use std::fs::{File, OpenOptions};
 use std::io::{Seek, SeekFrom, Write};
 use std::time::{Duration, Instant};
@@ -40,7 +39,7 @@ impl RepoLock {
     /// next round rather than block a user-initiated operation.
     pub fn acquire(operation: &str) -> Result<Self> {
         let file = open_lock_file()?;
-        file.try_lock_exclusive()
+        file.try_lock()
             .with_context(|| format!("skills repository is busy: {operation}"))?;
         Self::stamp(file, operation)
     }
@@ -53,7 +52,7 @@ impl RepoLock {
         let file = open_lock_file()?;
         let start = Instant::now();
         loop {
-            match file.try_lock_exclusive() {
+            match file.try_lock() {
                 Ok(()) => return Self::stamp(file, operation),
                 // Retry on any error (not just `WouldBlock`): on Windows
                 // `LockFileEx` reports contention as `ERROR_LOCK_VIOLATION`,
@@ -88,7 +87,9 @@ impl RepoLock {
                 .or_else(|_| std::env::var("COMPUTERNAME"))
                 .unwrap_or_else(|_| "unknown".to_string()),
             operation,
-            chrono::Utc::now().to_rfc3339()
+            jiff::Timestamp::now()
+                .to_zoned(jiff::tz::TimeZone::UTC)
+                .strftime("%Y-%m-%dT%H:%M:%S%.f%:z")
         )?;
         file.sync_all()?;
         Ok(Self { file })

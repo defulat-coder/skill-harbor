@@ -44,20 +44,20 @@ function SearchHomeContent({ index }: { index: ReturnType<typeof useSkillIndex> 
   // the prompt wraps) — same approach as upstream HomeHero.
   useEffect(() => {
     const node = beamRef.current;
-    if (!node) return;
+    if (!node) return undefined;
     const syncPath = () => {
       node.style.setProperty("--beam-path", `path("M 0 0 H ${node.offsetWidth} V ${node.offsetHeight} H 0 V 0")`);
     };
     syncPath();
-    if (typeof ResizeObserver === "undefined") return;
+    if (typeof ResizeObserver === "undefined") return undefined;
     const observer = new ResizeObserver(syncPath);
     observer.observe(node);
     return () => observer.disconnect();
   }, [beamPhase]);
   const busy = phase !== "idle";
-  const groups = Object.values((result?.hits ?? []).reduce<Record<string, { skillId: string; name: string; sources: { hit: SkillSearchResult["hits"][number]; index: number }[] }>>((all, hit, index) => {
+  const groups = Object.values((result?.hits ?? []).reduce<Record<string, { skillId: string; name: string; sources: { hit: SkillSearchResult["hits"][number]; index: number }[] }>>((all, hit, hitIndex) => {
     const group = all[hit.skill_id] ??= { skillId: hit.skill_id, name: hit.name, sources: [] };
-    group.sources.push({ hit, index }); return all;
+    group.sources.push({ hit, index: hitIndex }); return all;
   }, {}));
   const linkSkill = managedSkills.find(skill => skill.id === linkId);
 
@@ -112,7 +112,7 @@ function SearchHomeContent({ index }: { index: ReturnType<typeof useSkillIndex> 
             // card's own controls (textarea → send button).
             const next = event.relatedTarget;
             if (next instanceof Node && event.currentTarget.contains(next)) return;
-            setBeamPhase(phase => (phase === "active" ? "fading" : phase));
+            setBeamPhase(prev => (prev === "active" ? "fading" : prev));
           }}
         >
           <label className={styles.inputLabel} htmlFor="skill-question">描述你的需求</label>
@@ -151,7 +151,7 @@ function SearchHomeContent({ index }: { index: ReturnType<typeof useSkillIndex> 
       {answerError && <div role="alert" className={styles.error}><span>{answerError}。下方来源仍可阅读。</span><Button disabled={busy} onClick={() => void retryAnswer()}>重试回答</Button></div>}
       <div className={styles.hits}>{groups.map(group => <article className={styles.hit} key={group.skillId}>
         <header><h3><Link to={`/library?skill=${encodeURIComponent(group.skillId)}`}>{group.name}</Link></h3><Button variant="ghost" disabled={!managedSkills.some(skill => skill.id === group.skillId)} onClick={() => setLinkId(group.skillId)}><Link2 size={14} />加入项目</Button></header>
-        <Disclosure title={`查看来源 · ${group.sources.length} 个片段`}>{group.sources.map(({ hit, index }) => <div key={index}><p className={styles.source}><span>[{index + 1}] 第 {hit.line_start}–{hit.line_end} 行</span><code>{hit.path}</code></p><pre className={styles.excerpt}>{hit.text}</pre></div>)}</Disclosure>
+        <Disclosure title={`查看来源 · ${group.sources.length} 个片段`}>{group.sources.map(({ hit, index: hitIndex }) => <div key={hitIndex}><p className={styles.source}><span>[{hitIndex + 1}] 第 {hit.line_start}–{hit.line_end} 行</span><code>{hit.path}</code></p><pre className={styles.excerpt}>{hit.text}</pre></div>)}</Disclosure>
       </article>)}</div>
     </section>}
     {linkSkill && <SkillLinkDialog skills={[linkSkill]} onClose={() => setLinkId(null)} />}

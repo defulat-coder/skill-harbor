@@ -5,7 +5,9 @@
 //! projection row.
 
 use anyhow::{Context, Result, bail};
-use git2::{ObjectType, Oid, Repository};
+use gix::ObjectId;
+use gix::bstr::ByteSlice;
+use gix::objs::tree::EntryKind;
 use std::collections::BTreeSet;
 use std::path::Path;
 
@@ -15,7 +17,7 @@ use super::protocol::{self, TRAILER_RESOLVED};
 use super::snapshot;
 use crate::core::skill_store::SkillStore;
 use crate::core::sync_metadata::{self, SkillMetaFile, path_key};
-use crate::core::{git_backup, skill_metadata};
+use crate::core::{git_backup, gix_repo, skill_metadata};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResolveAction {
@@ -54,7 +56,7 @@ pub fn resolve_conflict_unlocked(
     }
     let safety_tag = git_backup::create_snapshot_tag_unlocked(skills_dir)?;
 
-    let repo = Repository::open(skills_dir).context("failed to open skills repository")?;
+    let repo = gix_repo::open(skills_dir).context("failed to open skills repository")?;
     let theirs_commit = pending::ref_target(&repo, &conflict_ref(skill_id))
         .or_else(|| {
             store
@@ -62,7 +64,7 @@ pub fn resolve_conflict_unlocked(
                 .ok()?
                 .into_iter()
                 .find(|r| r.skill_id == skill_id)
-                .and_then(|r| Oid::from_str(&r.theirs_commit).ok())
+                .and_then(|r| gix_repo::parse_oid(&r.theirs_commit).ok())
         });
 
     match action {
@@ -102,10 +104,10 @@ pub fn resolve_conflict_unlocked(
 /// local content dir + metadata, extract theirs content at theirs path
 /// (collision-adjusted against the other local skills), rebuild metadata.
 fn apply_use_remote(
-    repo: &Repository,
+    repo: &gix::Repository,
     skills_dir: &Path,
     skill_id: &str,
-    theirs_commit: Oid,
+    theirs_commit: ObjectId,
 ) -> Result<()> {
     let theirs_tree = repo.find_commit(theirs_commit)?.tree()?;
     let theirs_snap = snapshot::read_snapshot(repo, &theirs_tree)
@@ -189,13 +191,19 @@ fn apply_use_remote(
 /// design writes `name (来自 <设备名>)` — a language-neutral `name (device)`
 /// is used since backend strings are not localized).
 fn apply_keep_both(
-    repo: &Repository,
+    repo: &gix::Repository,
     skills_dir: &Path,
     skill_id: &str,
-    theirs_commit: Oid,
+    theirs_commit: ObjectId,
 ) -> Result<()> {
     let theirs_c = repo.find_commit(theirs_commit)?;
-    let device = theirs_c.author().name().unwrap_or("").trim().to_string();
+    let device = theirs_c
+        .author()
+        .ok()
+        .and_then(|a| a.name.to_str().ok())
+        .unwrap_or("")
+        .trim()
+        .to_string();
     let theirs_tree = theirs_c.tree()?;
     let theirs_snap = snapshot::read_snapshot(repo, &theirs_tree)
         .context("failed to read the pinned remote version")?;
@@ -322,8 +330,8 @@ fn free_path_for(skills_dir: &Path, wanted: &str, own_id: &str) -> Result<String
 /// the library, on the same volume so the final move is a plain rename.
 /// Cleans up after itself on failure.
 fn stage_skill_extract(
-    repo: &Repository,
-    content: git2::Oid,
+    repo: &gix::Repository,
+    content: ObjectId,
     skills_dir: &Path,
 ) -> Result<std::path::PathBuf> {
     let staging_parent = skills_dir
@@ -354,20 +362,22 @@ fn place_staged(staged: &Path, skills_dir: &Path, target_rel: &str) -> Result<()
     Ok(())
 }
 
-fn extract_tree_to_dir(repo: &Repository, tree: &git2::Tree, dest: &Path) -> Result<()> {
+fn extract_tree_to_dir(repo: &gix::Repository, tree: &gix::Tree, dest: &Path) -> Result<()> {
     std::fs::create_dir_all(dest)?;
     for entry in tree.iter() {
-        let name = entry.name().context("tree entry with non-utf8 name")?;
+        let entry = entry?;
+        let name = entry.filename().to_str().context("tree entry with non-utf8 name")?;
         let target = dest.join(name);
-        match entry.kind() {
-            Some(ObjectType::Tree) => {
-                extract_tree_to_dir(repo, &repo.find_tree(entry.id())?, &target)?;
+        let mode = entry.mode();
+        match mode.kind() {
+            EntryKind::Tree => {
+                extract_tree_to_dir(repo, &repo.find_tree(entry.object_id())?, &target)?;
             }
-            Some(ObjectType::Blob) => {
-                let blob = repo.find_blob(entry.id())?;
-                std::fs::write(&target, blob.content())?;
+            EntryKind::Blob => {
+                let blob = repo.find_blob(entry.object_id())?;
+                std::fs::write(&target, &blob.data)?;
                 #[cfg(unix)]
-                if entry.filemode() == 0o100755 {
+                if mode.value() == 0o100755 {
                     use std::os::unix::fs::PermissionsExt;
                     std::fs::set_permissions(&target, std::fs::Permissions::from_mode(0o755))?;
                 }

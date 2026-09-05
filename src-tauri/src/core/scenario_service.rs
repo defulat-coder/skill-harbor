@@ -338,7 +338,7 @@ pub fn sync_desired_targets(
             replace_policy(recorded_mode.as_deref()),
         ) {
             Ok(actual_mode) => {
-                let now = chrono::Utc::now().timestamp_millis();
+                let now = jiff::Timestamp::now().as_millisecond();
                 let target_record = SkillTargetRecord {
                     id: uuid::Uuid::new_v4().to_string(),
                     skill_id: desired.skill_id.clone(),
@@ -569,7 +569,7 @@ pub fn sync_skill_to_active_scenario(
                     replace_policy(recorded_mode.as_deref()),
                 ) {
                     Ok(actual_mode) => {
-                        let now = chrono::Utc::now().timestamp_millis();
+                        let now = jiff::Timestamp::now().as_millisecond();
                         let target_record = super::skill_store::SkillTargetRecord {
                             id: uuid::Uuid::new_v4().to_string(),
                             skill_id: skill_id.to_string(),
@@ -601,7 +601,7 @@ pub fn sync_skill_to_active_scenario(
 pub fn ensure_default_startup_scenario(store: &SkillStore) -> Result<(), AppError> {
     let mut scenarios = store.get_all_scenarios().map_err(AppError::db)?;
     if scenarios.is_empty() {
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         let default_scenario = ScenarioRecord {
             id: uuid::Uuid::new_v4().to_string(),
             name: "Default".to_string(),
@@ -646,7 +646,7 @@ pub fn ensure_default_startup_scenario(store: &SkillStore) -> Result<(), AppErro
 pub fn ensure_cli_scenario_state(store: &SkillStore) -> Result<(), AppError> {
     let mut scenarios = store.get_all_scenarios().map_err(AppError::db)?;
     if scenarios.is_empty() {
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         let default_scenario = ScenarioRecord {
             id: uuid::Uuid::new_v4().to_string(),
             name: "Default".to_string(),
@@ -767,7 +767,7 @@ pub fn sync_single_skill_to_tool(
     };
     let actual_mode = sync_engine::sync_skill(&source, &target, mode, policy).map_err(AppError::io)?;
 
-    let now = chrono::Utc::now().timestamp_millis();
+    let now = jiff::Timestamp::now().as_millisecond();
     let target_record = SkillTargetRecord {
         id: uuid::Uuid::new_v4().to_string(),
         skill_id: skill_id.to_string(),
@@ -1035,7 +1035,7 @@ fn apply_add(
         match sync_engine::sync_skill(source, target, *mode, replace_policy(effective_mode)) {
             Ok(actual_mode) => {
                 written_in_batch.insert(target.as_path(), actual_mode.as_str().to_string());
-                let now = chrono::Utc::now().timestamp_millis();
+                let now = jiff::Timestamp::now().as_millisecond();
                 let target_record = SkillTargetRecord {
                     id: uuid::Uuid::new_v4().to_string(),
                     skill_id: skill_id.clone(),

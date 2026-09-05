@@ -7,7 +7,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 export function useDragWindow(): MouseEventHandler {
   return useCallback((e) => {
     if (e.buttons === 1 && e.detail === 1) {
-      getCurrentWindow().startDragging();
+      void getCurrentWindow().startDragging();
     }
   }, []);
 }

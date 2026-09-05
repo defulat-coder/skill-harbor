@@ -45,7 +45,7 @@ fn root() -> PathBuf {
     central_repo::home_base_dir().join("local-workbench/tasks")
 }
 fn now() -> i64 {
-    chrono::Utc::now().timestamp_millis()
+    jiff::Timestamp::now().as_millisecond()
 }
 fn active() -> &'static Mutex<HashMap<String, ActiveRun>> {
     ACTIVE.get_or_init(|| {

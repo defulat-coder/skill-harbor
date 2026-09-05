@@ -50,10 +50,10 @@ export function GlobalSkills() {
     try { return localStorage.getItem("workbench.libraryView") === "list" ? "list" : "grid"; } catch { return "grid"; }
   });
   const sources = [...new Set(managedSkills.map(s => s.source_type))];
-  const tags = [...new Set(managedSkills.flatMap(s => s.tags))].sort();
+  const tags = [...new Set(managedSkills.flatMap(s => s.tags))].toSorted();
   const needle = query.trim().toLowerCase();
   const filtered = managedSkills.filter(s => (!source || s.source_type === source) && (!tag || s.tags.includes(tag)) && `${s.name} ${s.description ?? ""} ${s.tags.join(" ")}`.toLowerCase().includes(needle))
-    .sort((a, b) => sort === "updated" ? b.updated_at - a.updated_at : a.name.localeCompare(b.name, "zh-CN"));
+    .toSorted((a, b) => sort === "updated" ? b.updated_at - a.updated_at : a.name.localeCompare(b.name, "zh-CN"));
   const selected = managedSkills.find(s => s.id === (searchParams.get("skill") ?? selectedId));
   const checked = managedSkills.filter(s => checkedIds.includes(s.id));
   const linked = managedSkills.filter(s => linkIds.includes(s.id));

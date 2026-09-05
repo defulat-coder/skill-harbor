@@ -7,7 +7,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const runtime = join(root, 'search-runtime');
 if (Number(process.versions.node.split('.')[0]) < 22) throw new Error('Local search requires Node.js 22 or later to build.');
 const lock = await readFile(join(runtime, 'pnpm-lock.yaml'));
-const fingerprint = `${process.platform}-${process.arch}-${createHash('sha256').update(lock).digest('hex')}`;
+const fingerprint = `${process.platform}-${process.arch}-hoisted-${createHash('sha256').update(lock).digest('hex')}`;
 const marker = join(runtime, 'node_modules/.workbench-runtime');
 let installed = false;
 try { installed = await readFile(marker, 'utf8') === fingerprint; } catch { /* First preparation. */ }

@@ -53,7 +53,7 @@ export function CommandPalette() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
+      const target = e.target instanceof HTMLElement ? e.target : null;
       const typing =
         target &&
         (target.tagName === "INPUT" ||
@@ -105,7 +105,7 @@ export function CommandPalette() {
         sublabel: s.description || undefined,
         icon: <Layers className="h-3.5 w-3.5" />,
         run: () => {
-          navigate(`/library?skill=${encodeURIComponent(s.id)}`);
+          void navigate(`/library?skill=${encodeURIComponent(s.id)}`);
         },
       }));
 
@@ -126,7 +126,7 @@ export function CommandPalette() {
               setViewedPresetId(s.id);
             }
             if (!window.location.pathname.endsWith("/my-skills")) {
-              navigate("/my-skills");
+              void navigate("/my-skills");
             }
           },
         };

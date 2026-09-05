@@ -850,7 +850,7 @@ pub fn run() {
                     .format(|out, message, record| {
                         out.finish(format_args!(
                             "{} {:5} [{}] {}",
-                            chrono::Local::now().format("%Y-%m-%dT%H:%M:%S%.3f%:z"),
+                            jiff::Zoned::now().strftime("%Y-%m-%dT%H:%M:%S%.3f%:z"),
                             record.level(),
                             record.target(),
                             message

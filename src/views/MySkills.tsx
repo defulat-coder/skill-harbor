@@ -137,6 +137,38 @@ function centralDirName(skill: ManagedSkill) {
   return skill.central_path.split(/[\\/]/).filter(Boolean).pop() || skill.name;
 }
 
+function toggleFilter(set: Set<string>, value: string): Set<string> {
+  const next = new Set(set);
+  if (next.has(value)) next.delete(value);
+  else next.add(value);
+  return next;
+}
+
+function sourceIcon(type: string) {
+  switch (type) {
+    case "git":
+    case "skillssh":
+      return <GithubIcon className="h-3 w-3" />;
+    case "local":
+    case "import":
+      return <HardDrive className="h-3 w-3" />;
+    default:
+      return <Globe className="h-3 w-3" />;
+  }
+}
+
+function canRefresh(skill: ManagedSkill) {
+  return (
+    skill.source_type === "git" ||
+    skill.source_type === "skillssh" ||
+    ((skill.source_type === "local" || skill.source_type === "import") && !!skill.source_ref)
+  );
+}
+
+function sourceTypeLabel(skill: ManagedSkill) {
+  return skill.source_type === "skillssh" ? "skills.sh" : skill.source_type;
+}
+
 export function MySkills() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -237,15 +269,6 @@ export function MySkills() {
     const available = [...allTags, ...skills.flatMap((skill) => skill.tags)];
     setTagFilters((prev) => pruneStaleTagFilters(prev, available, hasUntagged));
   }
-
-
-
-  const toggleFilter = (set: Set<string>, value: string): Set<string> => {
-    const next = new Set(set);
-    if (next.has(value)) next.delete(value);
-    else next.add(value);
-    return next;
-  };
 
   // A filter can outlive the control that set it (the tag row hides itself once
   // no tag is left), so the empty state carries the way out. `filterMode` is
@@ -405,7 +428,7 @@ export function MySkills() {
   }, []);
 
   useEffect(() => {
-    (async () => {
+    void (async () => {
       const savedRemote = (await api.getSettings("git_backup_remote_url").catch(() => null))?.trim() || "";
       const status = await api.gitBackupStatus().catch(() => null);
       setGitStatus(status);
@@ -417,11 +440,11 @@ export function MySkills() {
 
   useEffect(() => {
     const handleWindowFocus = () => {
-      refreshGitStatus();
+      void refreshGitStatus();
     };
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        refreshGitStatus();
+        void refreshGitStatus();
       }
     };
 
@@ -435,7 +458,7 @@ export function MySkills() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      refreshGitStatusLocal();
+      void refreshGitStatusLocal();
     }, 400);
     return () => window.clearTimeout(timer);
   }, [skills, refreshGitStatusLocal]);
@@ -458,7 +481,7 @@ export function MySkills() {
         if (!cancelled) setToolToggles(null);
       }
     };
-    loadToggles();
+    void loadToggles();
     return () => {
       cancelled = true;
     };
@@ -1008,24 +1031,6 @@ export function MySkills() {
     };
   };
 
-  const sourceIcon = (type: string) => {
-    switch (type) {
-      case "git":
-      case "skillssh":
-        return <GithubIcon className="h-3 w-3" />;
-      case "local":
-      case "import":
-        return <HardDrive className="h-3 w-3" />;
-      default:
-        return <Globe className="h-3 w-3" />;
-    }
-  };
-
-  const canRefresh = (skill: ManagedSkill) =>
-    skill.source_type === "git" ||
-    skill.source_type === "skillssh" ||
-    ((skill.source_type === "local" || skill.source_type === "import") && !!skill.source_ref);
-
   const anyRefreshableSelected = useMemo(
     () => skills.some((skill) => selectedIds.has(skill.id) && canRefresh(skill)),
     [skills, selectedIds]
@@ -1038,9 +1043,6 @@ export function MySkills() {
     () => skills.filter((skill) => selectedIds.has(skill.id) && canRefresh(skill)).length,
     [skills, selectedIds]
   );
-
-  const sourceTypeLabel = (skill: ManagedSkill) =>
-    skill.source_type === "skillssh" ? "skills.sh" : skill.source_type;
 
   const refreshLabel = (skill: ManagedSkill) =>
     skill.source_type === "local" || skill.source_type === "import"
@@ -1382,7 +1384,7 @@ export function MySkills() {
                     </h3>
                     {showUpdatePill && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleRefreshSkill(skill); }}
+                        onClick={(e) => { e.stopPropagation(); void handleRefreshSkill(skill); }}
                         disabled={updatingSkillId === skill.id}
                         className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--ds-warning-bg)] px-2 py-0.5 text-[11px] font-medium text-[var(--ds-warning)] outline-hidden transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)] disabled:opacity-50"
                         title={refreshLabel(skill)}
@@ -1447,7 +1449,7 @@ export function MySkills() {
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
                         {conflictIds.has(skill.id) && (
                           <button
-                            onClick={(e) => { e.stopPropagation(); navigate("/backup"); }}
+                            onClick={(e) => { e.stopPropagation(); void navigate("/backup"); }}
                             className="rounded-full bg-[var(--ds-warning-bg)] px-2 py-0.5 text-[13px] font-medium text-[var(--ds-warning)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)]"
                             title={t("mySkills.needsAttentionHint")}
                           >
@@ -1467,14 +1469,14 @@ export function MySkills() {
                         {isMissingLocalSource && (
                           <>
                             <button
-                              onClick={(e) => { e.stopPropagation(); handleRelinkSource(skill); }}
+                              onClick={(e) => { e.stopPropagation(); void handleRelinkSource(skill); }}
                               disabled={updatingSkillId === skill.id}
                               className="rounded-full border border-border-subtle px-2 py-0.5 text-[12px] font-medium text-secondary transition-colors hover:bg-surface-hover disabled:opacity-50"
                             >
                               {t("mySkills.updateActions.relink")}
                             </button>
                             <button
-                              onClick={(e) => { e.stopPropagation(); handleDetachSource(skill); }}
+                              onClick={(e) => { e.stopPropagation(); void handleDetachSource(skill); }}
                               disabled={updatingSkillId === skill.id}
                               className="rounded-full border border-border-subtle px-2 py-0.5 text-[12px] font-medium text-muted transition-colors hover:bg-surface-hover hover:text-secondary disabled:opacity-50"
                             >
@@ -1497,7 +1499,7 @@ export function MySkills() {
                           <button
                             disabled={tagSaving}
                             aria-label={`移除标签 ${tag}`}
-                            onClick={(e) => { e.stopPropagation(); handleRemoveTag(skill, tag); }}
+                            onClick={(e) => { e.stopPropagation(); void handleRemoveTag(skill, tag); }}
                             className="hidden group-hover/tag:inline-flex -m-[7px] items-center justify-center rounded-full p-[7px] opacity-60 hover:opacity-100"
                           >
                             <X className="h-2.5 w-2.5" />
@@ -1514,11 +1516,11 @@ export function MySkills() {
                             value={tagInput}
                             onChange={(e) => setTagInput(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") { handleAddTag(skill); }
+                              if (e.key === "Enter") { void handleAddTag(skill); }
                               if (e.key === "Escape") { setTagEditSkillId(null); setTagInput(""); }
                             }}
                             onBlur={() => {
-                              if (tagInput.trim()) handleAddTag(skill);
+                              if (tagInput.trim()) void handleAddTag(skill);
                               else { setTagEditSkillId(null); setTagInput(""); }
                             }}
                             placeholder={t("mySkills.tags.addTag")}
@@ -1536,7 +1538,7 @@ export function MySkills() {
                                   key={tagOption}
                                   type="button"
                                   onMouseDown={(e) => e.preventDefault()}
-                                  onClick={(e) => { e.stopPropagation(); handleAddTag(skill, tagOption); }}
+                                  onClick={(e) => { e.stopPropagation(); void handleAddTag(skill, tagOption); }}
                                   className="w-full truncate rounded-sm px-1.5 py-1 text-left text-[11px] text-secondary hover:bg-surface-hover"
                                   title={tagOption}
                                 >
@@ -1667,7 +1669,7 @@ export function MySkills() {
                 <div className="flex shrink-0 items-center gap-2.5">
                   {conflictIds.has(skill.id) && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); navigate("/backup"); }}
+                      onClick={(e) => { e.stopPropagation(); void navigate("/backup"); }}
                       className="rounded-full bg-[var(--ds-warning-bg)] px-2 py-0.5 text-[12px] font-medium text-[var(--ds-warning)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)]"
                       title={t("mySkills.needsAttentionHint")}
                     >
@@ -1676,7 +1678,7 @@ export function MySkills() {
                   )}
                   {hasUpdate && !isMultiSelect ? (
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleRefreshSkill(skill); }}
+                      onClick={(e) => { e.stopPropagation(); void handleRefreshSkill(skill); }}
                       disabled={updatingSkillId === skill.id}
                       className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--ds-warning-bg)] px-2 py-0.5 text-[11px] font-medium text-[var(--ds-warning)] outline-hidden transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)] disabled:opacity-50"
                       title={refreshLabel(skill)}
@@ -1720,14 +1722,14 @@ export function MySkills() {
                 {isMissingLocalSource && !isMultiSelect && (
                   <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleRelinkSource(skill); }}
+                      onClick={(e) => { e.stopPropagation(); void handleRelinkSource(skill); }}
                       disabled={updatingSkillId === skill.id}
                       className="rounded-sm px-2 py-0.5 text-[13px] font-medium text-secondary transition-colors hover:bg-surface-hover disabled:opacity-50"
                     >
                       {t("mySkills.updateActions.relink")}
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleDetachSource(skill); }}
+                      onClick={(e) => { e.stopPropagation(); void handleDetachSource(skill); }}
                       disabled={updatingSkillId === skill.id}
                       className="rounded-sm px-2 py-0.5 text-[13px] font-medium text-muted transition-colors hover:bg-surface-hover hover:text-secondary disabled:opacity-50"
                     >

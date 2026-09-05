@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Runtime};
 
@@ -67,10 +67,10 @@ pub fn start<R: Runtime>(app: AppHandle<R>, store: Arc<SkillStore>) {
 /// "Check for skill updates" so the user-visible bookkeeping stays in sync
 /// regardless of which surface triggered the check.
 pub fn record_round_completion<R: Runtime>(app: &AppHandle<R>, store: &SkillStore) {
-    let now = Utc::now();
+    let now = Timestamp::now();
     write_last_run(store, now);
     let payload = AutoUpdatePayload {
-        ran_at: now.to_rfc3339(),
+        ran_at: rfc3339_utc(now),
     };
     if let Err(err) = app.emit(EVENT_AUTO_UPDATED, payload) {
         log::debug!("skill auto-updater: emit failed: {err}");
@@ -95,35 +95,42 @@ fn parse_interval(raw: &str) -> Option<Duration> {
     }
 }
 
-fn read_last_run(store: &SkillStore) -> Option<DateTime<Utc>> {
+fn read_last_run(store: &SkillStore) -> Option<Timestamp> {
     let raw = store.get_setting(SETTING_LAST_RUN).ok().flatten()?;
-    DateTime::parse_from_rfc3339(raw.trim())
-        .ok()
-        .map(|dt| dt.with_timezone(&Utc))
+    raw.trim().parse::<Timestamp>().ok()
 }
 
-fn write_last_run(store: &SkillStore, at: DateTime<Utc>) {
-    if let Err(err) = store.set_setting(SETTING_LAST_RUN, &at.to_rfc3339()) {
+fn write_last_run(store: &SkillStore, at: Timestamp) {
+    if let Err(err) = store.set_setting(SETTING_LAST_RUN, &rfc3339_utc(at)) {
         log::warn!("skill auto-updater: failed to persist {SETTING_LAST_RUN}: {err}");
     }
 }
 
-fn is_due(last_run: Option<DateTime<Utc>>, interval: Duration) -> bool {
+/// RFC 3339 with a `+00:00` UTC offset, matching the format previous versions
+/// persisted. Existing stored values stay byte-compatible, and both spellings
+/// parse back as `Timestamp`.
+fn rfc3339_utc(ts: Timestamp) -> String {
+    ts.to_zoned(jiff::tz::TimeZone::UTC)
+        .strftime("%Y-%m-%dT%H:%M:%S%.f%:z")
+        .to_string()
+}
+
+fn is_due(last_run: Option<Timestamp>, interval: Duration) -> bool {
     let Some(last) = last_run else {
         return true;
     };
-    let elapsed = Utc::now().signed_duration_since(last);
-    // If we can't represent the interval as chrono::Duration (unrealistic for
+    let elapsed = Timestamp::now().duration_since(last);
+    // If we can't represent the interval as SignedDuration (unrealistic for
     // our 6h–7d values), prefer "not due" so we don't accidentally run a
     // round on every tick.
-    let Some(interval_chrono) = chrono::Duration::from_std(interval).ok() else {
+    let Ok(interval_dur) = jiff::SignedDuration::try_from(interval) else {
         log::warn!(
-            "skill auto-updater: failed to convert interval to chrono::Duration ({}s)",
+            "skill auto-updater: failed to convert interval to jiff::SignedDuration ({}s)",
             interval.as_secs()
         );
         return false;
     };
-    elapsed >= interval_chrono
+    elapsed >= interval_dur
 }
 
 async fn run_round<R: Runtime>(_app: &AppHandle<R>, store: &Arc<SkillStore>) -> Result<(), String> {
@@ -248,22 +255,22 @@ mod tests {
 
     #[test]
     fn is_due_after_interval() {
-        let past = Utc::now() - chrono::Duration::hours(7);
+        let past = Timestamp::now() - jiff::SignedDuration::from_hours(7);
         assert!(is_due(Some(past), Duration::from_secs(6 * 3600)));
     }
 
     #[test]
     fn not_due_within_interval() {
-        let past = Utc::now() - chrono::Duration::hours(1);
+        let past = Timestamp::now() - jiff::SignedDuration::from_hours(1);
         assert!(!is_due(Some(past), Duration::from_secs(6 * 3600)));
     }
 
     #[test]
     fn is_due_returns_false_when_interval_overflow() {
-        // Duration::MAX is far larger than chrono::Duration can represent in
-        // milliseconds, so the conversion fails. We must NOT then run on
-        // every tick — the fallback should be "not due".
-        let past = Utc::now() - chrono::Duration::hours(1);
+        // Duration::MAX is far larger than SignedDuration can represent, so
+        // the conversion fails. We must NOT then run on every tick — the
+        // fallback should be "not due".
+        let past = Timestamp::now() - jiff::SignedDuration::from_hours(1);
         assert!(!is_due(Some(past), Duration::MAX));
     }
 }

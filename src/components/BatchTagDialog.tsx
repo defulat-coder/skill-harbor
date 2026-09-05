@@ -45,7 +45,7 @@ export function BatchTagDialog({ open, skills, allTags, onClose, onApply }: Prop
         counts.set(tag, (counts.get(tag) || 0) + 1);
       }
     }
-    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+    return Array.from(counts.entries()).toSorted((a, b) => b[1] - a[1]);
   }, [skills]);
 
   const suggestions = useMemo(() => {

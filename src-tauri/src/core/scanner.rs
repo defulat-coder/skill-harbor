@@ -104,7 +104,7 @@ fn push_discovered(
         .ok()
         .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
         .map(|d| d.as_millis() as i64)
-        .unwrap_or_else(|| chrono::Utc::now().timestamp_millis());
+        .unwrap_or_else(|| jiff::Timestamp::now().as_millisecond());
     discovered.push(DiscoveredSkillRecord {
         id: uuid::Uuid::new_v4().to_string(),
         tool: adapter_key.to_string(),

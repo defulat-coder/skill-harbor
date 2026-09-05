@@ -4,7 +4,8 @@
 //! happen earlier, as tree-build inputs — never here.
 
 use anyhow::{Context, Result, bail};
-use git2::{ObjectType, Repository, Tree};
+use gix::bstr::ByteSlice;
+use gix::objs::tree::EntryKind;
 use std::collections::{BTreeMap, BTreeSet};
 
 use super::protocol::ProtocolFile;
@@ -17,18 +18,18 @@ use crate::core::sync_metadata::{SkillMetaFile, path_key};
 /// merge — the invariant defends against merges *introducing* orphans, not
 /// against pre-existing ones. Best-effort: unparsable metadata files simply
 /// contribute no claim here (the strict checks still run on the merged tree).
-pub fn unclaimed_skill_dirs(repo: &Repository, tree: &Tree) -> Result<BTreeSet<String>> {
+pub fn unclaimed_skill_dirs(repo: &gix::Repository, tree: &gix::Tree) -> Result<BTreeSet<String>> {
     let mut claimed: BTreeSet<String> = BTreeSet::new();
     if let Some(meta_entry) = tree
-        .get_name(METADATA_DIR)
-        .or_else(|| tree.get_name(LEGACY_METADATA_DIR))
+        .find_entry(METADATA_DIR)
+        .or_else(|| tree.find_entry(LEGACY_METADATA_DIR))
     {
-        if let Ok(meta_tree) = repo.find_tree(meta_entry.id()) {
+        if let Ok(meta_tree) = repo.find_tree(meta_entry.object_id()) {
             if let Ok(skills_tree) = subtree(repo, &meta_tree, "skills") {
                 for entry in skills_tree.iter() {
-                    if let Ok(blob) = repo.find_blob(entry.id()) {
-                        if let Ok(meta) = serde_json::from_slice::<SkillMetaFile>(blob.content())
-                        {
+                    let entry = entry?;
+                    if let Ok(blob) = repo.find_blob(entry.object_id()) {
+                        if let Ok(meta) = serde_json::from_slice::<SkillMetaFile>(&blob.data) {
                             claimed.insert(meta.path);
                         }
                     }
@@ -43,8 +44,8 @@ pub fn unclaimed_skill_dirs(repo: &Repository, tree: &Tree) -> Result<BTreeSet<S
 }
 
 pub fn validate_merged_tree(
-    repo: &Repository,
-    tree: &Tree,
+    repo: &gix::Repository,
+    tree: &gix::Tree,
     tolerated_unclaimed: &BTreeSet<String>,
 ) -> Result<()> {
     validate_tree(repo, tree, tolerated_unclaimed, false)
@@ -56,16 +57,16 @@ pub fn validate_merged_tree(
 /// merged tree itself stays strict: the planner guarantees junk-free output,
 /// so junk there means an engine bug.
 pub fn validate_input_tip(
-    repo: &Repository,
-    tree: &Tree,
+    repo: &gix::Repository,
+    tree: &gix::Tree,
     tolerated_unclaimed: &BTreeSet<String>,
 ) -> Result<()> {
     validate_tree(repo, tree, tolerated_unclaimed, true)
 }
 
 fn validate_tree(
-    repo: &Repository,
-    tree: &Tree,
+    repo: &gix::Repository,
+    tree: &gix::Tree,
     tolerated_unclaimed: &BTreeSet<String>,
     tolerate_metadata_junk: bool,
 ) -> Result<()> {
@@ -88,7 +89,8 @@ fn validate_tree(
     if let Ok(skills_tree) = subtree(repo, &meta_tree, "skills") {
         let mut seen_keys: BTreeMap<String, String> = BTreeMap::new();
         for entry in skills_tree.iter() {
-            let name = entry.name().unwrap_or_default().to_string();
+            let entry = entry?;
+            let name = entry.filename().to_str().unwrap_or_default().to_string();
             let Some(stem) = name.strip_suffix(".json") else {
                 if tolerate_metadata_junk
                     && super::decision::is_metadata_namespace_junk(&format!(
@@ -100,9 +102,9 @@ fn validate_tree(
                 bail!("merged tree validation: unexpected file skills/{name}");
             };
             let raw = repo
-                .find_blob(entry.id())
+                .find_blob(entry.object_id())
                 .with_context(|| format!("skills/{name} is not a blob"))?
-                .content()
+                .data
                 .to_vec();
             let meta: SkillMetaFile = serde_json::from_slice(&raw)
                 .with_context(|| format!("merged tree validation: skills/{name} unparsable"))?;
@@ -141,21 +143,27 @@ fn validate_tree(
             );
         }
         let entry = tree
-            .get_path(std::path::Path::new(&meta.path))
+            .lookup_entry_by_path(std::path::Path::new(&meta.path))
+            .with_context(|| {
+                format!(
+                    "merged tree validation: {} path '{}' missing from tree",
+                    meta.skill_id, meta.path
+                )
+            })?
             .with_context(|| {
                 format!(
                     "merged tree validation: {} path '{}' missing from tree",
                     meta.skill_id, meta.path
                 )
             })?;
-        if entry.kind() != Some(ObjectType::Tree) {
+        if !entry.mode().is_tree() {
             bail!(
                 "merged tree validation: {} path '{}' is not a directory",
                 meta.skill_id,
                 meta.path
             );
         }
-        let dir = repo.find_tree(entry.id())?;
+        let dir = repo.find_tree(entry.object_id())?;
         if !tree_is_valid_skill_dir(&dir) {
             bail!(
                 "merged tree validation: {} path '{}' is not a valid skill dir",
@@ -198,7 +206,8 @@ fn validate_tree(
     let mut scenario_ids: BTreeSet<String> = BTreeSet::new();
     if let Ok(scenarios_tree) = subtree(repo, &meta_tree, "scenarios") {
         for entry in scenarios_tree.iter() {
-            let name = entry.name().unwrap_or_default();
+            let entry = entry?;
+            let name = entry.filename().to_str().unwrap_or_default();
             if let Some(stem) = name.strip_suffix(".json") {
                 scenario_ids.insert(stem.to_string());
             }
@@ -206,16 +215,18 @@ fn validate_tree(
     }
     if let Ok(members_tree) = subtree(repo, &meta_tree, "scenario-skills") {
         for dir in members_tree.iter() {
-            let sid = dir.name().unwrap_or_default().to_string();
+            let dir = dir?;
+            let sid = dir.filename().to_str().unwrap_or_default().to_string();
             if !scenario_ids.contains(&sid) {
                 bail!("merged tree validation: membership references unknown scenario {sid}");
             }
-            if dir.kind() != Some(ObjectType::Tree) {
+            if !dir.mode().is_tree() {
                 bail!("merged tree validation: scenario-skills/{sid} is not a directory");
             }
-            let dt = repo.find_tree(dir.id())?;
+            let dt = repo.find_tree(dir.object_id())?;
             for entry in dt.iter() {
-                let name = entry.name().unwrap_or_default();
+                let entry = entry?;
+                let name = entry.filename().to_str().unwrap_or_default();
                 let Some(skid) = name.strip_suffix(".json") else {
                     continue;
                 };
@@ -231,28 +242,28 @@ fn validate_tree(
     Ok(())
 }
 
-fn subtree<'r>(repo: &'r Repository, tree: &Tree, name: &str) -> Result<Tree<'r>> {
+fn subtree<'r>(repo: &'r gix::Repository, tree: &gix::Tree<'r>, name: &str) -> Result<gix::Tree<'r>> {
     let entry = tree
-        .get_name(name)
+        .find_entry(name)
         .with_context(|| format!("missing {name}"))?;
-    repo.find_tree(entry.id())
+    repo.find_tree(entry.object_id())
         .with_context(|| format!("{name} is not a directory"))
 }
 
-fn blob_of(repo: &Repository, tree: &Tree, name: &str) -> Result<Vec<u8>> {
+fn blob_of(repo: &gix::Repository, tree: &gix::Tree, name: &str) -> Result<Vec<u8>> {
     let entry = tree
-        .get_name(name)
+        .find_entry(name)
         .with_context(|| format!("missing {name}"))?;
     Ok(repo
-        .find_blob(entry.id())
+        .find_blob(entry.object_id())
         .with_context(|| format!("{name} is not a file"))?
-        .content()
+        .data
         .to_vec())
 }
 
 fn collect_unclaimed(
-    repo: &Repository,
-    tree: &Tree,
+    repo: &gix::Repository,
+    tree: &gix::Tree,
     prefix: &str,
     claimed: &BTreeSet<&str>,
     depth: usize,
@@ -266,10 +277,11 @@ fn collect_unclaimed(
         return Ok(());
     }
     for entry in tree.iter() {
-        if entry.kind() != Some(ObjectType::Tree) {
+        let entry = entry?;
+        if entry.mode().kind() != EntryKind::Tree {
             continue;
         }
-        let name = entry.name().unwrap_or_default();
+        let name = entry.filename().to_str().unwrap_or_default();
         if name.starts_with('.') {
             continue;
         }
@@ -281,7 +293,7 @@ fn collect_unclaimed(
         if claimed.contains(path.as_str()) {
             continue; // this dir belongs to a skill; do not descend
         }
-        let dir = repo.find_tree(entry.id())?;
+        let dir = repo.find_tree(entry.object_id())?;
         if tree_is_valid_skill_dir(&dir) {
             out.insert(path);
             continue;

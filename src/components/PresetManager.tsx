@@ -48,7 +48,7 @@ export function PresetManager({ open, onClose }: { open: boolean; onClose: () =>
   function view(preset: Preset) {
     setViewedPresetId(preset.id);
     onClose();
-    navigate("/my-skills");
+    void navigate("/my-skills");
   }
   return <>
     <DetailSheet open={open} title="技能预设" description="把常用技能组织为预设，在项目或工具目录中一起启用。" onClose={onClose} closeDisabled={busy}>

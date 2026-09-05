@@ -552,7 +552,7 @@ pub async fn add_project(
             .map(|n| n.to_string_lossy().to_string())
             .unwrap_or_else(|| "unknown".to_string());
 
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         let record = ProjectRecord {
             id: uuid::Uuid::new_v4().to_string(),
             name,
@@ -628,7 +628,7 @@ pub async fn add_linked_workspace(
             }
         };
 
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         let record = ProjectRecord {
             id: uuid::Uuid::new_v4().to_string(),
             name: name.clone(),
@@ -886,7 +886,7 @@ pub async fn import_project_skill_to_center(
         let result =
             installer::install_from_local(&source_path, Some(&skill.name)).map_err(AppError::io)?;
 
-        let now = chrono::Utc::now().timestamp_millis();
+        let now = jiff::Timestamp::now().as_millisecond();
         let id = uuid::Uuid::new_v4().to_string();
 
         let skill_record = SkillRecord {

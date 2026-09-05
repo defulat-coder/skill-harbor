@@ -22,9 +22,9 @@ export function PointerKineticGrid() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return undefined;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) return undefined;
 
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     let reducedMotion = motionQuery.matches;
@@ -51,7 +51,7 @@ export function PointerKineticGrid() {
     let dots: GridDot[] = [];
 
     const host = canvas.parentElement;
-    if (!host) return;
+    if (!host) return undefined;
 
 
     function build(): void {

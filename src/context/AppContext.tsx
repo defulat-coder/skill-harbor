@@ -1,4 +1,4 @@
-/* eslint-disable react-refresh/only-export-components */
+/* oxlint-disable react/only-export-components -- context files export the provider and its hook together */
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { listen } from "@tauri-apps/api/event";
 import type { AppUpdateInfo, ManagedSkill, Project, Preset, ToolInfo } from "../lib/tauri";
@@ -141,7 +141,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setTranslatedError("common.skills");
     }
     // Managed skill changes affect project sync health badges
-    refreshProjects();
+    void refreshProjects();
   }, [setTranslatedError, refreshProjects]);
 
   const refreshAppData = useCallback(async () => {
@@ -204,7 +204,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         applyTextSize(savedSize);
       }
     }
-    init();
+    void init();
   }, [refreshAppData]);
 
   useEffect(() => {
@@ -254,7 +254,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const notifyUpdatableSkills = useCallback((skills: ManagedSkill[]) => {
     const updatable = skills
       .filter((s) => s.update_status === "update_available")
-      .sort((a, b) => a.id.localeCompare(b.id));
+      .toSorted((a, b) => a.id.localeCompare(b.id));
 
     if (updatable.length === 0) {
       lastUpdateNotificationRef.current = null;
@@ -312,7 +312,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // watch set) tears this effect down and clears the pending timer, and marking
   // it done up front would skip the check for the rest of the session.
   useEffect(() => {
-    if (loading || appUpdateCheckedRef.current) return;
+    if (loading || appUpdateCheckedRef.current) return undefined;
     const timer = setTimeout(() => {
       appUpdateCheckedRef.current = true;
       refreshAppUpdate()
@@ -340,22 +340,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
     }, 3000);
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- runs once when initial loading finishes
   }, [loading]);
 
   // Check skill updates on startup (non-blocking, silent). When the user has
   // opted in via the Settings toggle, also apply any available updates.
   useEffect(() => {
-    if (loading || managedSkills.length === 0) return;
+    if (loading || managedSkills.length === 0) return undefined;
     const hasGitSkills = managedSkills.some(
       (s) => s.source_type === "git" || s.source_type === "skillssh"
     );
-    if (!hasGitSkills || autoCheckInFlightRef.current) return;
+    if (!hasGitSkills || autoCheckInFlightRef.current) return undefined;
 
     // Delay to avoid slowing down initial render
     const timer = setTimeout(() => {
       autoCheckInFlightRef.current = true;
-      (async () => {
+      void (async () => {
         try {
           await api.checkAllSkillUpdates(false);
           let skills = await api.getManagedSkills();
@@ -414,7 +414,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })();
     }, 3000);
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- runs once when initial loading finishes
   }, [loading]);
 
   // Refresh after a background auto-update round (Rust scheduler) or the

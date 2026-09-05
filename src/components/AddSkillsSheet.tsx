@@ -19,7 +19,6 @@ import {
   classifySkill,
   targetsToInstall,
   type PickerContext,
-  type ProjectPickerContext,
 } from "../lib/skillPickerStatus";
 import {
   getTagActiveColor,
@@ -86,7 +85,7 @@ function AddSkillsSheetBody({ open, onClose, target, managedSkills, onInstalled 
 
   // For project mode: precompute slugified dir names for managed skills
   useEffect(() => {
-    if (target.kind !== "project") return;
+    if (target.kind !== "project") return undefined;
     let cancelled = false;
     const load = async () => {
       const names = managedSkills.map((s) => s.name);
@@ -116,7 +115,7 @@ function AddSkillsSheetBody({ open, onClose, target, managedSkills, onInstalled 
         if (!cancelled) setDirNameMapLoading(false);
       }
     };
-    load();
+    void load();
     return () => {
       cancelled = true;
     };
@@ -146,14 +145,14 @@ function AddSkillsSheetBody({ open, onClose, target, managedSkills, onInstalled 
         if (tag.trim()) tags.add(tag);
       }
     }
-    return Array.from(tags).sort((a, b) => a.localeCompare(b));
+    return Array.from(tags).toSorted((a, b) => a.localeCompare(b));
   }, [managedSkills]);
 
   const sourceTypes = useMemo(() => {
     const present = new Set(managedSkills.map((s) => s.source_type).filter(Boolean));
     return [
       ...SOURCE_PRIORITY.filter((s) => present.has(s)),
-      ...Array.from(present).filter((s) => !SOURCE_PRIORITY.includes(s)).sort(),
+      ...Array.from(present).filter((s) => !SOURCE_PRIORITY.includes(s)).toSorted(),
     ];
   }, [managedSkills]);
 
@@ -191,7 +190,7 @@ function AddSkillsSheetBody({ open, onClose, target, managedSkills, onInstalled 
   // Sort: available first, then installed/conflict/unavailable (greyed out at bottom)
   const ordered = useMemo(() => {
     const statusOrder = { available: 0, conflict: 1, installed: 2, unavailable: 3 } as const;
-    return [...filtered].sort((a, b) => {
+    return [...filtered].toSorted((a, b) => {
       const sa = classifySkill(a, ctx);
       const sb = classifySkill(b, ctx);
       if (sa !== sb) return statusOrder[sa] - statusOrder[sb];
@@ -257,7 +256,7 @@ function AddSkillsSheetBody({ open, onClose, target, managedSkills, onInstalled 
     [selectedIds, managedSkills, ctx],
   );
 
-  const projectCtx = ctx.kind === "project" ? (ctx as ProjectPickerContext) : null;
+  const projectCtx = ctx.kind === "project" ? ctx : null;
   const projectNamesReady = target.kind !== "project" || dirNameMapError || !dirNameMapLoading;
   const enabledTargets = target.kind === "project"
     ? target.exportTargets.filter((tt) => tt.installed && tt.enabled)

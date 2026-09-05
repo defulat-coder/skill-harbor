@@ -33,16 +33,16 @@ export function Layout() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === ",") {
-        const target = e.target as HTMLElement;
-        if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
+        const target = e.target;
+        if (target instanceof HTMLElement && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
         e.preventDefault();
-        navigate("/settings");
+        void navigate("/settings");
       }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "r") {
-        const target = e.target as HTMLElement;
-        if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
+        const target = e.target;
+        if (target instanceof HTMLElement && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
         e.preventDefault();
-        refreshAppData();
+        void refreshAppData();
       }
     };
     window.addEventListener("keydown", handleKeyDown);

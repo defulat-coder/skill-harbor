@@ -6,13 +6,15 @@
 //! a rebuildable UI projection. (The trailer keys predate the rebrand and
 //! stay as-is: they are replayed from existing commit history.)
 
-use anyhow::{Context, Result};
-use git2::{Oid, Repository, Sort};
+use anyhow::Result;
+use gix::ObjectId;
+use gix::bstr::ByteSlice;
 use std::collections::BTreeMap;
 
 use super::decision::Side;
 use super::protocol::{TRAILER_CONFLICTS, TRAILER_RESOLVED, parse_trailer_ids};
 use super::snapshot::{Snapshot, skill_identical};
+use crate::core::gix_repo;
 
 pub const REF_PRE_MERGE: &str = "refs/skillharbor/pre-merge";
 pub const REF_APPLYING: &str = "refs/skillharbor/applying";
@@ -53,20 +55,14 @@ pub enum TrailerState {
 /// Replay conflict trailers over `hide..tip` (or the whole history up to
 /// `tip` when `hide` is `None`) in topological oldest→newest order (§11-5).
 pub fn replay_trailers(
-    repo: &Repository,
-    tip: Oid,
-    hide: Option<Oid>,
+    repo: &gix::Repository,
+    tip: ObjectId,
+    hide: Option<ObjectId>,
 ) -> Result<BTreeMap<String, TrailerState>> {
-    let mut walk = repo.revwalk()?;
-    walk.push(tip)?;
-    if let Some(hide) = hide {
-        walk.hide(hide)?;
-    }
-    walk.set_sorting(Sort::TOPOLOGICAL | Sort::REVERSE)?;
     let mut state = BTreeMap::new();
-    for oid in walk {
-        let commit = repo.find_commit(oid?)?;
-        let message = commit.message().unwrap_or_default();
+    for node in gix_repo::revwalk_topo_reverse(repo, tip, hide)? {
+        let commit = repo.find_commit(node.id)?;
+        let message = commit.message_raw_sloppy().to_str().unwrap_or_default();
         for id in parse_trailer_ids(message, TRAILER_CONFLICTS) {
             state.insert(id, TrailerState::Active);
         }
@@ -97,10 +93,10 @@ pub enum PendingOutcome {
 /// - independently declared on both sides: identical versions pin ours,
 ///   different versions block.
 pub fn effective_pending(
-    repo: &Repository,
-    base: Oid,
-    ours_tip: Oid,
-    theirs_tip: Oid,
+    repo: &gix::Repository,
+    base: ObjectId,
+    ours_tip: ObjectId,
+    theirs_tip: ObjectId,
     ours_snap: &Snapshot,
     theirs_snap: &Snapshot,
 ) -> Result<PendingOutcome> {
@@ -169,47 +165,36 @@ pub fn effective_pending(
 
 // ── hidden refs ──
 
-pub fn write_ref(repo: &Repository, name: &str, target: Oid, log: &str) -> Result<()> {
-    repo.reference(name, target, true, log)
-        .with_context(|| format!("failed to write {name}"))?;
-    Ok(())
+pub fn write_ref(repo: &gix::Repository, name: &str, target: ObjectId, log: &str) -> Result<()> {
+    gix_repo::write_ref(repo, name, target, log)
 }
 
-pub fn delete_ref(repo: &Repository, name: &str) {
-    if let Ok(mut r) = repo.find_reference(name) {
-        let _ = r.delete();
-    }
+pub fn delete_ref(repo: &gix::Repository, name: &str) {
+    gix_repo::delete_ref(repo, name);
     // A pre-rebrand copy of the same ref is stale the moment the new one is
     // written or removed — never let it linger as a duplicate source of truth.
     if let Some(legacy) = legacy_ref_name(name) {
-        if let Ok(mut r) = repo.find_reference(&legacy) {
-            let _ = r.delete();
-        }
+        gix_repo::delete_ref(repo, &legacy);
     }
 }
 
-pub fn ref_target(repo: &Repository, name: &str) -> Option<Oid> {
-    let lookup = |n: &str| repo.find_reference(n).ok().and_then(|r| r.target());
-    lookup(name).or_else(|| legacy_ref_name(name).and_then(|legacy| lookup(&legacy)))
+pub fn ref_target(repo: &gix::Repository, name: &str) -> Option<ObjectId> {
+    gix_repo::ref_target(repo, name)
+        .or_else(|| legacy_ref_name(name).and_then(|legacy| gix_repo::ref_target(repo, &legacy)))
 }
 
 /// All staging refs, as (attempt_id, skill_id, target). The new namespace
 /// wins when both carry a ref for the same (attempt, skill) pair.
-pub fn list_staging_refs(repo: &Repository) -> Vec<(String, String, Oid)> {
-    let mut out: Vec<(String, String, Oid)> = Vec::new();
+pub fn list_staging_refs(repo: &gix::Repository) -> Vec<(String, String, ObjectId)> {
+    let mut out: Vec<(String, String, ObjectId)> = Vec::new();
     for prefix in [STAGING_REF_PREFIX, LEGACY_STAGING_REF_PREFIX] {
-        if let Ok(refs) = repo.references_glob(&format!("{prefix}*")) {
-            for r in refs.flatten() {
-                let Ok(name) = r.name() else { continue };
-                let Some(rest) = name.strip_prefix(prefix) else { continue };
-                let Some((attempt, skill_id)) = rest.split_once('/') else { continue };
-                if out.iter().any(|(a, s, _)| a == attempt && s == skill_id) {
-                    continue;
-                }
-                if let Some(target) = r.target() {
-                    out.push((attempt.to_string(), skill_id.to_string(), target));
-                }
+        for (name, target) in gix_repo::refs_with_prefix(repo, prefix) {
+            let Some(rest) = name.strip_prefix(prefix) else { continue };
+            let Some((attempt, skill_id)) = rest.split_once('/') else { continue };
+            if out.iter().any(|(a, s, _)| a == attempt && s == skill_id) {
+                continue;
             }
+            out.push((attempt.to_string(), skill_id.to_string(), target));
         }
     }
     out
@@ -217,20 +202,15 @@ pub fn list_staging_refs(repo: &Repository) -> Vec<(String, String, Oid)> {
 
 /// All promoted conflict refs, as (skill_id, target). The new namespace wins
 /// when both carry a ref for the same skill.
-pub fn list_conflict_refs(repo: &Repository) -> Vec<(String, Oid)> {
-    let mut out: Vec<(String, Oid)> = Vec::new();
+pub fn list_conflict_refs(repo: &gix::Repository) -> Vec<(String, ObjectId)> {
+    let mut out: Vec<(String, ObjectId)> = Vec::new();
     for prefix in [CONFLICT_REF_PREFIX, LEGACY_CONFLICT_REF_PREFIX] {
-        if let Ok(refs) = repo.references_glob(&format!("{prefix}*")) {
-            for r in refs.flatten() {
-                let Ok(name) = r.name() else { continue };
-                let Some(skill_id) = name.strip_prefix(prefix) else { continue };
-                if out.iter().any(|(id, _)| id == skill_id) {
-                    continue;
-                }
-                if let Some(target) = r.target() {
-                    out.push((skill_id.to_string(), target));
-                }
+        for (name, target) in gix_repo::refs_with_prefix(repo, prefix) {
+            let Some(skill_id) = name.strip_prefix(prefix) else { continue };
+            if out.iter().any(|(id, _)| id == skill_id) {
+                continue;
             }
+            out.push((skill_id.to_string(), target));
         }
     }
     out
@@ -239,7 +219,7 @@ pub fn list_conflict_refs(repo: &Repository) -> Vec<(String, Oid)> {
 /// Step 11 (§4/§5): promote this attempt's staging refs to durable conflict
 /// refs and delete every remaining staging ref (ghosts from crashed
 /// attempts included).
-pub fn promote_staging(repo: &Repository, attempt_id: &str) -> Result<()> {
+pub fn promote_staging(repo: &gix::Repository, attempt_id: &str) -> Result<()> {
     for (attempt, skill_id, target) in list_staging_refs(repo) {
         if attempt == attempt_id {
             write_ref(repo, &conflict_ref(&skill_id), target, "promote conflict ref")?;
@@ -259,7 +239,7 @@ pub fn promote_staging(repo: &Repository, attempt_id: &str) -> Result<()> {
 /// (resolved, then re-declared while this device was offline) is rewritten —
 /// otherwise "use remote" would apply the pre-resolution version. Ghost
 /// staging refs are then removed.
-pub fn heal_conflict_refs(repo: &Repository, head: Oid) -> Result<Vec<(String, Oid)>> {
+pub fn heal_conflict_refs(repo: &gix::Repository, head: ObjectId) -> Result<Vec<(String, ObjectId)>> {
     let active: Vec<String> = replay_trailers(repo, head, None)?
         .into_iter()
         .filter(|(_, s)| *s == TrailerState::Active)
@@ -280,7 +260,7 @@ pub fn heal_conflict_refs(repo: &Repository, head: Oid) -> Result<Vec<(String, O
             Some(existing) if existing == desired => true,
             // A pointer that descends from the current declaration's theirs
             // side was legitimately advanced; anything else is stale.
-            Some(existing) => repo.graph_descendant_of(existing, desired).unwrap_or(false),
+            Some(existing) => gix_repo::is_descendant(repo, existing, desired),
         };
         if !up_to_date {
             write_ref(repo, &conflict_ref(id), desired, "heal conflict ref")?;
@@ -303,18 +283,15 @@ pub fn heal_conflict_refs(repo: &Repository, head: Oid) -> Result<Vec<(String, O
 
 /// Newest commit in HEAD's history whose Conflicts trailer declares `id`;
 /// its second parent is the theirs side at declaration time.
-fn find_declaring_theirs(repo: &Repository, head: Oid, id: &str) -> Option<Oid> {
-    let mut walk = repo.revwalk().ok()?;
-    walk.push(head).ok()?;
-    walk.set_sorting(Sort::TOPOLOGICAL).ok()?;
-    for oid in walk.flatten() {
-        let commit = repo.find_commit(oid).ok()?;
-        let message = commit.message().unwrap_or_default();
+fn find_declaring_theirs(repo: &gix::Repository, head: ObjectId, id: &str) -> Option<ObjectId> {
+    for node in gix_repo::revwalk_topo(repo, head, None).ok()? {
+        let commit = repo.find_commit(node.id).ok()?;
+        let message = commit.message_raw_sloppy().to_str().unwrap_or_default();
         if parse_trailer_ids(message, TRAILER_CONFLICTS)
             .iter()
             .any(|declared| declared == id)
         {
-            return commit.parent_id(1).ok();
+            return node.parents.get(1).copied();
         }
     }
     None

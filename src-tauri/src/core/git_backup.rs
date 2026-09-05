@@ -1,9 +1,8 @@
 use anyhow::{Context, Result};
-use chrono::Utc;
 use std::path::Path;
 use std::process::Command;
 
-use super::git2_engine;
+use super::gix_engine;
 use super::git_credentials;
 use super::merge::protocol;
 use super::repo_lock::RepoLock;
@@ -149,9 +148,9 @@ pub fn fetch_remote(skills_dir: &Path) -> Result<()> {
 
     let branch = run_git(skills_dir, &["rev-parse", "--abbrev-ref", "HEAD"])
         .unwrap_or_else(|_| "main".to_string());
-    if let Some(url) = raw_remote_url(skills_dir).filter(|u| git2_engine::applies_to(u)) {
-        if let Err(e) = git2_engine::fetch(skills_dir, Some(&branch), &url) {
-            log::warn!("git fetch (git2, best-effort): {e:#}");
+    if let Some(url) = raw_remote_url(skills_dir).filter(|u| gix_engine::applies_to(u)) {
+        if let Err(e) = gix_engine::fetch(skills_dir, Some(&branch), &url) {
+            log::warn!("git fetch (gix, best-effort): {e:#}");
         }
         return Ok(());
     }
@@ -333,8 +332,8 @@ pub(crate) fn set_remote_unlocked(skills_dir: &Path, url: &str) -> Result<()> {
     }
 
     // Fetch remote to set up tracking
-    if git2_engine::applies_to(url) {
-        if let Err(e) = git2_engine::fetch(skills_dir, None, url) {
+    if gix_engine::applies_to(url) {
+        if let Err(e) = gix_engine::fetch(skills_dir, None, url) {
             log::warn!("git set_remote: initial fetch failed (continuing): {e:#}");
         }
     } else {
@@ -380,8 +379,8 @@ pub(crate) fn set_remote_url_only(skills_dir: &Path, url: &str) -> Result<()> {
 
 /// Cheap network round-trip proving we can authenticate against origin.
 pub(crate) fn verify_remote_auth(skills_dir: &Path) -> Result<()> {
-    if let Some(url) = raw_remote_url(skills_dir).filter(|u| git2_engine::applies_to(u)) {
-        return git2_engine::ls_remote_refs(&url).map(|_| ());
+    if let Some(url) = raw_remote_url(skills_dir).filter(|u| gix_engine::applies_to(u)) {
+        return gix_engine::ls_remote_refs(&url).map(|_| ());
     }
     let env = remote_credential_env(skills_dir);
     run_git_env(skills_dir, &["ls-remote", "--heads", "origin"], &env).map(|_| ())
@@ -391,8 +390,8 @@ pub(crate) fn verify_remote_auth(skills_dir: &Path) -> Result<()> {
 /// Uses stored keychain credentials via askpass when available. Distinguishes
 /// "freshly created empty repository" from "existing backup to restore".
 pub fn remote_has_heads(url: &str) -> Result<bool> {
-    if git2_engine::applies_to(url) {
-        let refs = git2_engine::ls_remote_refs(url)?;
+    if gix_engine::applies_to(url) {
+        let refs = gix_engine::ls_remote_refs(url)?;
         return Ok(refs.iter().any(|r| r.starts_with("refs/heads/")));
     }
     let env = git_credentials::credential_env_for_url(url);
@@ -491,8 +490,8 @@ pub fn prune_hidden_refs_on_remote(skills_dir: &Path) -> Result<usize> {
     const HIDDEN_PREFIXES: [&str; 2] = ["refs/skillharbor/", "refs/skills-manager/"];
     let is_hidden = |r: &str| HIDDEN_PREFIXES.iter().any(|p| r.starts_with(p));
 
-    if let Some(url) = raw_remote_url(skills_dir).filter(|u| git2_engine::applies_to(u)) {
-        let refs: Vec<String> = git2_engine::ls_remote_refs(&url)?
+    if let Some(url) = raw_remote_url(skills_dir).filter(|u| gix_engine::applies_to(u)) {
+        let refs: Vec<String> = gix_engine::ls_remote_refs(&url)?
             .into_iter()
             .filter(|r| is_hidden(r))
             .collect();
@@ -500,8 +499,8 @@ pub fn prune_hidden_refs_on_remote(skills_dir: &Path) -> Result<usize> {
             return Ok(0);
         }
         let refspecs: Vec<String> = refs.iter().map(|r| format!(":{r}")).collect();
-        git2_engine::push_refs(skills_dir, &refspecs, &url)?;
-        log::info!("git prune hidden refs (git2): removed {} remote ref(s)", refs.len());
+        gix_engine::push_refs(skills_dir, &refspecs, &url)?;
+        log::info!("git prune hidden refs (gix): removed {} remote ref(s)", refs.len());
         return Ok(refs.len());
     }
 
@@ -562,8 +561,8 @@ pub(crate) fn push_unlocked(skills_dir: &Path) -> Result<()> {
         .unwrap_or_else(|_| "main".to_string());
     log::info!("git push: starting on branch {branch}");
 
-    if let Some(url) = raw_remote_url(skills_dir).filter(|u| git2_engine::applies_to(u)) {
-        return push_via_git2(skills_dir, &branch, &url);
+    if let Some(url) = raw_remote_url(skills_dir).filter(|u| gix_engine::applies_to(u)) {
+        return push_via_gix(skills_dir, &branch, &url);
     }
 
     let env = remote_credential_env(skills_dir);
@@ -626,12 +625,12 @@ pub(crate) fn push_unlocked(skills_dir: &Path) -> Result<()> {
     Ok(())
 }
 
-/// git2-engine variant of `push_unlocked`: branch first, then any snapshot
+/// gix-engine variant of `push_unlocked`: branch first, then any snapshot
 /// tags the remote is missing. Mirrors the system-git path's semantics,
 /// including treating a failed remote-tag listing as "push all tags"
 /// (re-pushing an existing identical tag is a no-op).
-fn push_via_git2(skills_dir: &Path, branch: &str, url: &str) -> Result<()> {
-    git2_engine::push_refs(
+fn push_via_gix(skills_dir: &Path, branch: &str, url: &str) -> Result<()> {
+    gix_engine::push_refs(
         skills_dir,
         &[format!("refs/heads/{branch}:refs/heads/{branch}")],
         url,
@@ -657,7 +656,7 @@ fn push_via_git2(skills_dir: &Path, branch: &str, url: &str) -> Result<()> {
 
     if !local_snapshot_tags.is_empty() {
         let remote_snapshot_tags: std::collections::HashSet<String> =
-            git2_engine::ls_remote_refs(url)
+            gix_engine::ls_remote_refs(url)
                 .unwrap_or_default()
                 .into_iter()
                 .filter_map(|r| r.strip_prefix("refs/tags/").map(|t| t.to_string()))
@@ -672,12 +671,12 @@ fn push_via_git2(skills_dir: &Path, branch: &str, url: &str) -> Result<()> {
 
         if !missing_tag_refs.is_empty() {
             let pushed = missing_tag_refs.len();
-            git2_engine::push_refs(skills_dir, &missing_tag_refs, url)?;
-            log::info!("git push (git2): pushed {pushed} snapshot tag(s)");
+            gix_engine::push_refs(skills_dir, &missing_tag_refs, url)?;
+            log::info!("git push (gix): pushed {pushed} snapshot tag(s)");
         }
     }
 
-    log::info!("git push (git2): done");
+    log::info!("git push (gix): done");
     Ok(())
 }
 
@@ -706,8 +705,8 @@ pub(crate) fn current_branch(skills_dir: &Path) -> String {
 
 /// Fetch one branch from origin through whichever network engine applies.
 pub(crate) fn fetch_branch(skills_dir: &Path, branch: &str) -> Result<()> {
-    if let Some(url) = raw_remote_url(skills_dir).filter(|u| git2_engine::applies_to(u)) {
-        git2_engine::fetch(skills_dir, Some(branch), &url)
+    if let Some(url) = raw_remote_url(skills_dir).filter(|u| gix_engine::applies_to(u)) {
+        gix_engine::fetch(skills_dir, Some(branch), &url)
     } else {
         let env = remote_credential_env(skills_dir);
         run_git_env_checked(skills_dir, &["fetch", "origin", branch], &env)
@@ -775,7 +774,10 @@ pub(crate) fn create_snapshot_tag_unlocked(skills_dir: &Path) -> Result<String> 
     }
 
     let short_sha = run_git(skills_dir, &["rev-parse", "--short", "HEAD"])?;
-    let timestamp = Utc::now().format("%Y%m%d-%H%M%S");
+    let timestamp = jiff::Timestamp::now()
+        .to_zoned(jiff::tz::TimeZone::UTC)
+        .strftime("%Y%m%d-%H%M%S")
+        .to_string();
     let mut tag = format!("sm-v-{}-{}", timestamp, short_sha);
 
     // Avoid collision when multiple snapshots happen within the same second.
@@ -785,7 +787,7 @@ pub(crate) fn create_snapshot_tag_unlocked(skills_dir: &Path) -> Result<String> 
     )
     .is_ok()
     {
-        let millis = Utc::now().timestamp_subsec_millis();
+        let millis = jiff::Timestamp::now().subsec_millisecond();
         tag = format!("sm-v-{}-{:03}-{}", timestamp, millis, short_sha);
     }
 
@@ -982,7 +984,10 @@ pub(crate) fn reclone_from_remote_unlocked(skills_dir: &Path, url: &str) -> Resu
     }
 
     log::info!("git reclone: re-cloning from remote, preserving local skills");
-    let ts = Utc::now().format("%Y%m%d-%H%M%S");
+    let ts = jiff::Timestamp::now()
+        .to_zoned(jiff::tz::TimeZone::UTC)
+        .strftime("%Y%m%d-%H%M%S")
+        .to_string();
     let git_backup = skills_dir.with_file_name(format!("skills-git-recovery-{ts}"));
     if git_backup.exists() {
         std::fs::remove_dir_all(&git_backup)?;
@@ -1058,8 +1063,8 @@ pub(crate) fn clone_into_unlocked(skills_dir: &Path, url: &str) -> Result<()> {
     );
 
     // Clone
-    let clone_result: Result<()> = if git2_engine::applies_to(url) {
-        git2_engine::clone(url, skills_dir)
+    let clone_result: Result<()> = if gix_engine::applies_to(url) {
+        gix_engine::clone(url, skills_dir)
     } else {
         let env = git_credentials::credential_env_for_url(url);
         let output = git_command()
@@ -1104,7 +1109,7 @@ pub(crate) fn clone_into_unlocked(skills_dir: &Path, url: &str) -> Result<()> {
             Ok(())
         }
         Err(e) => {
-            // Restore backup on failure. A partial git2 clone can leave a
+            // Restore backup on failure. A partial engine clone can leave a
             // half-created target (system git cleans up after itself);
             // clear it so a retry doesn't hit "already a git repository".
             if let Some(backup) = backup_dir {
@@ -1629,7 +1634,7 @@ fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
-fn redact_urls_in_text(text: &str) -> String {
+pub(crate) fn redact_urls_in_text(text: &str) -> String {
     text.split_whitespace()
         .map(redact_url)
         .collect::<Vec<_>>()

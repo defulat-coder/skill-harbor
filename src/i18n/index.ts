@@ -10,12 +10,19 @@ const SUPPORTED_LANGUAGES = ["zh", "zh-TW", "en"] as const;
 type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
 function isSupportedLanguage(lang: string | null): lang is SupportedLanguage {
-  return SUPPORTED_LANGUAGES.includes(lang as SupportedLanguage);
+  return lang !== null && (SUPPORTED_LANGUAGES as readonly string[]).includes(lang);
 }
 
 function getStoredLanguage(): SupportedLanguage | null {
   const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
   return isSupportedLanguage(stored) ? stored : null;
+}
+
+// Match the primary subtag, not a bare prefix: "zha" is Zhuang and "enm" is
+// Middle English, neither of which we serve, and treating them as zh/en would
+// swallow the next tag the user actually prefers.
+function isPrimary(lower: string, tag: string) {
+  return lower === tag || lower.startsWith(`${tag}-`);
 }
 
 /**
@@ -27,12 +34,6 @@ function detectLanguage(): SupportedLanguage {
   const tags = navigator.languages?.length
     ? navigator.languages
     : [navigator.language];
-
-  // Match the primary subtag, not a bare prefix: "zha" is Zhuang and "enm" is
-  // Middle English, neither of which we serve, and treating them as zh/en would
-  // swallow the next tag the user actually prefers.
-  const isPrimary = (lower: string, tag: string) =>
-    lower === tag || lower.startsWith(`${tag}-`);
 
   for (const tag of tags) {
     const lower = tag.toLowerCase();

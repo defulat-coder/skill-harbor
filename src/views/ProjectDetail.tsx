@@ -83,7 +83,7 @@ function handleCardKeyDown(event: ReactKeyboardEvent<HTMLDivElement>, activate: 
 }
 
 function getAssignedAgents(variants: ProjectSkill[]) {
-  return Array.from(new Set(variants.map((variant) => variant.agent))).sort();
+  return Array.from(new Set(variants.map((variant) => variant.agent))).toSorted();
 }
 
 function getAgentDotTargets(variants: ProjectSkill[]) {
@@ -190,7 +190,7 @@ export function ProjectDetail() {
         console.error("Failed to load project agent targets:", e);
       }
     };
-    loadProjectAgentTargets();
+    void loadProjectAgentTargets();
     return () => {
       cancelled = true;
     };
@@ -198,7 +198,7 @@ export function ProjectDetail() {
 
   useEffect(() => {
     if (!project && !loading) {
-      navigate("/");
+      void navigate("/");
     }
   }, [project, loading, navigate]);
 
@@ -211,8 +211,8 @@ export function ProjectDetail() {
         existing.variants.push(skill);
         existing.enabledCount += skill.enabled ? 1 : 0;
         existing.totalCount += 1;
-        existing.files = Array.from(new Set([...existing.files, ...skill.files])).sort();
-        existing.tags = Array.from(new Set([...existing.tags, ...skill.tags])).sort((a, b) => a.localeCompare(b));
+        existing.files = Array.from(new Set([...existing.files, ...skill.files])).toSorted();
+        existing.tags = Array.from(new Set([...existing.tags, ...skill.tags])).toSorted((a, b) => a.localeCompare(b));
         if (skill.center_skill_id && !existing.centerSkillIds.includes(skill.center_skill_id)) {
           existing.centerSkillIds.push(skill.center_skill_id);
           existing.centerSkillIds.sort((a, b) => a.localeCompare(b));
@@ -234,18 +234,18 @@ export function ProjectDetail() {
         totalCount: 1,
         primaryVariant: skill,
         status: skill.sync_status,
-        tags: [...skill.tags].sort((a, b) => a.localeCompare(b)),
+        tags: [...skill.tags].toSorted((a, b) => a.localeCompare(b)),
         centerSkillIds: skill.center_skill_id ? [skill.center_skill_id] : [],
       });
     }
     return Array.from(groups.values())
       .map((group) => ({
         ...group,
-        variants: [...group.variants].sort((a, b) => a.agent_display_name.localeCompare(b.agent_display_name)),
-        primaryVariant: [...group.variants].sort((a, b) => a.agent_display_name.localeCompare(b.agent_display_name))[0],
+        variants: [...group.variants].toSorted((a, b) => a.agent_display_name.localeCompare(b.agent_display_name)),
+        primaryVariant: [...group.variants].toSorted((a, b) => a.agent_display_name.localeCompare(b.agent_display_name))[0],
         status: getGroupStatus(group.variants),
       }))
-      .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+      .toSorted((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
   }, [skills]);
 
   if (detailSkill) {
@@ -338,7 +338,7 @@ export function ProjectDetail() {
 
   const [lastUsedExportAgents, setLastUsedExportAgents] = useState<string[] | null>(null);
   useEffect(() => {
-    if (!id) return;
+    if (!id) return undefined;
     let cancelled = false;
     api.getSettings(projectLastUsedAgentsKey(id))
       .then((raw) => {
@@ -379,8 +379,8 @@ export function ProjectDetail() {
   const initialSheetAgents = useMemo(() => {
     const availableKeys = new Set(enabledInstalledAgentKeys(exportTargets));
     if (lastUsedExportAgents && lastUsedExportAgents.length > 0) {
-      const filtered = lastUsedExportAgents.filter((k) => availableKeys.has(k));
-      if (filtered.length > 0) return filtered;
+      const filteredLastUsed = lastUsedExportAgents.filter((k) => availableKeys.has(k));
+      if (filteredLastUsed.length > 0) return filteredLastUsed;
     }
     return selectedExportAgents.filter((k) => availableKeys.has(k));
   }, [exportTargets, lastUsedExportAgents, selectedExportAgents]);
@@ -403,7 +403,7 @@ export function ProjectDetail() {
         if (tag.trim()) tags.add(tag);
       }
     }
-    return Array.from(tags).sort((a, b) => a.localeCompare(b));
+    return Array.from(tags).toSorted((a, b) => a.localeCompare(b));
   }, [groupedSkills]);
 
   // Prune tag filters whose pill disappeared (e.g. its last skill was deleted),
@@ -1195,7 +1195,7 @@ export function ProjectDetail() {
                             variant="ghost"
                             busy={isUpdatingCenter}
                             disabled={isUpdatingCenter || isUpdatingProject}
-                            onClick={(e) => { e.stopPropagation(); handleUpdateCenter(skill); }}
+                            onClick={(e) => { e.stopPropagation(); void handleUpdateCenter(skill); }}
                             title={t("project.updateCenter")}
                             aria-label={t("project.updateCenter")}
                           >
@@ -1209,7 +1209,7 @@ export function ProjectDetail() {
                             variant="ghost"
                             busy={isUpdatingProject}
                             disabled={isUpdatingCenter || isUpdatingProject}
-                            onClick={(e) => { e.stopPropagation(); handleUpdateProject(skill); }}
+                            onClick={(e) => { e.stopPropagation(); void handleUpdateProject(skill); }}
                             title={
                               skill.status === "project_newer"
                                 ? t("project.resetFromCenter")
@@ -1365,7 +1365,7 @@ export function ProjectDetail() {
                           variant="ghost"
                           busy={isUpdatingCenter}
                           disabled={isUpdatingCenter || isUpdatingProject}
-                          onClick={(e) => { e.stopPropagation(); handleUpdateCenter(skill); }}
+                          onClick={(e) => { e.stopPropagation(); void handleUpdateCenter(skill); }}
                           title={t("project.updateCenter")}
                           aria-label={t("project.updateCenter")}
                         >
@@ -1379,7 +1379,7 @@ export function ProjectDetail() {
                           variant="ghost"
                           busy={isUpdatingProject}
                           disabled={isUpdatingCenter || isUpdatingProject}
-                          onClick={(e) => { e.stopPropagation(); handleUpdateProject(skill); }}
+                          onClick={(e) => { e.stopPropagation(); void handleUpdateProject(skill); }}
                           title={
                             skill.status === "project_newer"
                               ? t("project.resetFromCenter")

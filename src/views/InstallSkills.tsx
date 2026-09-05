@@ -47,6 +47,18 @@ const MARKET_SEARCH_DEBOUNCE_MS = 450;
 const MARKET_SEARCH_CACHE_TTL_MS = 120_000;
 const MARKET_SEARCH_CACHE_MAX_ENTRIES = 150;
 
+function warnRejected(results: PromiseSettledResult<unknown>[], label: string) {
+  for (const r of results) {
+    if (r.status === "rejected") console.warn(`${label} failed:`, r.reason);
+  }
+}
+
+function handleCancelInstall(cancelKey: string) {
+  api.cancelInstall(cancelKey).catch(() => {
+    // Ignore race: install may have completed before cancel request arrives.
+  });
+}
+
 export function InstallSkills() {
   const { t } = useTranslation();
   const { refreshPresets, refreshManagedSkills, refreshProjects, managedSkills, projects, openSkillDetailById } = useApp();
@@ -132,7 +144,7 @@ export function InstallSkills() {
     if (skill) {
       openSkillDetailById(skill.id);
     }
-    navigate("/my-skills");
+    void navigate("/my-skills");
   }, [navigate, openSkillDetailById]);
 
   const pruneMarketSearchCache = useCallback(() => {
@@ -149,7 +161,7 @@ export function InstallSkills() {
       return;
     }
 
-    const sorted = Array.from(marketSearchCacheRef.current.entries()).sort(
+    const sorted = Array.from(marketSearchCacheRef.current.entries()).toSorted(
       (a, b) => a[1].timestamp - b[1].timestamp
     );
     const removeCount = marketSearchCacheRef.current.size - MARKET_SEARCH_CACHE_MAX_ENTRIES;
@@ -233,14 +245,8 @@ export function InstallSkills() {
     }
   }, []);
 
-  const warnRejected = (results: PromiseSettledResult<unknown>[], label: string) => {
-    for (const r of results) {
-      if (r.status === "rejected") console.warn(`${label} failed:`, r.reason);
-    }
-  };
-
   useEffect(() => {
-    if (activeTab !== "market") return;
+    if (activeTab !== "market") return undefined;
 
     const query = debouncedMarketQuery.trim();
     const loadingMore =
@@ -257,7 +263,7 @@ export function InstallSkills() {
         setMarketLoadingMore(false);
         setMarketPage(1);
         setMarketError(null);
-        return;
+        return undefined;
       }
     }
 
@@ -305,7 +311,7 @@ export function InstallSkills() {
   useEffect(() => {
     if (activeTab === "local" && !initialScanAttempted.current && !scanResult && !scanLoading) {
       initialScanAttempted.current = true;
-      runScan();
+      void runScan();
     }
   }, [activeTab, scanLoading, scanResult, runScan]);
 
@@ -353,7 +359,7 @@ export function InstallSkills() {
         multiple: false,
       });
       if (!selected) return;
-      installLocalSource(selected as string);
+      void installLocalSource(selected);
     } catch (error: unknown) {
       const message = getErrorMessage(error, t("common.error"));
       setLocalError(message);
@@ -368,7 +374,7 @@ export function InstallSkills() {
         filters: [{ name: "Skills", extensions: ["zip", "skill"] }],
       });
       if (!selected) return;
-      installLocalSource(selected as string);
+      void installLocalSource(selected);
     } catch (error: unknown) {
       const message = getErrorMessage(error, t("common.error"));
       setLocalError(message);
@@ -402,7 +408,7 @@ export function InstallSkills() {
       );
 
       const result: BatchImportResult = await api.batchImportFolder(
-        selected as string
+        selected
       );
 
       if (result.errors.length > 0) {
@@ -429,7 +435,7 @@ export function InstallSkills() {
       }
 
       await Promise.all([refreshPresets(), refreshManagedSkills()]);
-      runScan();
+      void runScan();
     } catch (error: unknown) {
       const message = getErrorMessage(error, t("common.error"));
       setLocalError(message);
@@ -490,12 +496,6 @@ export function InstallSkills() {
       marketInstallLock.current = false;
       unlisten?.();
     }
-  };
-
-  const handleCancelInstall = (cancelKey: string) => {
-    api.cancelInstall(cancelKey).catch(() => {
-      // Ignore race: install may have completed before cancel request arrives.
-    });
   };
 
   const handleGitPreview = async () => {
@@ -650,7 +650,7 @@ export function InstallSkills() {
       ? marketSkills
       : marketSkills.filter((skill) => skill.source === marketSourceFilter);
     if (debouncedMarketQuery.trim().length > 0) {
-      return [...filtered].sort((a, b) => b.installs - a.installs);
+      return [...filtered].toSorted((a, b) => b.installs - a.installs);
     }
     return filtered;
   }, [marketSkills, marketSourceFilter, debouncedMarketQuery]);
@@ -744,7 +744,7 @@ export function InstallSkills() {
               <p id="market-search-help" className={styles.help}>输入后自动搜索；中文转换会调用本地 Codex 整理英文检索词。</p>
               {translationError && <div role="alert"><StatusBanner compact tone="danger" title="关键词转换失败" description={translationError} actionLabel="重试转换" onAction={translateQuery} /></div>}
               <div className={styles.filters}>
-                <label>榜单<select className="app-input" aria-label="市场榜单" value={marketTab} disabled={hasMarketQuery} onChange={e => setMarketTab(e.target.value as "alltime" | "trending" | "hot")}><option value="alltime">{t("install.all")}</option><option value="trending">{t("install.trending")}</option><option value="hot">{t("install.hot")}</option></select></label>
+                <label>榜单<select className="app-input" aria-label="市场榜单" value={marketTab} disabled={hasMarketQuery} onChange={e => { const v = e.target.value; if (v === "alltime" || v === "trending" || v === "hot") setMarketTab(v); }}><option value="alltime">{t("install.all")}</option><option value="trending">{t("install.trending")}</option><option value="hot">{t("install.hot")}</option></select></label>
                 <label>来源<select className="app-input" aria-label="筛选技能来源" value={marketSourceFilter} onChange={e => { setMarketSourceFilter(e.target.value); setMarketPage(1); }}><option value="all">{t("install.filters.allSources")}</option>{sourceOptions.map(source => <option key={source} value={source}>@{source}</option>)}</select></label>
                 {hasMarketQuery && <span className={styles.help}>正在显示搜索结果，清空搜索可返回榜单。</span>}
               </div>
@@ -1060,7 +1060,7 @@ export function InstallSkills() {
                                           return next;
                                         });
                                       } else if (e.key === "Enter") {
-                                        (e.target as HTMLInputElement).blur();
+                                        if (e.target instanceof HTMLInputElement) e.target.blur();
                                       }
                                     }}
                                     className="min-w-0 max-w-[220px] rounded-sm border border-border bg-surface px-1.5 py-0.5 text-[13px] font-semibold text-secondary"
@@ -1168,7 +1168,7 @@ export function InstallSkills() {
                   id="git-repository-url"
                   value={gitUrl}
                   onChange={(e) => setGitUrl(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !gitLoading && gitUrl.trim()) handleGitPreview(); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !gitLoading && gitUrl.trim()) void handleGitPreview(); }}
                   placeholder={t("install.repoUrlPlaceholder")}
                   disabled={gitLoading}
                   className="app-input w-full"

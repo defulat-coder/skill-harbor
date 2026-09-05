@@ -340,9 +340,9 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
   useEffect(() => {
     if (!currentToolKey) {
       loadedAgentKeyRef.current = null;
-      return;
+      return undefined;
     }
-    if (loadedAgentKeyRef.current === currentToolKey) return;
+    if (loadedAgentKeyRef.current === currentToolKey) return undefined;
     loadedAgentKeyRef.current = currentToolKey;
     void loadLocalSkills();
     return () => {
@@ -424,7 +424,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
         if (tag.trim()) tags.add(tag);
       }
     }
-    return Array.from(tags).sort((a, b) => a.localeCompare(b));
+    return Array.from(tags).toSorted((a, b) => a.localeCompare(b));
   }, [localSkills]);
 
   // Prune tag filters whose pill disappeared (e.g. its last skill was deleted),
@@ -455,7 +455,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
         }
         return true;
       })
-      .sort((a, b) => {
+      .toSorted((a, b) => {
         const priority: Record<ProjectSkill["sync_status"], number> = {
           project_only: 0,
           project_newer: 1,

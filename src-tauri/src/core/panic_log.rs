@@ -26,7 +26,7 @@ pub fn install_panic_hook(app: AppHandle) {
     let prev = panic::take_hook();
     panic::set_hook(Box::new(move |info| {
         let backtrace = Backtrace::capture();
-        let timestamp = chrono::Local::now().format("%Y-%m-%dT%H:%M:%S%.3f%:z");
+        let timestamp = jiff::Zoned::now().strftime("%Y-%m-%dT%H:%M:%S%.3f%:z");
         let location = info
             .location()
             .map(|l| format!("{}:{}:{}", l.file(), l.line(), l.column()))
