@@ -1,10 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { AppUpdateInfo } from "../lib/tauri";
-import {
-  useUIStore,
-  VIEWED_PRESET_LS_KEY,
-  LEGACY_VIEWED_PRESET_LS_KEY,
-} from "./useUIStore";
+import { useUIStore, VIEWED_PRESET_LS_KEY, LEGACY_VIEWED_PRESET_LS_KEY } from "./useUIStore";
 
 const checkAppUpdate = vi.fn();
 

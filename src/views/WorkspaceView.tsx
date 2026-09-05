@@ -4,7 +4,14 @@ import { LoadingState } from "../components/ui/LoadingState";
 import { Button } from "../components/ui/Button";
 import { PageHeader } from "../components/ui/PageHeader";
 import styles from "./WorkspaceView.module.css";
-import { useCallback, useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate, Navigate } from "@tanstack/react-router";
 import {
@@ -35,7 +42,12 @@ import * as api from "../lib/tauri";
 import { queryKeys } from "../lib/queryKeys";
 import type { ManagedSkill, ProjectSkill } from "../lib/tauri";
 import { getErrorMessage } from "../lib/error";
-import { getTagActiveColor, getTagColor, pruneStaleTagFilters, UNTAGGED_FILTER } from "../lib/skillTags";
+import {
+  getTagActiveColor,
+  getTagColor,
+  pruneStaleTagFilters,
+  UNTAGGED_FILTER,
+} from "../lib/skillTags";
 import { getSyncStatusMeta } from "../lib/syncStatusMeta";
 import { AddSkillsSheet } from "../components/AddSkillsSheet";
 import type { WorkspaceConfig } from "./workspaceConfigs";
@@ -91,7 +103,10 @@ function WorkspaceSkillCard({
   if (viewMode === "list") {
     return (
       <div
-        className={cn(styles.skillRow, "group relative flex cursor-pointer items-center gap-3.5 px-3.5 py-3")}
+        className={cn(
+          styles.skillRow,
+          "group relative flex cursor-pointer items-center gap-3.5 px-3.5 py-3",
+        )}
         onClick={onClick}
         role="button"
         tabIndex={0}
@@ -103,7 +118,7 @@ function WorkspaceSkillCard({
               "h-2 w-2 rounded-full",
               active
                 ? "bg-accent-light shadow-[0_0_0_3px_var(--color-accent-bg)]"
-                : "bg-surface-active"
+                : "bg-surface-active",
             )}
           />
         </div>
@@ -111,11 +126,17 @@ function WorkspaceSkillCard({
           className="w-[180px] shrink-0 truncate text-[14px] font-semibold text-secondary group-hover:text-primary"
           title={title}
         >
-          <button className={styles.titleButton} onClick={(event) => { event.stopPropagation(); onClick(); }}>{title}</button>
+          <button
+            className={styles.titleButton}
+            onClick={(event) => {
+              event.stopPropagation();
+              onClick();
+            }}
+          >
+            {title}
+          </button>
         </h3>
-        <p className="min-w-0 flex-1 truncate text-[13px] text-muted">
-          {description || "-"}
-        </p>
+        <p className="min-w-0 flex-1 truncate text-[13px] text-muted">{description || "-"}</p>
         {tags.length > 0 && (
           <div className="flex shrink-0 items-center gap-1.5">
             {tags.map((tag) => (
@@ -123,7 +144,7 @@ function WorkspaceSkillCard({
                 key={tag.label}
                 className={cn(
                   "inline-flex items-center rounded-full px-1.5 py-0.5 text-[11px] font-medium",
-                  tag.className
+                  tag.className,
                 )}
               >
                 {tag.label}
@@ -132,7 +153,9 @@ function WorkspaceSkillCard({
           </div>
         )}
         <div className="flex shrink-0 items-center gap-2.5">
-          <span className={cn("rounded-full px-2 py-0.5 text-[12px] font-medium", status.className)}>
+          <span
+            className={cn("rounded-full px-2 py-0.5 text-[12px] font-medium", status.className)}
+          >
             {status.label}
           </span>
           {fileCount > 0 && (
@@ -146,7 +169,8 @@ function WorkspaceSkillCard({
           <div
             className={cn(
               "flex shrink-0 items-center gap-1",
-              actionsHover && "opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+              actionsHover &&
+                "opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100",
             )}
           >
             {actions}
@@ -159,7 +183,8 @@ function WorkspaceSkillCard({
   return (
     <div
       className={cn(
-        styles.skillCard, "group relative flex h-full cursor-pointer flex-col overflow-hidden"
+        styles.skillCard,
+        "group relative flex h-full cursor-pointer flex-col overflow-hidden",
       )}
       onClick={onClick}
       role="button"
@@ -173,7 +198,7 @@ function WorkspaceSkillCard({
               "h-2 w-2 rounded-full",
               active
                 ? "bg-accent-light shadow-[0_0_0_3px_var(--color-accent-bg)]"
-                : "bg-surface-active"
+                : "bg-surface-active",
             )}
           />
         </div>
@@ -181,7 +206,15 @@ function WorkspaceSkillCard({
           className="flex-1 truncate text-[14px] font-semibold text-primary group-hover:text-accent-light"
           title={title}
         >
-          <button className={styles.titleButton} onClick={(event) => { event.stopPropagation(); onClick(); }}>{title}</button>
+          <button
+            className={styles.titleButton}
+            onClick={(event) => {
+              event.stopPropagation();
+              onClick();
+            }}
+          >
+            {title}
+          </button>
         </h3>
         {fileCount > 0 && (
           <span className="flex shrink-0 items-center gap-1 text-[12px] text-faint">
@@ -191,9 +224,7 @@ function WorkspaceSkillCard({
         )}
       </div>
       <div className="px-3.5 pb-3">
-        <p className="truncate text-[13px] leading-[18px] text-muted">
-          {description || "-"}
-        </p>
+        <p className="truncate text-[13px] leading-[18px] text-muted">{description || "-"}</p>
         {tags.length > 0 && (
           <div className="mt-2 flex flex-wrap items-center gap-1">
             {tags.map((tag) => (
@@ -201,7 +232,7 @@ function WorkspaceSkillCard({
                 key={tag.label}
                 className={cn(
                   "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium",
-                  tag.className
+                  tag.className,
                 )}
               >
                 {tag.label}
@@ -253,28 +284,26 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
   // land on /lobster-workspace/openclaw. Compute it before any filtering so a
   // category mismatch doesn't briefly render "agent not found".
   const requestedTool = useMemo(
-    () => (agentKey ? tools.find((t) => t.key === agentKey) ?? null : null),
-    [agentKey, tools]
+    () => (agentKey ? (tools.find((t) => t.key === agentKey) ?? null) : null),
+    [agentKey, tools],
   );
-  const needsRedirect =
-    !!agentKey &&
-    !!requestedTool &&
-    requestedTool.category !== config.category;
+  const needsRedirect = !!agentKey && !!requestedTool && requestedTool.category !== config.category;
 
-  const workspacePaths = config.category === "lobster"
-    ? { overview: "/lobster-workspace", agent: "/lobster-workspace/$agentKey" } as const
-    : { overview: "/global-workspace", agent: "/global-workspace/$agentKey" } as const;
+  const workspacePaths =
+    config.category === "lobster"
+      ? ({ overview: "/lobster-workspace", agent: "/lobster-workspace/$agentKey" } as const)
+      : ({ overview: "/global-workspace", agent: "/global-workspace/$agentKey" } as const);
 
   const installedTools = useMemo(
     () => tools.filter((t) => t.installed && t.enabled && t.category === config.category),
-    [tools, config.category]
+    [tools, config.category],
   );
 
   const skillCountByAgent = useMemo(() => {
     const map: Record<string, number> = {};
     for (const tool of installedTools) {
       map[tool.key] = managedSkills.filter((s) =>
-        s.targets.some((target) => target.tool === tool.key)
+        s.targets.some((target) => target.tool === tool.key),
       ).length;
     }
     return map;
@@ -287,8 +316,8 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
   // per-agent scan query that falls back to the managed count until it
   // resolves; scoped to the overview (currentToolKey === null).
   const currentTool = useMemo(
-    () => (agentKey ? installedTools.find((t) => t.key === agentKey) ?? null : null),
-    [agentKey, installedTools]
+    () => (agentKey ? (installedTools.find((t) => t.key === agentKey) ?? null) : null),
+    [agentKey, installedTools],
   );
 
   // Preset actions must target what is actually rendered: a single agent when
@@ -298,7 +327,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
   // hidden agent while the overview is shown.
   const presetBarAgentKeys = useMemo(
     () => (currentTool ? [currentTool.key] : installedTools.map((t) => t.key)),
-    [currentTool, installedTools]
+    [currentTool, installedTools],
   );
   const currentToolKey = currentTool?.key ?? null;
 
@@ -339,7 +368,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
             // Keep the managed-count fallback for an agent that fails to scan.
             return [tool.key, null] as const;
           }
-        })
+        }),
       );
       // Agents whose scan failed are omitted so they fall back to the managed
       // count rather than showing a stale value.
@@ -366,11 +395,9 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
   const agentSkills = useMemo(
     () =>
       agentKey
-        ? managedSkills.filter((skill) =>
-            skill.targets.some((target) => target.tool === agentKey)
-          )
+        ? managedSkills.filter((skill) => skill.targets.some((target) => target.tool === agentKey))
         : [],
-    [agentKey, managedSkills]
+    [agentKey, managedSkills],
   );
 
   const allLocalTags = useMemo(() => {
@@ -419,16 +446,13 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
           center_newer: 3,
           in_sync: 4,
         };
-        return (
-          priority[a.sync_status] - priority[b.sync_status] ||
-          a.name.localeCompare(b.name)
-        );
+        return priority[a.sync_status] - priority[b.sync_status] || a.name.localeCompare(b.name);
       });
   }, [localSkills, search, tagFilters]);
 
   const inSyncLocalCount = useMemo(
     () => localSkills.filter((skill) => skill.sync_status === "in_sync").length,
-    [localSkills]
+    [localSkills],
   );
 
   const installedIds = useMemo(() => new Set(agentSkills.map((s) => s.id)), [agentSkills]);
@@ -438,14 +462,17 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
       new Set(
         localSkills
           .map((skill) => skill.center_skill_id)
-          .filter((id): id is string => !!id && installedIds.has(id))
+          .filter((id): id is string => !!id && installedIds.has(id)),
       ),
-    [installedIds, localSkills]
+    [installedIds, localSkills],
   );
 
   const managedLocalCount = useMemo(
-    () => localSkills.filter((skill) => !!skill.center_skill_id && managedLocalIds.has(skill.center_skill_id)).length,
-    [localSkills, managedLocalIds]
+    () =>
+      localSkills.filter(
+        (skill) => !!skill.center_skill_id && managedLocalIds.has(skill.center_skill_id),
+      ).length,
+    [localSkills, managedLocalIds],
   );
 
   const handleRemoveLocalManagedSkill = async (skill: ProjectSkill) => {
@@ -473,7 +500,12 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
       setLocalActionKey(key);
       try {
         await api.importGlobalLocalSkillToCenter(currentTool.key, skill.relative_path);
-        toast.success(t("globalWorkspace.localSkills.uploadedToast", { name: skill.name, agent: currentTool.display_name }));
+        toast.success(
+          t("globalWorkspace.localSkills.uploadedToast", {
+            name: skill.name,
+            agent: currentTool.display_name,
+          }),
+        );
         await Promise.all([loadLocalSkills(), refreshManagedSkills()]);
       } catch (error: unknown) {
         toast.error(getErrorMessage(error, t("common.error")));
@@ -482,7 +514,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
         setUploadConfirmSkill(null);
       }
     },
-    [currentTool, loadLocalSkills, refreshManagedSkills, t]
+    [currentTool, loadLocalSkills, refreshManagedSkills, t],
   );
 
   const handleDeleteLocalSkill = useCallback(
@@ -492,7 +524,12 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
       setLocalActionKey(key);
       try {
         await api.deleteGlobalLocalSkill(currentTool.key, skill.relative_path);
-        toast.success(t("globalWorkspace.localSkills.deletedLocalToast", { name: skill.name, agent: currentTool.display_name }));
+        toast.success(
+          t("globalWorkspace.localSkills.deletedLocalToast", {
+            name: skill.name,
+            agent: currentTool.display_name,
+          }),
+        );
         await loadLocalSkills();
       } catch (error: unknown) {
         toast.error(getErrorMessage(error, t("common.error")));
@@ -501,7 +538,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
         setDeleteLocalConfirmSkill(null);
       }
     },
-    [currentTool, loadLocalSkills, t]
+    [currentTool, loadLocalSkills, t],
   );
 
   const handlePullLocalSkill = useCallback(
@@ -511,7 +548,12 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
       setLocalActionKey(key);
       try {
         await api.updateGlobalLocalSkillFromCenter(currentTool.key, skill.relative_path);
-        toast.success(t("globalWorkspace.localSkills.pulledToast", { name: skill.name, agent: currentTool.display_name }));
+        toast.success(
+          t("globalWorkspace.localSkills.pulledToast", {
+            name: skill.name,
+            agent: currentTool.display_name,
+          }),
+        );
         await loadLocalSkills();
       } catch (error: unknown) {
         toast.error(getErrorMessage(error, t("common.error")));
@@ -520,15 +562,16 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
         setPullConfirmSkill(null);
       }
     },
-    [currentTool, loadLocalSkills, t]
+    [currentTool, loadLocalSkills, t],
   );
 
   const localDocQuery = useQuery({
     queryKey: queryKeys.workspace.localSkillDocument(
       currentTool?.key ?? "",
-      localDetailSkill?.relative_path ?? ""
+      localDetailSkill?.relative_path ?? "",
     ),
-    queryFn: () => api.getGlobalLocalSkillDocument(currentTool!.key, localDetailSkill!.relative_path),
+    queryFn: () =>
+      api.getGlobalLocalSkillDocument(currentTool!.key, localDetailSkill!.relative_path),
     enabled: !!currentTool && !!localDetailSkill,
   });
   const localCenterDocQuery = useQuery({
@@ -548,13 +591,12 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
       setLocalDetailSkill(skill);
       setLocalContentTab("local");
     },
-    [currentTool]
+    [currentTool],
   );
 
   const existsInGlobal = useCallback(
-    (skill: ManagedSkill, agentK: string) =>
-      skill.targets.some((target) => target.tool === agentK),
-    []
+    (skill: ManagedSkill, agentK: string) => skill.targets.some((target) => target.tool === agentK),
+    [],
   );
 
   const handlePresetAdd = useCallback(async (skill: ManagedSkill, agentK: string) => {
@@ -624,19 +666,35 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
           </Button>
         )}
 
-        {(isManaged || canDeleteLocal) && <CardActionMenu label={`管理 ${skill.name}`} actions={[
-          {key: "remove", label: isManaged ? t("globalWorkspace.localSkills.removeManaged") : t("globalWorkspace.localSkills.deleteLocal"), icon: <Trash2 size={14}/>, danger: true, disabled: removing || !!localActionKey,
-            onSelect: () => { if (isManaged) void handleRemoveLocalManagedSkill(skill); else setDeleteLocalConfirmSkill(skill); }},
-        ]}/>}
-
+        {(isManaged || canDeleteLocal) && (
+          <CardActionMenu
+            label={`管理 ${skill.name}`}
+            actions={[
+              {
+                key: "remove",
+                label: isManaged
+                  ? t("globalWorkspace.localSkills.removeManaged")
+                  : t("globalWorkspace.localSkills.deleteLocal"),
+                icon: <Trash2 size={14} />,
+                danger: true,
+                disabled: removing || !!localActionKey,
+                onSelect: () => {
+                  if (isManaged) void handleRemoveLocalManagedSkill(skill);
+                  else setDeleteLocalConfirmSkill(skill);
+                },
+              },
+            ]}
+          />
+        )}
       </>
     );
   };
 
   if (needsRedirect && requestedTool) {
-    const to = requestedTool.category === "lobster"
-      ? "/lobster-workspace/$agentKey"
-      : "/global-workspace/$agentKey";
+    const to =
+      requestedTool.category === "lobster"
+        ? "/lobster-workspace/$agentKey"
+        : "/global-workspace/$agentKey";
     return <Navigate to={to} params={{ agentKey: requestedTool.key }} replace />;
   }
 
@@ -662,8 +720,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     return (
       <div className={styles.page}>
         <div className={styles.header}>
-          <PageHeader title={t(config.i18nKeys.title)} count={installedTools.length}
- />
+          <PageHeader title={t(config.i18nKeys.title)} count={installedTools.length} />
 
           {presets.length > 0 && (
             <PresetBar
@@ -684,7 +741,9 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
             return (
               <button
                 key={tool.key}
-                onClick={() => navigate({ to: workspacePaths.agent, params: { agentKey: tool.key } })}
+                onClick={() =>
+                  navigate({ to: workspacePaths.agent, params: { agentKey: tool.key } })
+                }
                 className={styles.toolCard}
               >
                 <AgentIcon
@@ -693,8 +752,12 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
                   className="h-9 w-9 rounded-lg transition-colors group-hover:border-border"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-semibold text-secondary">{tool.display_name}</p>
-                  <p className="text-[12px] text-muted">{t("globalWorkspace.skillCount", { count })}</p>
+                  <p className="truncate text-[13px] font-semibold text-secondary">
+                    {tool.display_name}
+                  </p>
+                  <p className="text-[12px] text-muted">
+                    {t("globalWorkspace.skillCount", { count })}
+                  </p>
                 </div>
                 <ChevronRight className="h-4 w-4 shrink-0 text-faint transition-transform group-hover:translate-x-0.5" />
               </button>
@@ -710,10 +773,21 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
       {/* Header */}
       <div className={styles.header}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <PageHeader title={currentTool.display_name} count={localSkills.length}
-            description={`${compactHomePath(currentTool.skills_dir)} · ${t("globalWorkspace.localSkills.summary", {
-              total: localSkills.length, managed: managedLocalCount, synced: inSyncLocalCount,
-            })}`} actions={<Button onClick={() => navigate({ to: workspacePaths.overview })}>全部工具</Button>} />
+          <PageHeader
+            title={currentTool.display_name}
+            count={localSkills.length}
+            description={`${compactHomePath(currentTool.skills_dir)} · ${t(
+              "globalWorkspace.localSkills.summary",
+              {
+                total: localSkills.length,
+                managed: managedLocalCount,
+                synced: inSyncLocalCount,
+              },
+            )}`}
+            actions={
+              <Button onClick={() => navigate({ to: workspacePaths.overview })}>全部工具</Button>
+            }
+          />
 
           <div className={styles.toolbar}>
             <div className="relative w-full min-w-[220px] max-w-[320px]">
@@ -731,18 +805,17 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
               />
             </div>
 
-              <Button
-                iconOnly
-                variant="ghost"
-                busy={localSkillsQuery.isFetching}
-                onClick={() => void loadLocalSkills()}
-                title={t("settings.refresh")}
-                aria-label={t("settings.refresh")}
-              >
-                {!localSkillsQuery.isFetching && <RefreshCw className="h-4 w-4" aria-hidden />}
-              </Button>
+            <Button
+              iconOnly
+              variant="ghost"
+              busy={localSkillsQuery.isFetching}
+              onClick={() => void loadLocalSkills()}
+              title={t("settings.refresh")}
+              aria-label={t("settings.refresh")}
+            >
+              {!localSkillsQuery.isFetching && <RefreshCw className="h-4 w-4" aria-hidden />}
+            </Button>
             <div className="ds-view-toggle shrink-0" aria-label="视图切换">
-
               <button
                 aria-label="网格视图"
                 aria-pressed={viewMode === "grid"}
@@ -761,10 +834,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
               </button>
             </div>
 
-            <Button
-              onClick={() => setAddDialogOpen(true)}
-              variant="primary"
-            >
+            <Button onClick={() => setAddDialogOpen(true)} variant="primary">
               <Plus className="h-3.5 w-3.5" />
               {t("globalWorkspace.addSkill")}
             </Button>
@@ -772,66 +842,71 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
         </div>
 
         {allLocalTags.length > 0 && (
-          <Disclosure title={`标签筛选${tagFilters.size ? ` · 已选 ${tagFilters.size}` : ""}`}><div className="flex flex-wrap items-center gap-1.5">
-            <button
-              onClick={() => setTagFilters(new Set())}
-              className={cn(
-                "rounded-full px-2.5 py-0.5 text-[12px] font-medium transition-colors",
-                tagFilters.size === 0
-                  ? "bg-accent text-[var(--ds-on-accent)]"
-                  : "bg-surface-hover text-muted hover:text-secondary"
-              )}
-            >
-              {t("mySkills.tags.allTags")}
-            </button>
-            {localSkills.some((s) => s.tags.length === 0) && (() => {
-              const isActive = tagFilters.has(UNTAGGED_FILTER);
-              return (
-                <button
-                  onClick={() => {
-                    setTagFilters((prev) => {
-                      const next = new Set(prev);
-                      if (next.has(UNTAGGED_FILTER)) next.delete(UNTAGGED_FILTER);
-                      else next.add(UNTAGGED_FILTER);
-                      return next;
-                    });
-                  }}
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-medium transition-colors",
-                    isActive
-                      ? "bg-surface-active text-primary"
-                      : "border border-dashed border-border text-muted hover:text-secondary"
-                  )}
-                  title={t("mySkills.tags.untagged")}
-                >
-                  <CircleSlash className="h-3.5 w-3.5" />
-                  {t("mySkills.tags.untagged")}
-                </button>
-              );
-            })()}
-            {allLocalTags.map((tag) => {
-              const active = tagFilters.has(tag);
-              return (
-                <button
-                  key={tag}
-                  onClick={() => {
-                    setTagFilters((prev) => {
-                      const next = new Set(prev);
-                      if (next.has(tag)) next.delete(tag);
-                      else next.add(tag);
-                      return next;
-                    });
-                  }}
-                  className={cn(
-                    "rounded-full px-2.5 py-0.5 text-[12px] font-medium transition-colors",
-                    active ? getTagActiveColor(tag, allLocalTags) : getTagColor(tag, allLocalTags)
-                  )}
-                >
-                  {tag}
-                </button>
-              );
-            })}
-          </div></Disclosure>
+          <Disclosure title={`标签筛选${tagFilters.size ? ` · 已选 ${tagFilters.size}` : ""}`}>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                onClick={() => setTagFilters(new Set())}
+                className={cn(
+                  "rounded-full px-2.5 py-0.5 text-[12px] font-medium transition-colors",
+                  tagFilters.size === 0
+                    ? "bg-accent text-[var(--ds-on-accent)]"
+                    : "bg-surface-hover text-muted hover:text-secondary",
+                )}
+              >
+                {t("mySkills.tags.allTags")}
+              </button>
+              {localSkills.some((s) => s.tags.length === 0) &&
+                (() => {
+                  const isActive = tagFilters.has(UNTAGGED_FILTER);
+                  return (
+                    <button
+                      onClick={() => {
+                        setTagFilters((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(UNTAGGED_FILTER)) next.delete(UNTAGGED_FILTER);
+                          else next.add(UNTAGGED_FILTER);
+                          return next;
+                        });
+                      }}
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-medium transition-colors",
+                        isActive
+                          ? "bg-surface-active text-primary"
+                          : "border border-dashed border-border text-muted hover:text-secondary",
+                      )}
+                      title={t("mySkills.tags.untagged")}
+                    >
+                      <CircleSlash className="h-3.5 w-3.5" />
+                      {t("mySkills.tags.untagged")}
+                    </button>
+                  );
+                })()}
+              {allLocalTags.map((tag) => {
+                const active = tagFilters.has(tag);
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => {
+                      setTagFilters((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(tag)) next.delete(tag);
+                        else next.add(tag);
+                        return next;
+                      });
+                    }}
+                    className={cn(
+                      "rounded-full px-2.5 py-0.5 text-[12px] font-medium transition-colors",
+                      active
+                        ? getTagActiveColor(tag, allLocalTags)
+                        : getTagColor(tag, allLocalTags),
+                    )}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
+            </div>
+          </Disclosure>
         )}
 
         {/* Preset bar */}
@@ -851,7 +926,10 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
       {localSkillsLoading ? (
         <LoadingState label={t("common.loading")} />
       ) : localSkillsError ? (
-        <div role="alert" className="ds-empty"><p>{localSkillsError}</p><Button onClick={() => void loadLocalSkills()}>重新加载目录</Button></div>
+        <div role="alert" className="ds-empty">
+          <p>{localSkillsError}</p>
+          <Button onClick={() => void loadLocalSkills()}>重新加载目录</Button>
+        </div>
       ) : visibleLocalSkills.length === 0 ? (
         <div className="ds-empty">
           <Globe className="mb-4 h-12 w-12 text-faint" />
@@ -860,7 +938,17 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
               ? t("globalWorkspace.localSkills.empty")
               : t("mySkills.noMatch")}
           </h2>
-          {localSkills.length > 0 && <Button variant="secondary" onClick={() => { setSearch(""); setTagFilters(new Set()); }}>清除筛选</Button>}
+          {localSkills.length > 0 && (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setSearch("");
+                setTagFilters(new Set());
+              }}
+            >
+              清除筛选
+            </Button>
+          )}
           {localSkills.length === 0 && (
             <Button variant="primary" className="mt-4" onClick={() => setAddDialogOpen(true)}>
               <Plus className="h-3.5 w-3.5" aria-hidden />
@@ -870,15 +958,13 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
         </div>
       ) : (
         <div
-          className={cn(
-            "pb-8",
-            viewMode === "grid"
-              ? styles.toolGrid
-              : "flex flex-col gap-0.5"
-          )}
+          className={cn("pb-8", viewMode === "grid" ? styles.toolGrid : "flex flex-col gap-0.5")}
         >
           {visibleLocalSkills.map((skill) => {
-            const statusMeta = getSyncStatusMeta(t(SYNC_STATUS_LABEL_KEYS[skill.sync_status]), skill.sync_status);
+            const statusMeta = getSyncStatusMeta(
+              t(SYNC_STATUS_LABEL_KEYS[skill.sync_status]),
+              skill.sync_status,
+            );
             const isManaged = !!skill.center_skill_id && managedLocalIds.has(skill.center_skill_id);
 
             return (
@@ -887,7 +973,10 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
                 viewMode={viewMode}
                 title={skill.name}
                 description={skill.description || skill.relative_path}
-                tags={skill.tags.map((tag) => ({ label: tag, className: getTagColor(tag, allLocalTags) }))}
+                tags={skill.tags.map((tag) => ({
+                  label: tag,
+                  className: getTagColor(tag, allLocalTags),
+                }))}
                 status={statusMeta}
                 fileCount={skill.files.length}
                 active={isManaged}
@@ -922,8 +1011,21 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
         meta={
           localDetailSkill ? (
             <div className="flex flex-wrap items-center gap-2">
-              <span className={cn("rounded-full px-2.5 py-1 text-[12px] font-medium", getSyncStatusMeta(t(SYNC_STATUS_LABEL_KEYS[localDetailSkill.sync_status]), localDetailSkill.sync_status).className)}>
-                {getSyncStatusMeta(t(SYNC_STATUS_LABEL_KEYS[localDetailSkill.sync_status]), localDetailSkill.sync_status).label}
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-1 text-[12px] font-medium",
+                  getSyncStatusMeta(
+                    t(SYNC_STATUS_LABEL_KEYS[localDetailSkill.sync_status]),
+                    localDetailSkill.sync_status,
+                  ).className,
+                )}
+              >
+                {
+                  getSyncStatusMeta(
+                    t(SYNC_STATUS_LABEL_KEYS[localDetailSkill.sync_status]),
+                    localDetailSkill.sync_status,
+                  ).label
+                }
               </span>
               <span className="rounded-full bg-surface-hover px-2.5 py-1 text-[12px] text-muted">
                 {localDetailSkill.relative_path}
@@ -945,7 +1047,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
                   "rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors",
                   localContentTab === tab
                     ? "bg-accent text-[var(--ds-on-accent)]"
-                    : "bg-surface-hover text-muted hover:text-secondary"
+                    : "bg-surface-hover text-muted hover:text-secondary",
                 )}
                 disabled={(tab === "diff" || tab === "center") && localCenterDocLoading}
               >
@@ -967,7 +1069,9 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
           ) : localCenterDocLoading ? (
             <LoadingState label={t("common.loading")} />
           ) : (
-            <div className="mt-12 text-center text-[13px] text-muted">{t("mySkills.sourceDiffUnavailable")}</div>
+            <div className="mt-12 text-center text-[13px] text-muted">
+              {t("mySkills.sourceDiffUnavailable")}
+            </div>
           )
         ) : localContentTab === "center" ? (
           localCenterDocLoading ? (
@@ -975,12 +1079,16 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
           ) : localCenterDocContent ? (
             <SkillMarkdown content={localCenterDocContent} />
           ) : (
-            <div className="mt-12 text-center text-[13px] text-muted">{t("mySkills.sourceDiffUnavailable")}</div>
+            <div className="mt-12 text-center text-[13px] text-muted">
+              {t("mySkills.sourceDiffUnavailable")}
+            </div>
           )
         ) : localDocContent ? (
           <SkillMarkdown content={localDocContent} />
         ) : (
-          <div className="mt-12 text-center text-[13px] text-muted">{t("common.documentMissing")}</div>
+          <div className="mt-12 text-center text-[13px] text-muted">
+            {t("common.documentMissing")}
+          </div>
         )}
       </DetailSheet>
 
@@ -993,7 +1101,9 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
         tone="warning"
         confirmLabel={t("globalWorkspace.localSkills.upload")}
         onClose={() => setUploadConfirmSkill(null)}
-        onConfirm={() => uploadConfirmSkill ? handleUploadLocalSkill(uploadConfirmSkill) : Promise.resolve()}
+        onConfirm={() =>
+          uploadConfirmSkill ? handleUploadLocalSkill(uploadConfirmSkill) : Promise.resolve()
+        }
       />
       <ConfirmDialog
         open={!!pullConfirmSkill}
@@ -1005,7 +1115,9 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
         tone="danger"
         confirmLabel={t("globalWorkspace.localSkills.pull")}
         onClose={() => setPullConfirmSkill(null)}
-        onConfirm={() => pullConfirmSkill ? handlePullLocalSkill(pullConfirmSkill) : Promise.resolve()}
+        onConfirm={() =>
+          pullConfirmSkill ? handlePullLocalSkill(pullConfirmSkill) : Promise.resolve()
+        }
       />
       <ConfirmDialog
         open={!!deleteLocalConfirmSkill}
@@ -1017,9 +1129,12 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
         tone="danger"
         confirmLabel={t("common.delete")}
         onClose={() => setDeleteLocalConfirmSkill(null)}
-        onConfirm={() => deleteLocalConfirmSkill ? handleDeleteLocalSkill(deleteLocalConfirmSkill) : Promise.resolve()}
+        onConfirm={() =>
+          deleteLocalConfirmSkill
+            ? handleDeleteLocalSkill(deleteLocalConfirmSkill)
+            : Promise.resolve()
+        }
       />
     </div>
   );
 }
-

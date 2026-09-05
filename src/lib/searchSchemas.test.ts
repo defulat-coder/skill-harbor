@@ -19,7 +19,10 @@ describe("validateSkillPickerSearch", () => {
 describe("validateInstallSearch", () => {
   it("只接受合法 tab，非法值丢弃，project 原样透传", () => {
     expect(validateInstallSearch({ tab: "local" })).toEqual({ tab: "local", project: undefined });
-    expect(validateInstallSearch({ tab: "bogus", project: "p1" })).toEqual({ tab: undefined, project: "p1" });
+    expect(validateInstallSearch({ tab: "bogus", project: "p1" })).toEqual({
+      tab: undefined,
+      project: "p1",
+    });
     expect(validateInstallSearch({})).toEqual({ tab: undefined, project: undefined });
   });
 });

@@ -12,14 +12,7 @@ interface Props {
 }
 
 /** Shared 34x20 switch with theme-aware thumb and transform-only motion. */
-export function ToggleSwitch({
-  checked,
-  onChange,
-  disabled,
-  loading,
-  title,
-  className,
-}: Props) {
+export function ToggleSwitch({ checked, onChange, disabled, loading, title, className }: Props) {
   return (
     <button
       type="button"
@@ -35,9 +28,7 @@ export function ToggleSwitch({
       }}
       className={`${styles.switch} ${className ?? ""}`}
     >
-      <span
-        className={styles.knob}
-      >
+      <span className={styles.knob}>
         {loading && <Loader2 className="h-2.5 w-2.5 animate-spin text-muted" />}
       </span>
     </button>

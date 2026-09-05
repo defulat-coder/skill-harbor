@@ -23,29 +23,20 @@ interface Props {
   className?: string;
 }
 
-export function AgentToggleSection({
-  items,
-  togglingKey,
-  onToggle,
-  className,
-}: Props) {
+export function AgentToggleSection({ items, togglingKey, onToggle, className }: Props) {
   const { t } = useTranslation();
   const [showUnavailable, setShowUnavailable] = useState(false);
 
   const availableItems = items.filter((item) => item.isAvailable);
   const unavailableItems = items.filter((item) => !item.isAvailable);
-  const enabledAvailableCount = availableItems.filter(
-    (item) => item.enabled,
-  ).length;
+  const enabledAvailableCount = availableItems.filter((item) => item.enabled).length;
 
   return (
     <div className={cn(styles.panel, className)}>
       <div className="border-b border-border-subtle px-6 py-2.5">
         <div className="flex items-center justify-between gap-2 text-[13px]">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="font-medium text-secondary">
-              {t("mySkills.agentTogglesTitle")}
-            </span>
+            <span className="font-medium text-secondary">{t("mySkills.agentTogglesTitle")}</span>
             <span className="rounded-full border border-border-subtle bg-surface px-2 py-0.5 text-[12px] text-muted">
               {t("mySkills.syncSummary", {
                 synced: enabledAvailableCount,
@@ -56,9 +47,7 @@ export function AgentToggleSection({
         </div>
 
         {availableItems.length === 0 && (
-          <p className={styles.empty}>
-            没有可用工具，可在设置中检查工具安装状态。
-          </p>
+          <p className={styles.empty}>没有可用工具，可在设置中检查工具安装状态。</p>
         )}
         <span className={styles.status} role="status">
           {togglingKey ? "正在更新工具状态…" : ""}
@@ -122,9 +111,7 @@ function AgentToggle({
       aria-label={`${item.displayName}，${loading ? "正在更新" : item.enabled ? "已启用" : "未启用"}`}
       className={cn(
         styles.toggle,
-        item.enabled
-          ? "border-border bg-surface"
-          : "border-border-subtle bg-bg-secondary",
+        item.enabled ? "border-border bg-surface" : "border-border-subtle bg-bg-secondary",
         !disabled && "hover:bg-surface-hover",
         disabled && "opacity-55",
       )}

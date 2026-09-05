@@ -12,7 +12,10 @@ migrateStorage();
 
 function readInitialViewedPresetId(): string | null {
   try {
-    return localStorage.getItem(VIEWED_PRESET_LS_KEY) || localStorage.getItem(LEGACY_VIEWED_PRESET_LS_KEY);
+    return (
+      localStorage.getItem(VIEWED_PRESET_LS_KEY) ||
+      localStorage.getItem(LEGACY_VIEWED_PRESET_LS_KEY)
+    );
   } catch {
     return null;
   }

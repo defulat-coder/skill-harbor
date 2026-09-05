@@ -4,7 +4,7 @@ version = "1.36.1"
 description = "SkillHarbor - Chinese-first personal skill library for AI agents"
 authors = ["tianliang"]
 license = "MIT"
-edition = "2021"
+edition = "2024"
 rust-version = "1.88"
 default-run = "skillharbor"
 

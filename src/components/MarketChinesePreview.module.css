@@ -1,8 +1,46 @@
-.trigger { align-self: flex-start; }
-.loading { display: flex; align-items: center; gap: 8px; padding: 24px 0; font-size: 13px; line-height: 1.8; color: var(--ds-muted); }
-.error { display: grid; justify-items: start; gap: 12px; color: var(--ds-danger); font-size: 13px; line-height: 1.8; }
-.meta { font-size: 12px; color: var(--ds-muted); margin-bottom: 20px; }
-.reading { max-width: 70ch; margin-inline: 0; font-size: 14px; line-height: 1.8; overflow-wrap: anywhere; }
-.spinner { flex-shrink: 0; animation: turn 1s linear infinite; }
-@keyframes turn { to { transform: rotate(360deg); } }
-@media(prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+.trigger {
+  align-self: flex-start;
+}
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 0;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--ds-muted);
+}
+.error {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  color: var(--ds-danger);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.meta {
+  font-size: 12px;
+  color: var(--ds-muted);
+  margin-bottom: 20px;
+}
+.reading {
+  max-width: 70ch;
+  margin-inline: 0;
+  font-size: 14px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.spinner {
+  flex-shrink: 0;
+  animation: turn 1s linear infinite;
+}
+@keyframes turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

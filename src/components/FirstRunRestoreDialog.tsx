@@ -34,7 +34,9 @@ export function FirstRunRestoreDialog() {
     queryFn: async () => {
       const dismissedSetting = await api.getSettings(PROMPT_SETTING_KEY).catch(() => null);
       if (dismissedSetting) return false;
-      const savedRemote = (await api.getSettings("git_backup_remote_url").catch(() => null))?.trim();
+      const savedRemote = (
+        await api.getSettings("git_backup_remote_url").catch(() => null)
+      )?.trim();
       if (savedRemote) return false;
       const status = await api.gitBackupStatus().catch(() => null);
       if (!status || status.is_repo) return false;
@@ -75,12 +77,49 @@ export function FirstRunRestoreDialog() {
     }
   };
 
-  return <DetailSheet open={open} size="compact" closeDisabled={busy} title={t("firstRun.title")} description={t("firstRun.subtitle")} onClose={() => void dismiss()}>
-    <label htmlFor="restore-source" className="block text-[13px] mb-2">{t("firstRun.urlLabel")}</label>
-    <input aria-describedby={error ? "restore-error" : undefined} id="restore-source" className="app-input w-full" value={url} onChange={e => { setUrl(e.target.value); setError(null); }} placeholder={t("settings.gitRemoteUrlPlaceholder")} disabled={busy} autoCapitalize="none" autoCorrect="off" spellCheck={false} />
-    {error && <p id="restore-error" role="alert" className="text-danger mt-3">{error}</p>}
-    {busy && <LoadingState label={t("firstRun.restoring")} />}
-    <div className="mt-6 flex flex-wrap justify-end gap-2"><Button onClick={dismiss} disabled={busy}>{t("firstRun.startFresh")}</Button><Button variant="primary" onClick={handleRestore} busy={busy} disabled={!url.trim()}>{!busy && <CloudDownload size={15} />}{busy ? t("firstRun.restoring") : t("firstRun.restore")}</Button></div>
-    <p className="mt-4 text-[12px] text-muted">{t("firstRun.hint")}</p>
-  </DetailSheet>;
+  return (
+    <DetailSheet
+      open={open}
+      size="compact"
+      closeDisabled={busy}
+      title={t("firstRun.title")}
+      description={t("firstRun.subtitle")}
+      onClose={() => void dismiss()}
+    >
+      <label htmlFor="restore-source" className="block text-[13px] mb-2">
+        {t("firstRun.urlLabel")}
+      </label>
+      <input
+        aria-describedby={error ? "restore-error" : undefined}
+        id="restore-source"
+        className="app-input w-full"
+        value={url}
+        onChange={(e) => {
+          setUrl(e.target.value);
+          setError(null);
+        }}
+        placeholder={t("settings.gitRemoteUrlPlaceholder")}
+        disabled={busy}
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
+      />
+      {error && (
+        <p id="restore-error" role="alert" className="text-danger mt-3">
+          {error}
+        </p>
+      )}
+      {busy && <LoadingState label={t("firstRun.restoring")} />}
+      <div className="mt-6 flex flex-wrap justify-end gap-2">
+        <Button onClick={dismiss} disabled={busy}>
+          {t("firstRun.startFresh")}
+        </Button>
+        <Button variant="primary" onClick={handleRestore} busy={busy} disabled={!url.trim()}>
+          {!busy && <CloudDownload size={15} />}
+          {busy ? t("firstRun.restoring") : t("firstRun.restore")}
+        </Button>
+      </div>
+      <p className="mt-4 text-[12px] text-muted">{t("firstRun.hint")}</p>
+    </DetailSheet>
+  );
 }

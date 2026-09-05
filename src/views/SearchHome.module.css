@@ -1,59 +1,358 @@
 /* Source composition: OpenDesign HomeHero + entry composer. All color/font tokens stay shared. */
-.page { max-width: 960px; margin: 0 auto; padding-bottom: 40px; }
-.hero { max-width: 760px; margin: 0 auto 32px; padding-top: clamp(24px,7vh,72px); }
-.identity { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 16px; color: var(--ds-strong); font-size: 16px; font-weight: 600; }
-.hero h1 { margin: 0; text-align: center; font-size: 28px; line-height: 1.4; font-weight: 600; color: var(--ds-strong); letter-spacing: 0; }
-.subtitle { margin: 10px 0 24px; text-align: center; color: var(--ds-muted); font-size: 14px; line-height: 1.7; }
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+.hero {
+  max-width: 760px;
+  margin: 0 auto 32px;
+  padding-top: clamp(24px, 7vh, 72px);
+}
+.identity {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  color: var(--ds-strong);
+  font-size: 16px;
+  font-weight: 600;
+}
+.hero h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 28px;
+  line-height: 1.4;
+  font-weight: 600;
+  color: var(--ds-strong);
+  letter-spacing: 0;
+}
+.subtitle {
+  margin: 10px 0 24px;
+  text-align: center;
+  color: var(--ds-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
 /* Composer follows the OpenDesign home-hero pattern: a borderless neutral
    tray (--ds-subtle) groups a white inner input card; the only stroke appears
    on the inner card once the field is engaged (focus-within). Radii are
    concentric: outer 20px = inner 16px + the tray's 4px inset. */
-.composer { overflow: hidden; display: flex; flex-direction: column; gap: 8px; padding: 4px 4px 8px; border: 0; border-radius: 20px; background: var(--ds-subtle); }
-.inputCard { position: relative; display: flex; flex-direction: column; border: 1px solid transparent; border-radius: 16px; background: var(--ds-bg); padding: 15px 15px 11px; transition: border-color 100ms; }
-.inputCard:focus-within { border-color: var(--ds-border-soft); }
-.inputLabel { display: block; padding: 0 4px; font-size: 12px; color: var(--ds-muted); }
-.composer textarea { display: block; resize: vertical; width: 100%; min-height: 120px; max-height: 360px; padding: 10px 4px; border: 0; background: transparent; color: var(--ds-text); font: inherit; font-size: 15px; line-height: 1.8; }
-.composer textarea:focus-visible { outline: none; }
-.composer textarea::placeholder { color: var(--ds-soft); }
-.composerActions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 4px 0; }
-.composerActions > span { font-size: 12px; color: var(--ds-muted); }
+.composer {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 4px 8px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--ds-subtle);
+}
+.inputCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: var(--ds-bg);
+  padding: 15px 15px 11px;
+  transition: border-color 100ms;
+}
+.inputCard:focus-within {
+  border-color: var(--ds-border-soft);
+}
+.inputLabel {
+  display: block;
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--ds-muted);
+}
+.composer textarea {
+  display: block;
+  resize: vertical;
+  width: 100%;
+  min-height: 120px;
+  max-height: 360px;
+  padding: 10px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--ds-text);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.composer textarea:focus-visible {
+  outline: none;
+}
+.composer textarea::placeholder {
+  color: var(--ds-soft);
+}
+.composerActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 4px 0;
+}
+.composerActions > span {
+  font-size: 12px;
+  color: var(--ds-muted);
+}
 /* Send mark, ported from OpenDesign `.home-hero__submit`: a 36px near-black
    squircle with the brand-green arrow; the pair carries its own contrast, so
    it reads the same in both themes, and the disabled (nothing typed) state is
    visually identical — the button never shifts color as you type. */
-.send { appearance: none; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: calc(36px * 14 / 32); background: #202020; color: #00ff08; box-shadow: none; cursor: pointer; }
-.send:hover:not(:disabled), .send:active:not(:disabled) { background: color-mix(in srgb, #202020 88%, #00ff08); }
-.send:disabled { opacity: 1; cursor: default; background: #202020; color: #00ff08; }
-.sendSpinner { animation: sendSpin 1s linear 60; }
-@keyframes sendSpin { to { transform: rotate(360deg); } }
+.send {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: calc(36px * 14 / 32);
+  background: #202020;
+  color: #00ff08;
+  box-shadow: none;
+  cursor: pointer;
+}
+.send:hover:not(:disabled),
+.send:active:not(:disabled) {
+  background: color-mix(in srgb, #202020 88%, #00ff08);
+}
+.send:disabled {
+  opacity: 1;
+  cursor: default;
+  background: #202020;
+  color: #00ff08;
+}
+.sendSpinner {
+  animation: sendSpin 1s linear 60;
+}
+@keyframes sendSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 /* Border beam (ported from OpenDesign composer-beam.css, same ring-mask +
    orbiting-bloom mechanics): a green→cyan light travels the input card's
    border while focused; fades in 0.6s on focus, out 0.5s on blur. */
-.beam { position: absolute; inset: -1px; border: 1px solid transparent; border-radius: 16px; -webkit-mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0); -webkit-mask-clip: padding-box, border-box; -webkit-mask-composite: xor; mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0); mask-clip: padding-box, border-box; mask-composite: exclude; z-index: 3; pointer-events: none; opacity: 0; }
-.beam[data-active] { animation: beamFadeIn 0.6s ease forwards; }
-.beam[data-fading] { animation: beamFadeOut 0.5s ease forwards; }
-.beamBloom { position: absolute; inset: 0; width: 280px; aspect-ratio: 1; background: radial-gradient(ellipse at center, #00ff08, #00fbff, transparent, transparent); offset-path: var(--beam-path); offset-rotate: 0deg; animation: beamOrbit 8s linear infinite; }
-@keyframes beamOrbit { from { offset-distance: 0%; } to { offset-distance: 100%; } }
-@keyframes beamFadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes beamFadeOut { from { opacity: 1; } to { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .beam { display: none; } .sendSpinner { animation: none; } }
-.directory { display: flex; align-items: center; gap: 8px; padding: 2px 16px 4px; color: var(--ds-muted); font-size: 12px; }
-.directory > span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.directory > a { flex-shrink: 0; text-decoration: underline; text-underline-offset: 3px; }
-.indexRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; color: var(--ds-muted); font-size: 12px; }
-.indexLink { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
-.hint { margin: 8px 0 12px; color: var(--ds-muted); font-size: 13px; line-height: 1.7; }
-.error { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 14px 16px; margin: 12px 0; border: 1px solid var(--ds-danger); border-radius: var(--ds-radius); color: var(--ds-danger); background: var(--ds-danger-bg); font-size: 13px; line-height: 1.7; }
-.results { border-top: 1px solid var(--ds-border-soft); padding-top: 24px; }
-.resultsHeader { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
-.resultsHeader h2 { font-size: 20px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; color: var(--ds-strong); }
-.resultsHeader p { margin: 8px 0 0; color: var(--ds-muted); font-size: 13px; line-height: 1.7; }
-.answer { padding: 0 0 24px; margin-bottom: 20px; border-bottom: 1px solid var(--ds-border-soft); }
-.answer > h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
-.hits { display: flex; flex-direction: column; gap: 14px; }
-.hit { padding: 16px 0; border-bottom: 1px solid var(--ds-border-soft); min-width: 0; }
-.hit > header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-.hit h3 { font-size: 16px; line-height: 1.5; font-weight: 600; overflow-wrap: anywhere; }.hit h3 a:hover { text-decoration: underline; }
-.source { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 12px 0; color: var(--ds-muted); font-size: 12px; }.source code { overflow-wrap: anywhere; }
-.excerpt { white-space: pre-wrap; overflow-wrap: anywhere; padding-top: 12px; margin: 0; font-size: 13px; line-height: 1.8; color: var(--ds-text); font-family: inherit; }
-@media(max-width:760px) { .hero { padding-top: 20px; }.hero h1 { font-size: 24px; }.hit > header,.resultsHeader { flex-wrap: wrap; }.answer,.hit { padding: 16px; }.composerActions > span { font-size: 11px; } }
+.beam {
+  position: absolute;
+  inset: -1px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  -webkit-mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
+  -webkit-mask-clip: padding-box, border-box;
+  -webkit-mask-composite: xor;
+  mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
+  mask-clip: padding-box, border-box;
+  mask-composite: exclude;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+}
+.beam[data-active] {
+  animation: beamFadeIn 0.6s ease forwards;
+}
+.beam[data-fading] {
+  animation: beamFadeOut 0.5s ease forwards;
+}
+.beamBloom {
+  position: absolute;
+  inset: 0;
+  width: 280px;
+  aspect-ratio: 1;
+  background: radial-gradient(ellipse at center, #00ff08, #00fbff, transparent, transparent);
+  offset-path: var(--beam-path);
+  offset-rotate: 0deg;
+  animation: beamOrbit 8s linear infinite;
+}
+@keyframes beamOrbit {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
+@keyframes beamFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes beamFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .beam {
+    display: none;
+  }
+  .sendSpinner {
+    animation: none;
+  }
+}
+.directory {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 16px 4px;
+  color: var(--ds-muted);
+  font-size: 12px;
+}
+.directory > span {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.directory > a {
+  flex-shrink: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.indexRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  color: var(--ds-muted);
+  font-size: 12px;
+}
+.indexLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.hint {
+  margin: 8px 0 12px;
+  color: var(--ds-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.error {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  border: 1px solid var(--ds-danger);
+  border-radius: var(--ds-radius);
+  color: var(--ds-danger);
+  background: var(--ds-danger-bg);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.results {
+  border-top: 1px solid var(--ds-border-soft);
+  padding-top: 24px;
+}
+.resultsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.resultsHeader h2 {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  color: var(--ds-strong);
+}
+.resultsHeader p {
+  margin: 8px 0 0;
+  color: var(--ds-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.answer {
+  padding: 0 0 24px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--ds-border-soft);
+}
+.answer > h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.hits {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.hit {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--ds-border-soft);
+  min-width: 0;
+}
+.hit > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.hit h3 {
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.hit h3 a:hover {
+  text-decoration: underline;
+}
+.source {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 12px 0;
+  color: var(--ds-muted);
+  font-size: 12px;
+}
+.source code {
+  overflow-wrap: anywhere;
+}
+.excerpt {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding-top: 12px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--ds-text);
+  font-family: inherit;
+}
+@media (max-width: 760px) {
+  .hero {
+    padding-top: 20px;
+  }
+  .hero h1 {
+    font-size: 24px;
+  }
+  .hit > header,
+  .resultsHeader {
+    flex-wrap: wrap;
+  }
+  .answer,
+  .hit {
+    padding: 16px;
+  }
+  .composerActions > span {
+    font-size: 11px;
+  }
+}

@@ -20,7 +20,7 @@ function setup(filtered: Row[] = items) {
       filtered,
       getKey: (row) => row.id,
       isItemActive: (row) => row.active,
-    })
+    }),
   );
 }
 

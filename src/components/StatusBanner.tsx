@@ -13,7 +13,14 @@ interface StatusBannerProps {
   compact?: boolean;
 }
 
-export function StatusBanner({ title, description, actionLabel, onAction, tone = "warning", compact = false }: StatusBannerProps) {
+export function StatusBanner({
+  title,
+  description,
+  actionLabel,
+  onAction,
+  tone = "warning",
+  compact = false,
+}: StatusBannerProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const pending = useRef(false);
@@ -23,13 +30,41 @@ export function StatusBanner({ title, description, actionLabel, onAction, tone =
     pending.current = true;
     setBusy(true);
     setError("");
-    try { await onAction(); }
-    catch (failure) { setError(getErrorMessage(failure, "操作未完成，请重试。")); }
-    finally { pending.current = false; setBusy(false); }
+    try {
+      await onAction();
+    } catch (failure) {
+      setError(getErrorMessage(failure, "操作未完成，请重试。"));
+    } finally {
+      pending.current = false;
+      setBusy(false);
+    }
   }
-  return <section className={`${styles.banner} ${styles[tone]} ${compact ? styles.compact : ""}`} aria-label={title}>
-    <Icon className={styles.icon} size={18} aria-hidden />
-    <div className={styles.content}><p className={styles.title}>{title}</p>{description && <p className={styles.description}>{description}</p>}{error && <p role="alert" className={styles.error}>{error}</p>}{busy && <p role="status" className={styles.description}>正在处理…</p>}</div>
-    {actionLabel && onAction && <Button onClick={() => void act()} busy={busy} className={styles.action}>{!busy && <RefreshCw size={14} aria-hidden />}{actionLabel}</Button>}
-  </section>;
+  return (
+    <section
+      className={`${styles.banner} ${styles[tone]} ${compact ? styles.compact : ""}`}
+      aria-label={title}
+    >
+      <Icon className={styles.icon} size={18} aria-hidden />
+      <div className={styles.content}>
+        <p className={styles.title}>{title}</p>
+        {description && <p className={styles.description}>{description}</p>}
+        {error && (
+          <p role="alert" className={styles.error}>
+            {error}
+          </p>
+        )}
+        {busy && (
+          <p role="status" className={styles.description}>
+            正在处理…
+          </p>
+        )}
+      </div>
+      {actionLabel && onAction && (
+        <Button onClick={() => void act()} busy={busy} className={styles.action}>
+          {!busy && <RefreshCw size={14} aria-hidden />}
+          {actionLabel}
+        </Button>
+      )}
+    </section>
+  );
 }

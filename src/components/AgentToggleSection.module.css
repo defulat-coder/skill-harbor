@@ -1,4 +1,30 @@
-.panel { border: 1px solid var(--ds-border-soft); border-radius: var(--ds-radius-panel); min-width: 0; }
-.toggle { width: 100%; min-width: 0; min-height: 36px; height: auto; justify-content: start; padding: 8px; text-align: start; white-space: normal; }
-.empty { color: var(--ds-muted); line-height: 1.7; font-size: 13px; margin-top: 12px; }
-.status { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.panel {
+  border: 1px solid var(--ds-border-soft);
+  border-radius: var(--ds-radius-panel);
+  min-width: 0;
+}
+.toggle {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  height: auto;
+  justify-content: start;
+  padding: 8px;
+  text-align: start;
+  white-space: normal;
+}
+.empty {
+  color: var(--ds-muted);
+  line-height: 1.7;
+  font-size: 13px;
+  margin-top: 12px;
+}
+.status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

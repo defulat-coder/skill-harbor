@@ -21,10 +21,7 @@ describe("pruneStaleTagFilters", () => {
 
   it("keeps the untagged sentinel only while untagged skills exist", () => {
     const prev = new Set([UNTAGGED_FILTER, "a"]);
-    expect([...pruneStaleTagFilters(prev, ["a"], true)].toSorted()).toEqual([
-      UNTAGGED_FILTER,
-      "a",
-    ]);
+    expect([...pruneStaleTagFilters(prev, ["a"], true)].toSorted()).toEqual([UNTAGGED_FILTER, "a"]);
     expect([...pruneStaleTagFilters(prev, ["a"], false)]).toEqual(["a"]);
   });
 

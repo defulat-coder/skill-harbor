@@ -1,32 +1,32 @@
 #!/usr/bin/env node
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from "node:fs";
+import path from "node:path";
 
 const root = process.cwd();
 const args = process.argv.slice(2);
 
-const releaseArg = args.find((arg) => !arg.startsWith('--'));
-const dryRun = args.includes('--dry-run');
+const releaseArg = args.find((arg) => !arg.startsWith("--"));
+const dryRun = args.includes("--dry-run");
 
 if (!releaseArg) {
-  console.error('Usage: npm run release:prepare -- <patch|minor|major|x.y.z> [--dry-run]');
+  console.error("Usage: npm run release:prepare -- <patch|minor|major|x.y.z> [--dry-run]");
   process.exit(1);
 }
 
 const dateStr = new Date().toISOString().slice(0, 10);
 
-const packagePath = path.join(root, 'package.json');
-const tauriConfPath = path.join(root, 'src-tauri', 'tauri.conf.json');
-const cargoTomlPath = path.join(root, 'src-tauri', 'Cargo.toml');
-const cargoLockPath = path.join(root, 'src-tauri', 'Cargo.lock');
-const enI18nPath = path.join(root, 'src', 'i18n', 'en.json');
-const zhI18nPath = path.join(root, 'src', 'i18n', 'zh.json');
-const zhTwI18nPath = path.join(root, 'src', 'i18n', 'zh-TW.json');
-const changelogPath = path.join(root, 'CHANGELOG.md');
-const changelogZhPath = path.join(root, 'CHANGELOG-zh.md');
+const packagePath = path.join(root, "package.json");
+const tauriConfPath = path.join(root, "src-tauri", "tauri.conf.json");
+const cargoTomlPath = path.join(root, "src-tauri", "Cargo.toml");
+const cargoLockPath = path.join(root, "src-tauri", "Cargo.lock");
+const enI18nPath = path.join(root, "src", "i18n", "en.json");
+const zhI18nPath = path.join(root, "src", "i18n", "zh.json");
+const zhTwI18nPath = path.join(root, "src", "i18n", "zh-TW.json");
+const changelogPath = path.join(root, "CHANGELOG.md");
+const changelogZhPath = path.join(root, "CHANGELOG-zh.md");
 
 function readJson(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
 function writeJson(filePath, value) {
@@ -45,13 +45,13 @@ function bumpVersion(current, releaseType) {
     throw new Error(`Current package version is not SemVer: ${current}`);
   }
 
-  if (releaseType === 'patch') {
+  if (releaseType === "patch") {
     return `${parsed.major}.${parsed.minor}.${parsed.patch + 1}`;
   }
-  if (releaseType === 'minor') {
+  if (releaseType === "minor") {
     return `${parsed.major}.${parsed.minor + 1}.0`;
   }
-  if (releaseType === 'major') {
+  if (releaseType === "major") {
     return `${parsed.major + 1}.0.0`;
   }
 
@@ -63,22 +63,22 @@ function bumpVersion(current, releaseType) {
 }
 
 function updateSettingsVersion(i18nObj, nextVersion, fileLabel) {
-  if (!i18nObj.settings || typeof i18nObj.settings.version !== 'string') {
+  if (!i18nObj.settings || typeof i18nObj.settings.version !== "string") {
     throw new Error(`Missing settings.version in ${fileLabel}`);
   }
   i18nObj.settings.version = i18nObj.settings.version.replace(/\d+\.\d+\.\d+/, nextVersion);
 }
 
 function updateCargoPackageVersion(cargoToml, nextVersion) {
-  const packageStart = cargoToml.indexOf('[package]');
+  const packageStart = cargoToml.indexOf("[package]");
   if (packageStart === -1) {
-    throw new Error('Missing [package] in src-tauri/Cargo.toml');
+    throw new Error("Missing [package] in src-tauri/Cargo.toml");
   }
-  const nextSection = cargoToml.indexOf('\n[', packageStart + '[package]'.length);
+  const nextSection = cargoToml.indexOf("\n[", packageStart + "[package]".length);
   const packageEnd = nextSection === -1 ? cargoToml.length : nextSection;
   const packageSection = cargoToml.slice(packageStart, packageEnd);
   if (!/^version = "[^"]+"$/m.test(packageSection)) {
-    throw new Error('Missing package version in src-tauri/Cargo.toml');
+    throw new Error("Missing package version in src-tauri/Cargo.toml");
   }
   const updatedSection = packageSection.replace(
     /^version = "[^"]+"$/m,
@@ -90,7 +90,7 @@ function updateCargoPackageVersion(cargoToml, nextVersion) {
 function updateCargoLockVersion(cargoLock, nextVersion) {
   const packagePattern = /(\[\[package\]\]\nname = "skillharbor"\nversion = ")[^"]+("\n)/;
   if (!packagePattern.test(cargoLock)) {
-    throw new Error('Missing skillharbor package entry in src-tauri/Cargo.lock');
+    throw new Error("Missing skillharbor package entry in src-tauri/Cargo.lock");
   }
   return cargoLock.replace(
     packagePattern,
@@ -105,10 +105,19 @@ function ensureChangelogEntry(changelog, nextVersion, { zh = false } = {}) {
   }
 
   const sections = zh
-    ? ['### 发布概览', '- ', '', '### 用户可见更新', '- ', '', '### 开发者与治理更新', '- ']
-    : ['### Release Overview', '- ', '', '### User-facing', '- ', '', '### Developer & Governance', '- '];
+    ? ["### 发布概览", "- ", "", "### 用户可见更新", "- ", "", "### 开发者与治理更新", "- "]
+    : [
+        "### Release Overview",
+        "- ",
+        "",
+        "### User-facing",
+        "- ",
+        "",
+        "### Developer & Governance",
+        "- ",
+      ];
 
-  const entry = [heading, '', ...sections, ''].join('\n');
+  const entry = [heading, "", ...sections, ""].join("\n");
 
   const firstReleaseHeading = changelog.search(/^## \[/m);
   if (firstReleaseHeading === -1) {
@@ -121,13 +130,13 @@ function ensureChangelogEntry(changelog, nextVersion, { zh = false } = {}) {
 function main() {
   const pkg = readJson(packagePath);
   const tauriConf = readJson(tauriConfPath);
-  const cargoToml = fs.readFileSync(cargoTomlPath, 'utf8');
-  const cargoLock = fs.readFileSync(cargoLockPath, 'utf8');
+  const cargoToml = fs.readFileSync(cargoTomlPath, "utf8");
+  const cargoLock = fs.readFileSync(cargoLockPath, "utf8");
   const en = readJson(enI18nPath);
   const zh = readJson(zhI18nPath);
   const zhTw = readJson(zhTwI18nPath);
-  const changelog = fs.readFileSync(changelogPath, 'utf8');
-  const changelogZh = fs.readFileSync(changelogZhPath, 'utf8');
+  const changelog = fs.readFileSync(changelogPath, "utf8");
+  const changelogZh = fs.readFileSync(changelogZhPath, "utf8");
 
   const currentVersion = pkg.version;
   const nextVersion = bumpVersion(currentVersion, releaseArg);
@@ -136,9 +145,9 @@ function main() {
   tauriConf.version = nextVersion;
   const nextCargoToml = updateCargoPackageVersion(cargoToml, nextVersion);
   const nextCargoLock = updateCargoLockVersion(cargoLock, nextVersion);
-  updateSettingsVersion(en, nextVersion, 'src/i18n/en.json');
-  updateSettingsVersion(zh, nextVersion, 'src/i18n/zh.json');
-  updateSettingsVersion(zhTw, nextVersion, 'src/i18n/zh-TW.json');
+  updateSettingsVersion(en, nextVersion, "src/i18n/en.json");
+  updateSettingsVersion(zh, nextVersion, "src/i18n/zh.json");
+  updateSettingsVersion(zhTw, nextVersion, "src/i18n/zh-TW.json");
   const nextChangelog = ensureChangelogEntry(changelog, nextVersion);
   const nextChangelogZh = ensureChangelogEntry(changelogZh, nextVersion, { zh: true });
 
@@ -158,16 +167,16 @@ function main() {
   fs.writeFileSync(changelogZhPath, nextChangelogZh);
 
   console.log(`Prepared release ${nextVersion}`);
-  console.log('Updated:');
-  console.log('- CHANGELOG.md');
-  console.log('- CHANGELOG-zh.md');
-  console.log('- package.json');
-  console.log('- src-tauri/tauri.conf.json');
-  console.log('- src-tauri/Cargo.toml');
-  console.log('- src-tauri/Cargo.lock');
-  console.log('- src/i18n/en.json');
-  console.log('- src/i18n/zh.json');
-  console.log('- src/i18n/zh-TW.json');
+  console.log("Updated:");
+  console.log("- CHANGELOG.md");
+  console.log("- CHANGELOG-zh.md");
+  console.log("- package.json");
+  console.log("- src-tauri/tauri.conf.json");
+  console.log("- src-tauri/Cargo.toml");
+  console.log("- src-tauri/Cargo.lock");
+  console.log("- src/i18n/en.json");
+  console.log("- src/i18n/zh.json");
+  console.log("- src/i18n/zh-TW.json");
 }
 
 main();

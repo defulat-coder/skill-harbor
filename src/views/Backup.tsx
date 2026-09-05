@@ -38,10 +38,7 @@ import { getErrorKind, getErrorMessage } from "../lib/error";
 import { mapGitErrorMessage } from "../lib/gitErrors";
 import * as api from "../lib/tauri";
 import { queryKeys } from "../lib/queryKeys";
-import type {
-  GitBackupStatus,
-  GitUpstreamHealth,
-} from "../lib/tauri";
+import type { GitBackupStatus, GitUpstreamHealth } from "../lib/tauri";
 
 type BackupMode =
   | "loading"
@@ -196,10 +193,7 @@ export function Backup() {
   const [deviceNameError, setDeviceNameError] = useState<string | null>(null);
   const operationBusy = !!loading || !!restoringVersionTag || !!resolvingConflict;
 
-  const mapGitError = useCallback(
-    (error: unknown) => mapGitErrorMessage(error, t),
-    [t],
-  );
+  const mapGitError = useCallback((error: unknown) => mapGitErrorMessage(error, t), [t]);
 
   const statusLoading = gitStatusQuery.isFetching;
   const statusError = gitStatusQuery.error ? mapGitError(gitStatusQuery.error) : null;
@@ -210,31 +204,37 @@ export function Backup() {
     : null;
 
   // Abandon an in-flight device-flow poll loop when leaving the page.
-  useEffect(() => () => {
-    deviceGenerationRef.current += 1;
-  }, []);
+  useEffect(
+    () => () => {
+      deviceGenerationRef.current += 1;
+    },
+    [],
+  );
 
   const isRecoverableSetupError = (error: unknown) => {
     const message = getErrorMessage(error, "");
     return (
-      message.includes("unrelated histories")
-      || message.includes("refusing to merge")
-      || message.includes("[rejected]")
-      || message.includes("non-fast-forward")
-      || message.includes("fetch first")
-      || message.includes("failed to push some refs")
-      || message.includes("no upstream")
-      || isSyncConflictError(error)
+      message.includes("unrelated histories") ||
+      message.includes("refusing to merge") ||
+      message.includes("[rejected]") ||
+      message.includes("non-fast-forward") ||
+      message.includes("fetch first") ||
+      message.includes("failed to push some refs") ||
+      message.includes("no upstream") ||
+      isSyncConflictError(error)
     );
   };
 
-  const refreshGitStatus = useCallback(async (fetchRemote = false) => {
-    if (fetchRemote) {
-      await api.gitBackupFetch().catch(() => {});
-    }
-    await queryClient.invalidateQueries({ queryKey: queryKeys.backup.status() });
-    return queryClient.getQueryData<GitBackupStatus>(queryKeys.backup.status()) ?? null;
-  }, [queryClient]);
+  const refreshGitStatus = useCallback(
+    async (fetchRemote = false) => {
+      if (fetchRemote) {
+        await api.gitBackupFetch().catch(() => {});
+      }
+      await queryClient.invalidateQueries({ queryKey: queryKeys.backup.status() });
+      return queryClient.getQueryData<GitBackupStatus>(queryKeys.backup.status()) ?? null;
+    },
+    [queryClient],
+  );
 
   const refreshVersions = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: queryKeys.backup.versions(50) });
@@ -291,7 +291,10 @@ export function Backup() {
     setAutoBackupSaving(true);
     try {
       await api.setSettings("backup_auto_enabled", next ? "on" : "off");
-      queryClient.setQueryData(queryKeys.settings.value("backup_auto_enabled"), next ? "on" : "off");
+      queryClient.setQueryData(
+        queryKeys.settings.value("backup_auto_enabled"),
+        next ? "on" : "off",
+      );
     } catch {
       toast.error(t("common.error"));
     } finally {
@@ -304,13 +307,14 @@ export function Backup() {
     if (!gitStatus.is_repo) return "uninitialized";
     if (!gitStatus.remote_url && !remoteConfig) return "needs_remote";
     if (
-      gitStatus.upstream_health === "unrelated_histories"
-      || gitStatus.upstream_health === "detached"
+      gitStatus.upstream_health === "unrelated_histories" ||
+      gitStatus.upstream_health === "detached"
     ) {
       return "needs_fix";
     }
     if (gitStatus.upstream_health === "no_upstream") return "pending_changes";
-    if (gitStatus.has_changes || gitStatus.ahead > 0 || gitStatus.behind > 0) return "pending_changes";
+    if (gitStatus.has_changes || gitStatus.ahead > 0 || gitStatus.behind > 0)
+      return "pending_changes";
     return "up_to_date";
   }, [gitStatus, remoteConfig]);
 
@@ -322,7 +326,8 @@ export function Backup() {
         icon: XCircle,
         title: t("backup.status.failed"),
         description: backupError,
-        className: "border-[color-mix(in_srgb,var(--ds-danger)_40%,transparent)] bg-[var(--ds-danger-bg)]",
+        className:
+          "border-[color-mix(in_srgb,var(--ds-danger)_40%,transparent)] bg-[var(--ds-danger-bg)]",
         iconClassName: "text-[var(--ds-danger)]",
       };
     }
@@ -350,7 +355,8 @@ export function Backup() {
           icon: AlertTriangle,
           title: t("backup.status.needsFix"),
           description: t("backup.status.needsFixDesc"),
-          className: "border-[color-mix(in_srgb,var(--ds-danger)_40%,transparent)] bg-[var(--ds-danger-bg)]",
+          className:
+            "border-[color-mix(in_srgb,var(--ds-danger)_40%,transparent)] bg-[var(--ds-danger-bg)]",
           iconClassName: "text-[var(--ds-danger)]",
         };
       case "pending_changes": {
@@ -371,7 +377,8 @@ export function Backup() {
               : (gitStatus?.changed_skill_count ?? 0) > 0
                 ? t("backup.status.pendingSkills", { count: gitStatus?.changed_skill_count })
                 : t("backup.status.pendingDesc", { local: localCount, remote: remoteCount }),
-          className: "border-[color-mix(in_srgb,var(--ds-warning)_40%,transparent)] bg-[var(--ds-warning-bg)]",
+          className:
+            "border-[color-mix(in_srgb,var(--ds-warning)_40%,transparent)] bg-[var(--ds-warning-bg)]",
           iconClassName: "text-[var(--ds-warning)]",
         };
       }
@@ -380,9 +387,12 @@ export function Backup() {
           icon: CheckCircle2,
           title: t("backup.status.synced"),
           description: t("backup.status.syncedDesc", {
-            when: formatSnapshotWhen(gitStatus?.current_snapshot_tag ?? null) ?? t("backup.status.noSnapshot"),
+            when:
+              formatSnapshotWhen(gitStatus?.current_snapshot_tag ?? null) ??
+              t("backup.status.noSnapshot"),
           }),
-          className: "border-[color-mix(in_srgb,var(--ds-success)_35%,transparent)] bg-[var(--ds-success-bg)]",
+          className:
+            "border-[color-mix(in_srgb,var(--ds-success)_35%,transparent)] bg-[var(--ds-success-bg)]",
           iconClassName: "text-[var(--ds-success)]",
         };
     }
@@ -417,7 +427,12 @@ export function Backup() {
     try {
       await api.gitBackupClone(remoteConfig);
       toast.success(t("settings.gitCloneSuccess"));
-      await Promise.all([refreshGitStatus(true), refreshManagedSkills(), refreshPresets(), refreshVersions()]);
+      await Promise.all([
+        refreshGitStatus(true),
+        refreshManagedSkills(),
+        refreshPresets(),
+        refreshVersions(),
+      ]);
     } catch (error) {
       toast.error(mapGitError(error));
       throw error;
@@ -452,7 +467,12 @@ export function Backup() {
     try {
       await api.gitBackupReclone(remoteConfig);
       toast.success(t("settings.gitRecoveryRecloneSuccess"));
-      await Promise.all([refreshGitStatus(true), refreshManagedSkills(), refreshPresets(), refreshVersions()]);
+      await Promise.all([
+        refreshGitStatus(true),
+        refreshManagedSkills(),
+        refreshPresets(),
+        refreshVersions(),
+      ]);
     } catch (error) {
       toast.error(mapGitError(error));
       throw error;
@@ -478,8 +498,8 @@ export function Backup() {
         return;
       }
       if (
-        status.upstream_health === "unrelated_histories"
-        || status.upstream_health === "detached"
+        status.upstream_health === "unrelated_histories" ||
+        status.upstream_health === "detached"
       ) {
         setRecoveryReason(status.upstream_health);
         setRecoveryOpen(true);
@@ -492,10 +512,9 @@ export function Backup() {
       if (merge && merge.engine === "object" && !merge.legacy_fallback) {
         // Object merge (merge-engine design §8): human-readable outcome.
         if (merge.new_conflicts.length > 0) {
-          toast.warning(
-            t("backup.merge.newConflicts", { count: merge.new_conflicts.length }),
-            { duration: 10000 },
-          );
+          toast.warning(t("backup.merge.newConflicts", { count: merge.new_conflicts.length }), {
+            duration: 10000,
+          });
         } else {
           toast.success(t("backup.merge.applied", { count: merge.updated.length }));
         }
@@ -510,7 +529,11 @@ export function Backup() {
         await Promise.all([refreshManagedSkills(), refreshPresets()]);
       }
       if (outcome.pushed && outcome.snapshot_tag) {
-        toast.success(t("mySkills.gitSyncSuccessWithVersion", { tag: displaySnapshotLabel(outcome.snapshot_tag) }));
+        toast.success(
+          t("mySkills.gitSyncSuccessWithVersion", {
+            tag: displaySnapshotLabel(outcome.snapshot_tag),
+          }),
+        );
       } else if (!merge) {
         toast.success(t("settings.gitUpToDate"));
       }
@@ -528,7 +551,11 @@ export function Backup() {
       } else if (isRecoverableSetupError(error)) {
         toast.error(mapGitError(error));
         const latest = await refreshGitStatus();
-        setRecoveryReason(isSyncConflictError(error) ? "conflict" : (latest?.upstream_health ?? "unrelated_histories"));
+        setRecoveryReason(
+          isSyncConflictError(error)
+            ? "conflict"
+            : (latest?.upstream_health ?? "unrelated_histories"),
+        );
         setRecoveryOpen(true);
       } else {
         toast.error(mapGitError(error));
@@ -538,17 +565,12 @@ export function Backup() {
     }
   };
 
-  const handleResolveConflict = async (
-    skillId: string,
-    action: api.ResolveConflictAction,
-  ) => {
+  const handleResolveConflict = async (skillId: string, action: api.ResolveConflictAction) => {
     if (operationBusy) return;
     setResolvingConflict(skillId);
     try {
       const safetyTag = await api.gitBackupResolveConflict(skillId, action);
-      toast.success(
-        t("backup.conflicts.resolved", { tag: displaySnapshotLabel(safetyTag) }),
-      );
+      toast.success(t("backup.conflicts.resolved", { tag: displaySnapshotLabel(safetyTag) }));
       await Promise.all([
         refreshPendingConflicts(),
         refreshGitStatus(),
@@ -592,7 +614,8 @@ export function Backup() {
     setReconnectMode(false);
     setBackupError(null);
     setBackupErrorRaw("");
-    api.getSettings("github_auth_method")
+    api
+      .getSettings("github_auth_method")
       .then((v) => queryClient.setQueryData(queryKeys.settings.value("github_auth_method"), v))
       .catch(() => {});
     setRemoteInput(res.url);
@@ -614,7 +637,12 @@ export function Backup() {
         await api.gitBackupSetRemote(res.url);
       }
       toast.success(t("backup.github.connectedRestored"));
-      await Promise.all([refreshGitStatus(true), refreshManagedSkills(), refreshPresets(), refreshVersions()]);
+      await Promise.all([
+        refreshGitStatus(true),
+        refreshManagedSkills(),
+        refreshPresets(),
+        refreshVersions(),
+      ]);
     } else {
       // Fresh backup: initialize if needed, wire the remote, run the first backup.
       if (!status.is_repo) {
@@ -700,9 +728,16 @@ export function Backup() {
     setRestoringVersionTag(restoreVersionTag);
     try {
       const safetyTag = await api.gitBackupRestoreVersion(restoreVersionTag);
-      toast.success(t("mySkills.gitVersionRestoreSuccess", { tag: displaySnapshotLabel(restoreVersionTag) }));
+      toast.success(
+        t("mySkills.gitVersionRestoreSuccess", { tag: displaySnapshotLabel(restoreVersionTag) }),
+      );
       toast.info(t("backup.restoreSafetyPoint", { tag: displaySnapshotLabel(safetyTag) }));
-      await Promise.all([refreshGitStatus(), refreshVersions(), refreshManagedSkills(), refreshPresets()]);
+      await Promise.all([
+        refreshGitStatus(),
+        refreshVersions(),
+        refreshManagedSkills(),
+        refreshPresets(),
+      ]);
       setRestoreVersionTag(null);
     } catch (error) {
       throw new Error(mapGitError(error), { cause: error });
@@ -715,7 +750,10 @@ export function Backup() {
     if (deviceNameSaving) return;
     const draft = deviceNameDraft.trim();
     if (!draft) return;
-    if (draft === deviceName) { setDeviceNameEditing(false); return; }
+    if (draft === deviceName) {
+      setDeviceNameEditing(false);
+      return;
+    }
     setDeviceNameSaving(true);
     setDeviceNameError(null);
     try {
@@ -755,8 +793,8 @@ export function Backup() {
   // Token revoked/expired on the GitHub side → offer an explicit reconnect
   // instead of only a failure card (backup redesign Phase 2 待办).
   const authErrorNeedsReconnect =
-    isGithubRemote
-    && /authentication failed|401|403|invalid.{0,24}(credentials|token)|could not read username/i.test(
+    isGithubRemote &&
+    /authentication failed|401|403|invalid.{0,24}(credentials|token)|could not read username/i.test(
       backupErrorRaw,
     );
 
@@ -797,28 +835,55 @@ export function Backup() {
 
   return (
     <div className={styles.page}>
-      <PageHeader title={t("backup.title")} 
-        actions={<Button onClick={() => refreshGitStatus(true)} busy={statusLoading} disabled={operationBusy}>
-          <RefreshCw className="h-3.5 w-3.5" />{t("settings.refresh")}
-        </Button>} />
+      <PageHeader
+        title={t("backup.title")}
+        actions={
+          <Button
+            onClick={() => refreshGitStatus(true)}
+            busy={statusLoading}
+            disabled={operationBusy}
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            {t("settings.refresh")}
+          </Button>
+        }
+      />
 
       {(operationBusy || statusLoading) && <LoadingState label={t("common.loading")} />}
-      {statusError && <div className={styles.error} role="alert">{statusError}<Button onClick={() => refreshGitStatus(true)} busy={statusLoading}>{t("backup.actions.retry")}</Button></div>}
+      {statusError && (
+        <div className={styles.error} role="alert">
+          {statusError}
+          <Button onClick={() => refreshGitStatus(true)} busy={statusLoading}>
+            {t("backup.actions.retry")}
+          </Button>
+        </div>
+      )}
       <div className={styles.layout}>
         <div className="space-y-4">
           <section className={cn(styles.status, statusMeta.className)}>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex min-w-0 items-start gap-3">
                 <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-surface">
-                  <StatusIcon className={cn("h-5 w-5", statusError ? "text-danger" : statusMeta.iconClassName)} />
+                  <StatusIcon
+                    className={cn(
+                      "h-5 w-5",
+                      statusError ? "text-danger" : statusMeta.iconClassName,
+                    )}
+                  />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-[15px] font-semibold text-primary">{statusError ? t("backup.status.failed") : statusMeta.title}</h2>
-                  <p className="mt-1 text-[13px] leading-5 text-muted">{statusError || statusMeta.description}</p>
+                  <h2 className="text-[15px] font-semibold text-primary">
+                    {statusError ? t("backup.status.failed") : statusMeta.title}
+                  </h2>
+                  <p className="mt-1 text-[13px] leading-5 text-muted">
+                    {statusError || statusMeta.description}
+                  </p>
                   <div className="mt-3 grid gap-2 text-[12px] text-tertiary sm:grid-cols-2">
                     <div className="min-w-0">
                       <div className="text-faint">{t("backup.connection.repository")}</div>
-                      <div className="truncate font-mono text-secondary" title={remoteLabel}>{remoteLabel}</div>
+                      <div className="truncate font-mono text-secondary" title={remoteLabel}>
+                        {remoteLabel}
+                      </div>
                     </div>
                     <div>
                       <div className="text-faint">{t("backup.connection.branch")}</div>
@@ -832,18 +897,23 @@ export function Backup() {
                             type="text"
                             aria-label={t("backup.device.label")}
                             value={deviceNameDraft}
-                            onChange={(event) => { setDeviceNameDraft(event.target.value); setDeviceNameError(null); }}
+                            onChange={(event) => {
+                              setDeviceNameDraft(event.target.value);
+                              setDeviceNameError(null);
+                            }}
                             disabled={deviceNameSaving}
                             aria-describedby={deviceNameError ? "backup-device-error" : undefined}
                             onKeyDown={(event) => {
                               if (event.key === "Enter") void handleSaveDeviceName();
-                              if (event.key === "Escape" && !deviceNameSaving) setDeviceNameEditing(false);
+                              if (event.key === "Escape" && !deviceNameSaving)
+                                setDeviceNameEditing(false);
                             }}
                             autoFocus
                             maxLength={64}
                             className="app-input min-w-0 flex-1 px-1.5 text-[12px]"
                           />
-                          <Button variant="ghost"
+                          <Button
+                            variant="ghost"
                             iconOnly
                             type="button"
                             onClick={handleSaveDeviceName}
@@ -857,7 +927,8 @@ export function Backup() {
                       ) : (
                         <div className="flex items-center gap-1">
                           <span className="truncate text-secondary">{deviceName || "-"}</span>
-                          <Button variant="ghost"
+                          <Button
+                            variant="ghost"
                             iconOnly
                             type="button"
                             onClick={() => {
@@ -873,7 +944,11 @@ export function Backup() {
                       )}
                     </div>
                   </div>
-                  {deviceNameError && <p id="backup-device-error" role="alert" className="text-danger mt-2">{deviceNameError}</p>}
+                  {deviceNameError && (
+                    <p id="backup-device-error" role="alert" className="text-danger mt-2">
+                      {deviceNameError}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -889,7 +964,8 @@ export function Backup() {
                   </Button>
                 )}
                 {mode === "needs_fix" ? (
-                  <Button variant="danger-ghost"
+                  <Button
+                    variant="danger-ghost"
                     type="button"
                     onClick={() => {
                       setRecoveryReason(gitStatus?.upstream_health ?? "unrelated_histories");
@@ -907,7 +983,11 @@ export function Backup() {
                     disabled={operationBusy || !remoteConfig}
                     variant="primary"
                   >
-                    {loading === "start" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Cloud className="h-3.5 w-3.5" />}
+                    {loading === "start" ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Cloud className="h-3.5 w-3.5" />
+                    )}
                     {t("settings.gitStartBackup")}
                   </Button>
                 ) : (
@@ -917,7 +997,11 @@ export function Backup() {
                     disabled={operationBusy || !canBackupNow}
                     variant="primary"
                   >
-                    {loading === "sync" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                    {loading === "sync" ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Upload className="h-3.5 w-3.5" />
+                    )}
                     {backupError
                       ? t("backup.actions.retry")
                       : mode === "up_to_date"
@@ -931,7 +1015,12 @@ export function Backup() {
             </div>
           </section>
 
-          {conflictsError && <div className={styles.error} role="alert">{conflictsError}<Button onClick={refreshPendingConflicts}>{t("backup.actions.retry")}</Button></div>}
+          {conflictsError && (
+            <div className={styles.error} role="alert">
+              {conflictsError}
+              <Button onClick={refreshPendingConflicts}>{t("backup.actions.retry")}</Button>
+            </div>
+          )}
           {pendingConflicts.length > 0 && (
             <section className="app-panel border-[color-mix(in_srgb,var(--ds-warning)_40%,transparent)] bg-[var(--ds-warning-bg)] p-4">
               <div className="mb-1 flex items-center gap-2">
@@ -945,12 +1034,7 @@ export function Backup() {
               </div>
               <p className="mb-3 text-[13px] leading-5 text-muted">
                 {t("backup.conflicts.desc")}
-                {(gitStatus?.behind ?? 0) > 0 && (
-                  <>
-                    {" "}
-                    {t("backup.conflicts.autoPaused")}
-                  </>
-                )}
+                {(gitStatus?.behind ?? 0) > 0 && <> {t("backup.conflicts.autoPaused")}</>}
               </p>
               <ul className="space-y-2">
                 {pendingConflicts.map((conflict) => {
@@ -1023,14 +1107,17 @@ export function Backup() {
                     <div className="font-mono text-[26px] font-bold tracking-[0.25em] text-primary">
                       {deviceInfo.user_code}
                     </div>
-                    <Button variant="ghost"
+                    <Button
+                      variant="ghost"
                       size="sm"
                       type="button"
                       onClick={async () => {
                         try {
                           await clipboardWriteText(deviceInfo.user_code);
                           toast.success(t("backup.github.deviceCodeCopied"));
-                        } catch (error) { toast.error(mapGitError(error)); }
+                        } catch (error) {
+                          toast.error(mapGitError(error));
+                        }
                       }}
                     >
                       <Copy className="h-3.5 w-3.5" />
@@ -1045,11 +1132,7 @@ export function Backup() {
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       {t("backup.github.deviceWaiting")}
                     </span>
-                    <Button variant="ghost"
-                      size="sm"
-                      type="button"
-                      onClick={cancelDeviceFlow}
-                    >
+                    <Button variant="ghost" size="sm" type="button" onClick={cancelDeviceFlow}>
                       {t("common.cancel")}
                     </Button>
                   </div>
@@ -1063,10 +1146,18 @@ export function Backup() {
                       disabled={operationBusy}
                       variant="primary"
                     >
-                      {loading === "github" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GithubIcon className="h-3.5 w-3.5" />}
-                      {loading === "github" ? t("backup.github.connecting") : t("backup.github.deviceSignIn")}
+                      {loading === "github" ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <GithubIcon className="h-3.5 w-3.5" />
+                      )}
+                      {loading === "github"
+                        ? t("backup.github.connecting")
+                        : t("backup.github.deviceSignIn")}
                     </Button>
-                    <label htmlFor="backup-github-repo" className={styles.label}>{t("backup.github.repoLabel")}</label>
+                    <label htmlFor="backup-github-repo" className={styles.label}>
+                      {t("backup.github.repoLabel")}
+                    </label>
                     <input
                       id="backup-github-repo"
                       type="text"
@@ -1084,7 +1175,9 @@ export function Backup() {
 
                   {patMode ? (
                     <>
-                      <label htmlFor="backup-github-token" className={styles.label}>GitHub Token</label>
+                      <label htmlFor="backup-github-token" className={styles.label}>
+                        GitHub Token
+                      </label>
                       <div className="flex flex-wrap items-center gap-2">
                         <input
                           id="backup-github-token"
@@ -1112,7 +1205,8 @@ export function Backup() {
                           {t("backup.github.connect")}
                         </Button>
                       </div>
-                      <Button variant="ghost"
+                      <Button
+                        variant="ghost"
                         size="sm"
                         type="button"
                         onClick={() => void openUrl(GITHUB_TOKEN_URL)}
@@ -1122,7 +1216,8 @@ export function Backup() {
                       </Button>
                     </>
                   ) : (
-                    <Button variant="ghost"
+                    <Button
+                      variant="ghost"
                       size="sm"
                       type="button"
                       onClick={() => setPatMode(true)}
@@ -1132,7 +1227,11 @@ export function Backup() {
                   )}
 
                   {githubError && (
-                    <div role="alert" id="backup-github-error" className="rounded-md border border-[color-mix(in_srgb,var(--ds-danger)_40%,transparent)] bg-[var(--ds-danger-bg)] px-3 py-2 text-[12px] leading-5 text-[var(--ds-danger)]">
+                    <div
+                      role="alert"
+                      id="backup-github-error"
+                      className="rounded-md border border-[color-mix(in_srgb,var(--ds-danger)_40%,transparent)] bg-[var(--ds-danger-bg)] px-3 py-2 text-[12px] leading-5 text-[var(--ds-danger)]"
+                    >
                       {githubError}
                     </div>
                   )}
@@ -1144,15 +1243,22 @@ export function Backup() {
           <section className={styles.section}>
             <div className="mb-3 flex items-center gap-2">
               <Cloud className="h-4 w-4 text-muted" />
-              <h2 className="text-[14px] font-semibold text-secondary">{t("backup.connection.title")}</h2>
+              <h2 className="text-[14px] font-semibold text-secondary">
+                {t("backup.connection.title")}
+              </h2>
             </div>
             <p className="mb-3 text-[13px] leading-5 text-muted">{t("backup.connection.desc")}</p>
-            <label htmlFor="backup-remote" className={styles.label}>{t("backup.connection.repository")}</label>
+            <label htmlFor="backup-remote" className={styles.label}>
+              {t("backup.connection.repository")}
+            </label>
             <div className="flex flex-wrap items-center gap-2">
               <input
                 type="text"
                 value={remoteInput}
-                onChange={(event) => { setRemoteInput(event.target.value); setRemoteError(null); }}
+                onChange={(event) => {
+                  setRemoteInput(event.target.value);
+                  setRemoteError(null);
+                }}
                 disabled={operationBusy}
                 id="backup-remote"
                 aria-describedby={remoteError ? "backup-remote-error" : undefined}
@@ -1169,20 +1275,31 @@ export function Backup() {
                 disabled={operationBusy}
                 variant="secondary"
               >
-                {loading === "save" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                {loading === "save" ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Save className="h-3.5 w-3.5" />
+                )}
                 {t("common.save")}
               </Button>
             </div>
-            {remoteError && <p id="backup-remote-error" role="alert" className="text-danger mt-2">{remoteError}</p>}
+            {remoteError && (
+              <p id="backup-remote-error" role="alert" className="text-danger mt-2">
+                {remoteError}
+              </p>
+            )}
           </section>
 
           <section className={styles.section}>
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <History className="h-4 w-4 text-muted" />
-                <h2 className="text-[14px] font-semibold text-secondary">{t("backup.history.title")}</h2>
+                <h2 className="text-[14px] font-semibold text-secondary">
+                  {t("backup.history.title")}
+                </h2>
               </div>
-              <Button variant="ghost"
+              <Button
+                variant="ghost"
                 size="sm"
                 type="button"
                 onClick={refreshVersions}
@@ -1193,7 +1310,12 @@ export function Backup() {
               </Button>
             </div>
 
-            {versionsError ? <div role="alert" className={styles.error}>{versionsError}<Button onClick={refreshVersions}>{t("backup.actions.retry")}</Button></div> : versionsLoading ? (
+            {versionsError ? (
+              <div role="alert" className={styles.error}>
+                {versionsError}
+                <Button onClick={refreshVersions}>{t("backup.actions.retry")}</Button>
+              </div>
+            ) : versionsLoading ? (
               <LoadingState label={t("mySkills.gitVersionLoading")} />
             ) : versions.length === 0 ? (
               <div className="rounded-md border border-dashed border-border-subtle py-6 text-center text-[13px] text-muted">
@@ -1210,7 +1332,9 @@ export function Backup() {
                       <div className="truncate text-[13px] font-semibold text-secondary">
                         {displaySnapshotLabel(version.tag)}
                       </div>
-                      <div className="truncate text-[12px] text-muted">{version.message || version.commit}</div>
+                      <div className="truncate text-[12px] text-muted">
+                        {version.message || version.commit}
+                      </div>
                       <div className="text-[11px] text-faint">
                         {version.author ? `${version.author} · ` : ""}
                         {version.commit} · {formatDateTime(version.committed_at)}
@@ -1236,31 +1360,41 @@ export function Backup() {
         <aside className={styles.sidebar}>
           <section className={styles.section}>
             <Disclosure title={t("backup.scope.title")}>
-            <div className="space-y-2 text-[13px]">
-              {["skills", "metadata"].map((key) => (
-                <div key={key} className="flex items-start gap-2 text-tertiary">
-                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--ds-success)]" />
-                  <span>{t(`backup.scope.included.${key}`)}</span>
-                </div>
-              ))}
-              {["secrets", "local"].map((key) => (
-                <div key={key} className="flex items-start gap-2 text-muted">
-                  <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-faint" />
-                  <span>{t(`backup.scope.excluded.${key}`)}</span>
-                </div>
-              ))}
-            </div>
+              <div className="space-y-2 text-[13px]">
+                {["skills", "metadata"].map((key) => (
+                  <div key={key} className="flex items-start gap-2 text-tertiary">
+                    <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--ds-success)]" />
+                    <span>{t(`backup.scope.included.${key}`)}</span>
+                  </div>
+                ))}
+                {["secrets", "local"].map((key) => (
+                  <div key={key} className="flex items-start gap-2 text-muted">
+                    <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-faint" />
+                    <span>{t(`backup.scope.excluded.${key}`)}</span>
+                  </div>
+                ))}
+              </div>
             </Disclosure>
-            {sizeReport && (sizeReport.oversized.length > 0 || sizeReport.total_bytes > sizeReport.repo_warn_bytes) ? (
+            {sizeReport &&
+            (sizeReport.oversized.length > 0 ||
+              sizeReport.total_bytes > sizeReport.repo_warn_bytes) ? (
               <div className="mt-3 space-y-1 rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_40%,transparent)] bg-[var(--ds-warning-bg)] px-3 py-2 text-[12px] leading-5 text-[color-mix(in_srgb,var(--ds-warning)_55%,var(--ds-strong))]">
                 {sizeReport.total_bytes > sizeReport.repo_warn_bytes && (
-                  <div>{t("backup.scope.repoTooLarge", { size: formatBytes(sizeReport.total_bytes) })}</div>
+                  <div>
+                    {t("backup.scope.repoTooLarge", { size: formatBytes(sizeReport.total_bytes) })}
+                  </div>
                 )}
                 {sizeReport.oversized.map((skill) => (
                   <div key={skill.name}>
                     {skill.excluded
-                      ? t("backup.scope.oversizedExcluded", { name: skill.name, size: formatBytes(skill.bytes) })
-                      : t("backup.scope.oversizedSkill", { name: skill.name, size: formatBytes(skill.bytes) })}
+                      ? t("backup.scope.oversizedExcluded", {
+                          name: skill.name,
+                          size: formatBytes(skill.bytes),
+                        })
+                      : t("backup.scope.oversizedSkill", {
+                          name: skill.name,
+                          size: formatBytes(skill.bytes),
+                        })}
                   </div>
                 ))}
               </div>
@@ -1273,92 +1407,107 @@ export function Backup() {
 
           <Disclosure title="备份设置与连接管理">
             <div className="space-y-4">
-          <section className={styles.section}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className="text-[14px] font-semibold text-secondary">{t("backup.auto.title")}</h2>
-                <p className="mt-1 text-[12px] leading-5 text-muted">{t("backup.auto.desc")}</p>
-              </div>
-              <ToggleSwitch
-                className="mt-0.5"
-                checked={autoBackupEnabled}
-                loading={autoBackupSaving}
-                onChange={handleToggleAutoBackup}
-                title={t("backup.auto.title")}
-              />
-            </div>
-          </section>
-
-          <section className={styles.section}>
-            <div className="mb-3 flex items-center gap-2">
-              <Unlink className="h-4 w-4 text-muted" />
-              <h2 className="text-[14px] font-semibold text-secondary">{t("backup.disconnect.title")}</h2>
-            </div>
-            <p className="text-[13px] leading-5 text-muted">{t("backup.disconnect.desc")}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                onClick={() => setDisconnectConfirmOpen(true)}
-                disabled={operationBusy || (!remoteConfig && !gitStatus?.remote_url)}
-                variant="secondary"
-              >
-                {loading === "disconnect" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Unlink className="h-3.5 w-3.5" />}
-                {t("settings.gitDisconnect")}
-              </Button>
-              {isGithubRemote && (
-                <Button
-                  type="button"
-                  onClick={() => setRevokeConfirmOpen(true)}
-                  disabled={operationBusy}
-                  variant="secondary"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  {t("backup.disconnect.revoke")}
-                </Button>
-              )}
-            </div>
-            {isGithubRemote && (
-              <p className="mt-2 text-[12px] leading-4 text-faint">
-                {authMethod === "pat"
-                  ? t("backup.disconnect.revokeHintPat")
-                  : authMethod === "oauth"
-                    ? t("backup.disconnect.revokeHintOauth")
-                    : t("backup.disconnect.revokeHintUnknown")}
-              </p>
-            )}
-            {githubRepoWebUrl && (
-              <div className="mt-3 rounded-md border border-[color-mix(in_srgb,var(--ds-danger)_40%,transparent)] bg-[var(--ds-danger-bg)] px-3 py-2.5">
-                <div className="text-[13px] font-medium text-[var(--ds-danger)]">
-                  {t("backup.disconnect.deleteRemote")}
+              <section className={styles.section}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="text-[14px] font-semibold text-secondary">
+                      {t("backup.auto.title")}
+                    </h2>
+                    <p className="mt-1 text-[12px] leading-5 text-muted">{t("backup.auto.desc")}</p>
+                  </div>
+                  <ToggleSwitch
+                    className="mt-0.5"
+                    checked={autoBackupEnabled}
+                    loading={autoBackupSaving}
+                    onChange={handleToggleAutoBackup}
+                    title={t("backup.auto.title")}
+                  />
                 </div>
-                <p className="mt-1 text-[12px] leading-4 text-[color-mix(in_srgb,var(--ds-danger)_75%,var(--ds-text))]">
-                  {t("backup.disconnect.deleteRemoteDesc")}
-                </p>
-                <Button variant="danger-ghost"
-                  size="sm"
-                  type="button"
-                  onClick={() => setDeleteRemoteConfirmOpen(true)}
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  {t("backup.disconnect.deleteRemoteAction")}
-                </Button>
-              </div>
-            )}
-          </section>
+              </section>
 
-          <section className={styles.section}>
-            <h2 className="text-[14px] font-semibold text-secondary">{t("backup.summary.title")}</h2>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
-              <div className="rounded-md border border-border-subtle bg-bg-secondary px-3 py-2">
-                <div className="text-faint">{t("backup.summary.skills")}</div>
-                <div className="mt-1 text-[18px] font-semibold text-primary">{managedSkills.length}</div>
-              </div>
-              <div className="rounded-md border border-border-subtle bg-bg-secondary px-3 py-2">
-                <div className="text-faint">{t("backup.summary.snapshots")}</div>
-                <div className="mt-1 text-[18px] font-semibold text-primary">{versions.length}</div>
-              </div>
-            </div>
-          </section>
+              <section className={styles.section}>
+                <div className="mb-3 flex items-center gap-2">
+                  <Unlink className="h-4 w-4 text-muted" />
+                  <h2 className="text-[14px] font-semibold text-secondary">
+                    {t("backup.disconnect.title")}
+                  </h2>
+                </div>
+                <p className="text-[13px] leading-5 text-muted">{t("backup.disconnect.desc")}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => setDisconnectConfirmOpen(true)}
+                    disabled={operationBusy || (!remoteConfig && !gitStatus?.remote_url)}
+                    variant="secondary"
+                  >
+                    {loading === "disconnect" ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Unlink className="h-3.5 w-3.5" />
+                    )}
+                    {t("settings.gitDisconnect")}
+                  </Button>
+                  {isGithubRemote && (
+                    <Button
+                      type="button"
+                      onClick={() => setRevokeConfirmOpen(true)}
+                      disabled={operationBusy}
+                      variant="secondary"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      {t("backup.disconnect.revoke")}
+                    </Button>
+                  )}
+                </div>
+                {isGithubRemote && (
+                  <p className="mt-2 text-[12px] leading-4 text-faint">
+                    {authMethod === "pat"
+                      ? t("backup.disconnect.revokeHintPat")
+                      : authMethod === "oauth"
+                        ? t("backup.disconnect.revokeHintOauth")
+                        : t("backup.disconnect.revokeHintUnknown")}
+                  </p>
+                )}
+                {githubRepoWebUrl && (
+                  <div className="mt-3 rounded-md border border-[color-mix(in_srgb,var(--ds-danger)_40%,transparent)] bg-[var(--ds-danger-bg)] px-3 py-2.5">
+                    <div className="text-[13px] font-medium text-[var(--ds-danger)]">
+                      {t("backup.disconnect.deleteRemote")}
+                    </div>
+                    <p className="mt-1 text-[12px] leading-4 text-[color-mix(in_srgb,var(--ds-danger)_75%,var(--ds-text))]">
+                      {t("backup.disconnect.deleteRemoteDesc")}
+                    </p>
+                    <Button
+                      variant="danger-ghost"
+                      size="sm"
+                      type="button"
+                      onClick={() => setDeleteRemoteConfirmOpen(true)}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      {t("backup.disconnect.deleteRemoteAction")}
+                    </Button>
+                  </div>
+                )}
+              </section>
+
+              <section className={styles.section}>
+                <h2 className="text-[14px] font-semibold text-secondary">
+                  {t("backup.summary.title")}
+                </h2>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
+                  <div className="rounded-md border border-border-subtle bg-bg-secondary px-3 py-2">
+                    <div className="text-faint">{t("backup.summary.skills")}</div>
+                    <div className="mt-1 text-[18px] font-semibold text-primary">
+                      {managedSkills.length}
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-border-subtle bg-bg-secondary px-3 py-2">
+                    <div className="text-faint">{t("backup.summary.snapshots")}</div>
+                    <div className="mt-1 text-[18px] font-semibold text-primary">
+                      {versions.length}
+                    </div>
+                  </div>
+                </div>
+              </section>
             </div>
           </Disclosure>
         </aside>
@@ -1367,7 +1516,9 @@ export function Backup() {
       <ConfirmDialog
         open={restoreVersionTag !== null}
         title={t("mySkills.gitVersionRestoreTitle")}
-        message={t("mySkills.gitVersionRestoreConfirm", { tag: displaySnapshotLabel(restoreVersionTag || "") })}
+        message={t("mySkills.gitVersionRestoreConfirm", {
+          tag: displaySnapshotLabel(restoreVersionTag || ""),
+        })}
         tone="warning"
         confirmLabel={t("mySkills.gitVersionRestore")}
         onClose={() => setRestoreVersionTag(null)}
@@ -1385,11 +1536,13 @@ export function Backup() {
       <ConfirmDialog
         open={revokeConfirmOpen}
         title={t("backup.disconnect.revokeConfirmTitle")}
-        message={authMethod === "pat"
-          ? t("backup.disconnect.revokeConfirmPat")
-          : authMethod === "oauth"
-            ? t("backup.disconnect.revokeConfirmOauth")
-            : t("backup.disconnect.revokeConfirmUnknown")}
+        message={
+          authMethod === "pat"
+            ? t("backup.disconnect.revokeConfirmPat")
+            : authMethod === "oauth"
+              ? t("backup.disconnect.revokeConfirmOauth")
+              : t("backup.disconnect.revokeConfirmUnknown")
+        }
         tone="warning"
         confirmLabel={t("backup.disconnect.revoke")}
         onClose={() => setRevokeConfirmOpen(false)}

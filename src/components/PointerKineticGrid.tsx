@@ -1,9 +1,9 @@
 // Adapted from Open Design AppWashKineticGrid.tsx (Apache-2.0).
 // See THIRD_PARTY_NOTICES.md and docs/design/upstream/manifest.json.
 // Full-window shared background; input, idle, hidden and reduced-motion handling.
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
-const DOT_COLOR = '#9a9a9a';
+const DOT_COLOR = "#9a9a9a";
 const SPACING = 25;
 const RADIUS = 203;
 const STRENGTH = 2;
@@ -23,10 +23,10 @@ export function PointerKineticGrid() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return undefined;
 
-    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     let reducedMotion = motionQuery.matches;
 
     const pull = (Math.max(1, Math.min(10, STRENGTH)) / 10) * 4;
@@ -52,7 +52,6 @@ export function PointerKineticGrid() {
 
     const host = canvas.parentElement;
     if (!host) return undefined;
-
 
     function build(): void {
       if (!canvas || !ctx || !host) return;
@@ -101,7 +100,6 @@ export function PointerKineticGrid() {
     });
     ro.observe(host);
 
-
     drawStatic();
 
     // Background layer: the canvas never receives pointer events, so the
@@ -121,12 +119,14 @@ export function PointerKineticGrid() {
       mouse.y = -9999;
       wake();
     };
-    window.addEventListener('mousemove', onMove, { passive: true });
-    const onOut = (event: MouseEvent) => { if (!event.relatedTarget) onLeave(); };
-    window.addEventListener('mouseout', onOut);
-    window.addEventListener('blur', onLeave);
-    document.addEventListener('focusin', onFocusIn);
-    document.addEventListener('focusout', onFocusOut);
+    window.addEventListener("mousemove", onMove, { passive: true });
+    const onOut = (event: MouseEvent) => {
+      if (!event.relatedTarget) onLeave();
+    };
+    window.addEventListener("mouseout", onOut);
+    window.addEventListener("blur", onLeave);
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
     hoverSuppressed = isEditable(document.activeElement);
 
     let raf = 0;
@@ -147,8 +147,8 @@ export function PointerKineticGrid() {
       drawStatic();
       wake();
     };
-    document.addEventListener('visibilitychange', onVisibility);
-    motionQuery.addEventListener('change', onMotionChange);
+    document.addEventListener("visibilitychange", onVisibility);
+    motionQuery.addEventListener("change", onMotionChange);
     const frame = () => {
       raf = 0;
       if (document.hidden || reducedMotion) return;
@@ -192,13 +192,13 @@ export function PointerKineticGrid() {
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseout', onOut);
-      document.removeEventListener('visibilitychange', onVisibility);
-      motionQuery.removeEventListener('change', onMotionChange);
-      window.removeEventListener('blur', onLeave);
-      document.removeEventListener('focusin', onFocusIn);
-      document.removeEventListener('focusout', onFocusOut);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseout", onOut);
+      document.removeEventListener("visibilitychange", onVisibility);
+      motionQuery.removeEventListener("change", onMotionChange);
+      window.removeEventListener("blur", onLeave);
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
     };
   }, []);
 
@@ -207,11 +207,11 @@ export function PointerKineticGrid() {
       ref={canvasRef}
       aria-hidden
       style={{
-        position: 'fixed',
+        position: "fixed",
         top: 0,
         left: 0,
         zIndex: -1,
-        pointerEvents: 'none',
+        pointerEvents: "none",
       }}
     />
   );

@@ -23,8 +23,7 @@ export function useTheme() {
   const setTheme = useThemeStore((s) => s.setTheme);
   const systemTheme = useThemeStore((s) => s.systemTheme);
 
-  const resolvedTheme: ResolvedTheme =
-    theme === "system" ? systemTheme : theme;
+  const resolvedTheme: ResolvedTheme = theme === "system" ? systemTheme : theme;
 
   return { theme, setTheme, resolvedTheme };
 }
@@ -34,9 +33,7 @@ export function useTheme() {
  * settings sync). Mount once at the app root; consumers only need useTheme().
  */
 export function useThemeEffects() {
-  const resolvedTheme = useThemeStore((s) =>
-    s.theme === "system" ? s.systemTheme : s.theme
-  );
+  const resolvedTheme = useThemeStore((s) => (s.theme === "system" ? s.systemTheme : s.theme));
 
   // Apply class on mount and theme change
   useEffect(() => {
@@ -46,8 +43,7 @@ export function useThemeEffects() {
   // Track the OS preference so system mode re-renders on OS theme switches.
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () =>
-      useThemeStore.getState().setSystemTheme(getSystemTheme());
+    const handler = () => useThemeStore.getState().setSystemTheme(getSystemTheme());
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);

@@ -3,10 +3,7 @@ import { CloseActionGuard } from "./components/CloseActionGuard";
 import { FirstRunRestoreDialog } from "./components/FirstRunRestoreDialog";
 import { HelpDialog } from "./components/HelpDialog";
 import { WorkspaceView } from "./views/WorkspaceView";
-import {
-  CODING_WORKSPACE_CONFIG,
-  LOBSTER_WORKSPACE_CONFIG,
-} from "./views/workspaceConfigs";
+import { CODING_WORKSPACE_CONFIG, LOBSTER_WORKSPACE_CONFIG } from "./views/workspaceConfigs";
 
 export function RootComponent() {
   return (

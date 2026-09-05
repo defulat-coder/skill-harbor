@@ -18,6 +18,8 @@ describe("applyTextSize", () => {
   it("falls back to the default scale for unknown sizes", () => {
     applyTextSize("enormous");
     expect(document.documentElement.style.zoom).toBe(TEXT_SIZE_SCALE_MAP.default);
-    expect(document.documentElement.style.getPropertyValue("--app-scale")).toBe(TEXT_SIZE_SCALE_MAP.default);
+    expect(document.documentElement.style.getPropertyValue("--app-scale")).toBe(
+      TEXT_SIZE_SCALE_MAP.default,
+    );
   });
 });

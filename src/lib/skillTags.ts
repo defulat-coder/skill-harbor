@@ -14,7 +14,7 @@ export const UNTAGGED_FILTER = "__untagged__";
 export function pruneStaleTagFilters(
   prev: Set<string>,
   availableTags: string[],
-  hasUntagged: boolean
+  hasUntagged: boolean,
 ): Set<string> {
   if (prev.size === 0) return prev;
   const available = new Set(availableTags);
@@ -26,7 +26,8 @@ export function pruneStaleTagFilters(
 /* Tag pills follow the neutral `.ds-tag` contract (design-system.css); only
    the active filter state carries the brand pair. */
 const TAG_NEUTRAL_CLASS = "bg-bg-secondary border border-border-faint text-muted";
-const TAG_ACTIVE_CLASS = "border border-[var(--ds-brand)] bg-[var(--ds-brand-bg)] text-[var(--ds-brand)]";
+const TAG_ACTIVE_CLASS =
+  "border border-[var(--ds-brand)] bg-[var(--ds-brand-bg)] text-[var(--ds-brand)]";
 
 export function getTagColor(tag: string, allTags: string[]) {
   void tag;

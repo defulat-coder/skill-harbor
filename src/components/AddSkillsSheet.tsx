@@ -4,27 +4,13 @@ import { Button } from "./ui/Button";
 import styles from "./AddSkillsSheet.module.css";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import {
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  CircleSlash,
-  Search,
-} from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronRight, CircleSlash, Search } from "lucide-react";
 import { cn } from "../utils";
 import * as api from "../lib/tauri";
 import type { ManagedSkill, ProjectAgentTarget } from "../lib/tauri";
 import { getErrorMessage } from "../lib/error";
-import {
-  classifySkill,
-  targetsToInstall,
-  type PickerContext,
-} from "../lib/skillPickerStatus";
-import {
-  getTagActiveColor,
-  getTagColor,
-  UNTAGGED_FILTER,
-} from "../lib/skillTags";
+import { classifySkill, targetsToInstall, type PickerContext } from "../lib/skillPickerStatus";
+import { getTagActiveColor, getTagColor, UNTAGGED_FILTER } from "../lib/skillTags";
 import { AgentIcon } from "./AgentIcon";
 import { SkillPickerRow } from "./SkillPickerRow";
 
@@ -152,7 +138,9 @@ function AddSkillsSheetBody({ open, onClose, target, managedSkills, onInstalled 
     const present = new Set(managedSkills.map((s) => s.source_type).filter(Boolean));
     return [
       ...SOURCE_PRIORITY.filter((s) => present.has(s)),
-      ...Array.from(present).filter((s) => !SOURCE_PRIORITY.includes(s)).toSorted(),
+      ...Array.from(present)
+        .filter((s) => !SOURCE_PRIORITY.includes(s))
+        .toSorted(),
     ];
   }, [managedSkills]);
 
@@ -248,22 +236,25 @@ function AddSkillsSheetBody({ open, onClose, target, managedSkills, onInstalled 
   };
 
   const selectableSelected = useMemo(
-    () => Array.from(selectedIds).filter((id) => {
-      const skill = managedSkills.find((s) => s.id === id);
-      if (!skill) return false;
-      return classifySkill(skill, ctx) === "available";
-    }),
+    () =>
+      Array.from(selectedIds).filter((id) => {
+        const skill = managedSkills.find((s) => s.id === id);
+        if (!skill) return false;
+        return classifySkill(skill, ctx) === "available";
+      }),
     [selectedIds, managedSkills, ctx],
   );
 
   const projectCtx = ctx.kind === "project" ? ctx : null;
   const projectNamesReady = target.kind !== "project" || dirNameMapError || !dirNameMapLoading;
-  const enabledTargets = target.kind === "project"
-    ? target.exportTargets.filter((tt) => tt.installed && tt.enabled)
-    : [];
-  const inactiveTargets = target.kind === "project"
-    ? target.exportTargets.filter((tt) => !tt.installed || !tt.enabled)
-    : [];
+  const enabledTargets =
+    target.kind === "project"
+      ? target.exportTargets.filter((tt) => tt.installed && tt.enabled)
+      : [];
+  const inactiveTargets =
+    target.kind === "project"
+      ? target.exportTargets.filter((tt) => !tt.installed || !tt.enabled)
+      : [];
 
   const renderAgentIcons = (
     agents: { key: string; display_name: string }[],
@@ -361,7 +352,7 @@ function AddSkillsSheetBody({ open, onClose, target, managedSkills, onInstalled 
       }
       if (ok > 0) {
         toast.success(t("addFromLibrary.toastInstalled", { count: ok }));
-        setSelectedIds((previous) => new Set([...previous].filter(id => !succeededIds.has(id))));
+        setSelectedIds((previous) => new Set([...previous].filter((id) => !succeededIds.has(id))));
       }
       if (failed > 0) {
         // Surface why. A refusal carries the path it protected and what to do
@@ -468,7 +459,9 @@ function AddSkillsSheetBody({ open, onClose, target, managedSkills, onInstalled 
               onClick={toggleAll}
               className="shrink-0 pt-1 text-[12px] text-accent-light transition-colors hover:underline"
             >
-              {allSelected ? t("addFromLibrary.clearTargets") : t("addFromLibrary.selectAllTargets")}
+              {allSelected
+                ? t("addFromLibrary.clearTargets")
+                : t("addFromLibrary.selectAllTargets")}
             </button>
           )}
         </div>
@@ -511,8 +504,15 @@ function AddSkillsSheetBody({ open, onClose, target, managedSkills, onInstalled 
   })();
 
   return (
-    <DetailSheet open={open} title={t("addFromLibrary.title")} onClose={onClose} closeDisabled={installing}
-      description={target.kind === "project" ? "从全局技能库选择技能，通过软链接加入项目。" : undefined}>
+    <DetailSheet
+      open={open}
+      title={t("addFromLibrary.title")}
+      onClose={onClose}
+      closeDisabled={installing}
+      description={
+        target.kind === "project" ? "从全局技能库选择技能，通过软链接加入项目。" : undefined
+      }
+    >
       <fieldset className={styles.content} disabled={installing}>
         <div className={styles.target}>{targetSummary}</div>
         <div className="shrink-0 border-b border-border-subtle px-5 py-3">
@@ -631,7 +631,11 @@ function AddSkillsSheetBody({ open, onClose, target, managedSkills, onInstalled 
           )}
         </div>
 
-        {installError && <p role="alert" className={styles.error}>{installError}</p>}
+        {installError && (
+          <p role="alert" className={styles.error}>
+            {installError}
+          </p>
+        )}
         <div className={styles.footer}>
           <Button
             onClick={handleInstall}
@@ -641,7 +645,8 @@ function AddSkillsSheetBody({ open, onClose, target, managedSkills, onInstalled 
               selectableSelected.length === 0 ||
               (target.kind === "project" && selectedAgents.length === 0)
             }
-            variant="primary" busy={installing}
+            variant="primary"
+            busy={installing}
           >
             {ctaLabel}
           </Button>

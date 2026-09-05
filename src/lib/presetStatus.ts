@@ -12,7 +12,7 @@ export function computePresetStatus(
   preset: Preset,
   skills: ManagedSkill[],
   agentKeys: string[],
-  existsInWorkspace: (skill: ManagedSkill, agentKey: string) => boolean
+  existsInWorkspace: (skill: ManagedSkill, agentKey: string) => boolean,
 ): PresetStatusResult {
   const presetSkills = skills.filter((s) => s.preset_ids.includes(preset.id));
   if (presetSkills.length === 0 || agentKeys.length === 0) {

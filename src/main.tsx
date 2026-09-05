@@ -29,6 +29,6 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <App router={router} />
     </QueryClientProvider>
-  </StrictMode>
+  </StrictMode>,
 );
 logStartupEvent("root_rendered", performance.now()).catch(() => {});

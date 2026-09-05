@@ -15,7 +15,10 @@ vi.mock("@tauri-apps/api/event", () => ({
   listen: vi.fn((event: string, handler: Handler) => {
     handlers.set(event, [...(handlers.get(event) ?? []), handler]);
     const unlisten = vi.fn(() => {
-      handlers.set(event, (handlers.get(event) ?? []).filter((h) => h !== handler));
+      handlers.set(
+        event,
+        (handlers.get(event) ?? []).filter((h) => h !== handler),
+      );
     });
     unlistenMocks.push(unlisten);
     return Promise.resolve(unlisten);
@@ -51,9 +54,12 @@ describe("useTauriEventInvalidation", () => {
   it("subscribes to every event in the mapping", () => {
     const { wrapper } = setup();
     renderHook(() => useTauriEventInvalidation(), { wrapper });
-    expect(vi.mocked(listen).mock.calls.map(([event]) => event).toSorted()).toEqual(
-      TAURI_EVENT_INVALIDATIONS.map(({ event }) => event).toSorted(),
-    );
+    expect(
+      vi
+        .mocked(listen)
+        .mock.calls.map(([event]) => event)
+        .toSorted(),
+    ).toEqual(TAURI_EVENT_INVALIDATIONS.map(({ event }) => event).toSorted());
   });
 
   it("invalidates the app-data domains on app-files-changed, debounced", () => {

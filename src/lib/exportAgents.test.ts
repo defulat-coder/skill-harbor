@@ -38,12 +38,7 @@ describe("getDefaultExportAgents", () => {
       makeTarget("windsurf"),
       makeTarget("claude_code"),
     ];
-    expect(getDefaultExportAgents(targets)).toEqual([
-      "claude_code",
-      "cursor",
-      "pi",
-      "windsurf",
-    ]);
+    expect(getDefaultExportAgents(targets)).toEqual(["claude_code", "cursor", "pi", "windsurf"]);
   });
 
   it("excludes disabled or uninstalled agents from the defaults", () => {

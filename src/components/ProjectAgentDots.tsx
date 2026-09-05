@@ -70,9 +70,7 @@ export function ProjectAgentDots({
   const visible = typeof limit === "number" ? dots.slice(0, limit) : dots;
   const hiddenCount = dots.length - visible.length;
 
-  const dim = size === "sm"
-    ? "h-[16px] w-[16px] text-[11px]"
-    : "h-[18px] w-[18px] text-[11px]";
+  const dim = size === "sm" ? "h-[16px] w-[16px] text-[11px]" : "h-[18px] w-[18px] text-[11px]";
 
   const iconStateClass: Record<DotState, string> = {
     synced: "bg-surface",
@@ -110,7 +108,9 @@ export function ProjectAgentDots({
         const baseClass = cn(
           "inline-flex select-none items-center justify-center overflow-hidden rounded-[4px] transition-colors",
           dim,
-          useIcon ? iconStateClass[dot.state] : cn("border font-mono font-semibold tracking-[0.06em]", textStateClass[dot.state]),
+          useIcon
+            ? iconStateClass[dot.state]
+            : cn("border font-mono font-semibold tracking-[0.06em]", textStateClass[dot.state]),
           isPending && "opacity-70",
         );
         const content = isPending ? (

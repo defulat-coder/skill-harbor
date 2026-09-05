@@ -15,11 +15,7 @@ import {
 } from "./lib/searchSchemas";
 import * as api from "./lib/tauri";
 import * as wb from "./lib/workbench";
-import {
-  CodingWorkspace,
-  LobsterWorkspace,
-  RootComponent,
-} from "./routerComponents";
+import { CodingWorkspace, LobsterWorkspace, RootComponent } from "./routerComponents";
 import { Backup } from "./views/Backup";
 import { GlobalSkills } from "./views/GlobalSkills";
 import { InstallSkills } from "./views/InstallSkills";
@@ -180,10 +176,7 @@ const routeTree = rootRoute.addChildren([
   ]),
 ]);
 
-export function createAppRouter(
-  queryClient: QueryClient,
-  options?: { history?: RouterHistory },
-) {
+export function createAppRouter(queryClient: QueryClient, options?: { history?: RouterHistory }) {
   return createRouter({
     routeTree,
     context: { queryClient },

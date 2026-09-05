@@ -11,7 +11,12 @@ export function CloseActionGuard() {
       const tray = await api.getSettings("show_tray_icon");
       const trayEnabled = (() => {
         const normalized = (tray ?? "true").trim().toLowerCase();
-        return !(normalized === "false" || normalized === "0" || normalized === "no" || normalized === "off");
+        return !(
+          normalized === "false" ||
+          normalized === "0" ||
+          normalized === "no" ||
+          normalized === "off"
+        );
       })();
       if (!trayEnabled) {
         void api.appExit();

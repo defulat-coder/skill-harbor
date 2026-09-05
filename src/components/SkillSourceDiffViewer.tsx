@@ -10,9 +10,12 @@ interface Props {
 }
 
 const STATUS_TONE: Record<SkillSourceDiffEntry["status"], string> = {
-  added: "border-[color-mix(in_srgb,var(--ds-success)_40%,transparent)] bg-[var(--ds-success-bg)] text-[color-mix(in_srgb,var(--ds-success)_55%,var(--ds-strong))]",
-  removed: "border-[color-mix(in_srgb,var(--ds-danger)_40%,transparent)] bg-[var(--ds-danger-bg)] text-[var(--ds-danger)]",
-  modified: "border-[color-mix(in_srgb,var(--ds-info)_40%,transparent)] bg-[var(--ds-info-bg)] text-[color-mix(in_srgb,var(--ds-info)_65%,var(--ds-strong))]",
+  added:
+    "border-[color-mix(in_srgb,var(--ds-success)_40%,transparent)] bg-[var(--ds-success-bg)] text-[color-mix(in_srgb,var(--ds-success)_55%,var(--ds-strong))]",
+  removed:
+    "border-[color-mix(in_srgb,var(--ds-danger)_40%,transparent)] bg-[var(--ds-danger-bg)] text-[var(--ds-danger)]",
+  modified:
+    "border-[color-mix(in_srgb,var(--ds-info)_40%,transparent)] bg-[var(--ds-info-bg)] text-[color-mix(in_srgb,var(--ds-info)_65%,var(--ds-strong))]",
 };
 
 export function SkillSourceDiffViewer({ entries, className }: Props) {
@@ -20,8 +23,15 @@ export function SkillSourceDiffViewer({ entries, className }: Props) {
 
   if (entries.length === 0) {
     return (
-      <div className={cn("rounded-xl border border-border-subtle bg-bg-secondary px-4 py-6 text-center", className)}>
-        <div className="text-[13px] font-medium text-secondary">{t("mySkills.sourceDiff.noChanges")}</div>
+      <div
+        className={cn(
+          "rounded-xl border border-border-subtle bg-bg-secondary px-4 py-6 text-center",
+          className,
+        )}
+      >
+        <div className="text-[13px] font-medium text-secondary">
+          {t("mySkills.sourceDiff.noChanges")}
+        </div>
       </div>
     );
   }
@@ -34,12 +44,15 @@ export function SkillSourceDiffViewer({ entries, className }: Props) {
             <span
               className={cn(
                 "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium",
-                STATUS_TONE[entry.status]
+                STATUS_TONE[entry.status],
               )}
             >
               {t(`mySkills.sourceDiff.status.${entry.status}`)}
             </span>
-            <span className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-secondary" title={entry.relative_path}>
+            <span
+              className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-secondary"
+              title={entry.relative_path}
+            >
               {entry.relative_path}
             </span>
             {entry.status === "modified" && entry.executable_before !== entry.executable_after && (

@@ -121,7 +121,7 @@ export function useApp() {
       await api.applyPresetToDefault(id);
       await Promise.all([refreshPresets(), refreshManagedSkills()]);
     },
-    [refreshManagedSkills, refreshPresets]
+    [refreshManagedSkills, refreshPresets],
   );
 
   const viewedPreset = resolveViewedPreset(viewedPresetId, presets, activePreset);

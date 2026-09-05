@@ -21,8 +21,6 @@ export function CreatePresetDialog({ open, onClose, onCreate }: Props) {
   const [error, setError] = useState("");
   const pending = useRef(false);
 
-
-
   const handleCreate = async () => {
     if (!name.trim() || pending.current) return;
     pending.current = true;
@@ -45,12 +43,29 @@ export function CreatePresetDialog({ open, onClose, onCreate }: Props) {
   const inputClass = "app-input w-full";
 
   return (
-    <DetailSheet open={open} title={t("preset.create")} onClose={() => { if (!pending.current) { setError(""); onClose(); } }} size="compact" closeDisabled={loading}>
-      {error && <p role="alert" className="text-danger mb-3">{error}</p>}
+    <DetailSheet
+      open={open}
+      title={t("preset.create")}
+      onClose={() => {
+        if (!pending.current) {
+          setError("");
+          onClose();
+        }
+      }}
+      size="compact"
+      closeDisabled={loading}
+    >
+      {error && (
+        <p role="alert" className="text-danger mb-3">
+          {error}
+        </p>
+      )}
       <fieldset disabled={loading} className="min-w-0 border-0 p-0 m-0">
         <div className="space-y-3">
           <div>
-            <label className="block text-[13px] font-medium text-tertiary mb-1">{t("preset.name")}</label>
+            <label className="block text-[13px] font-medium text-tertiary mb-1">
+              {t("preset.name")}
+            </label>
             <input
               type="text"
               aria-label={t("preset.name")}
@@ -59,11 +74,15 @@ export function CreatePresetDialog({ open, onClose, onCreate }: Props) {
               placeholder={t("preset.namePlaceholder")}
               className={inputClass}
               autoFocus
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) void handleCreate(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.nativeEvent.isComposing) void handleCreate();
+              }}
             />
           </div>
           <div>
-            <label className="block text-[13px] font-medium text-tertiary mb-1">{t("preset.description")}</label>
+            <label className="block text-[13px] font-medium text-tertiary mb-1">
+              {t("preset.description")}
+            </label>
             <input
               type="text"
               aria-label={t("preset.description")}
@@ -74,20 +93,29 @@ export function CreatePresetDialog({ open, onClose, onCreate }: Props) {
             />
           </div>
           <div>
-            <label className="block text-[13px] font-medium text-tertiary mb-1.5">{t("preset.icon")}</label>
+            <label className="block text-[13px] font-medium text-tertiary mb-1.5">
+              {t("preset.icon")}
+            </label>
             <PresetIconPicker value={icon} onChange={setIcon} />
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button
-              onClick={() => { if (!pending.current) { setError(""); onClose(); } }}
-              variant="ghost" disabled={loading}
+              onClick={() => {
+                if (!pending.current) {
+                  setError("");
+                  onClose();
+                }
+              }}
+              variant="ghost"
+              disabled={loading}
             >
               {t("common.cancel")}
             </Button>
             <Button
               onClick={handleCreate}
               disabled={!name.trim() || loading}
-              variant="primary" busy={loading}
+              variant="primary"
+              busy={loading}
             >
               {loading ? t("common.loading") : t("common.create")}
             </Button>

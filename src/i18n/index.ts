@@ -31,9 +31,7 @@ function isPrimary(lower: string, tag: string) {
  * never overridden.
  */
 function detectLanguage(): SupportedLanguage {
-  const tags = navigator.languages?.length
-    ? navigator.languages
-    : [navigator.language];
+  const tags = navigator.languages?.length ? navigator.languages : [navigator.language];
 
   for (const tag of tags) {
     const lower = tag.toLowerCase();

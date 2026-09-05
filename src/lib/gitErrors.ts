@@ -11,17 +11,17 @@ export function mapGitErrorMessage(error: unknown, t: TFunction): string {
 
   if (kind === "network") return t("settings.gitErrorNetwork");
   if (
-    message.includes("Authentication failed")
-    || message.includes("Permission denied")
-    || message.includes("could not read Username")
+    message.includes("Authentication failed") ||
+    message.includes("Permission denied") ||
+    message.includes("could not read Username")
   ) {
     return t("settings.gitErrorAuth");
   }
   if (
-    message.includes("Could not resolve host")
-    || message.includes("Failed to connect")
-    || message.includes("Connection timed out")
-    || /connection\s+refused/i.test(message)
+    message.includes("Could not resolve host") ||
+    message.includes("Failed to connect") ||
+    message.includes("Connection timed out") ||
+    /connection\s+refused/i.test(message)
   ) {
     return t("settings.gitErrorNetwork");
   }
@@ -29,10 +29,10 @@ export function mapGitErrorMessage(error: unknown, t: TFunction): string {
     return t("settings.gitErrorUnrelatedHistories");
   }
   if (
-    message.includes("[rejected]")
-    || message.includes("non-fast-forward")
-    || message.includes("fetch first")
-    || message.includes("failed to push some refs")
+    message.includes("[rejected]") ||
+    message.includes("non-fast-forward") ||
+    message.includes("fetch first") ||
+    message.includes("failed to push some refs")
   ) {
     return t("settings.gitErrorRejected");
   }

@@ -23,7 +23,6 @@ export function GitSetupDialog({ open, hasRemote, onClose, onClone, onInit }: Pr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-
   const handleConfirm = async () => {
     if (!hasRemote || loading) return;
     setLoading(true);
@@ -43,51 +42,55 @@ export function GitSetupDialog({ open, hasRemote, onClose, onClone, onInit }: Pr
   };
 
   return (
-    <DetailSheet open={open} size="compact" title={t("settings.gitSetupTitle")} description={t("settings.gitSetupSubtitle")} closeDisabled={loading} onClose={onClose}>
-        {loading && <LoadingState label={t("common.loading")} />}
-        {error && <p role="alert" className="text-danger mb-4">{error}</p>}
-        {!hasRemote && (
-          <div className="mb-4 rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_40%,transparent)] bg-[var(--ds-warning-bg)] px-3 py-2 text-[12px] text-[color-mix(in_srgb,var(--ds-warning)_55%,var(--ds-strong))]">
-            {t("settings.gitSetupNeedRemote")}
-          </div>
-        )}
-
-        <div className="space-y-2">
-          <ChoiceCard
-            icon={<Cloud className="h-4 w-4" />}
-            active={choice === "clone"}
-            disabled={!hasRemote || loading}
-            badge={t("settings.gitSetupCardCloneBadge")}
-            title={t("settings.gitSetupCardCloneTitle")}
-            description={t("settings.gitSetupCardCloneDesc")}
-            onClick={() => setChoice("clone")}
-          />
-          <ChoiceCard
-            icon={<Upload className="h-4 w-4" />}
-            active={choice === "init"}
-            disabled={!hasRemote || loading}
-            badge={t("settings.gitSetupCardInitBadge")}
-            title={t("settings.gitSetupCardInitTitle")}
-            description={t("settings.gitSetupCardInitDesc")}
-            onClick={() => setChoice("init")}
-          />
+    <DetailSheet
+      open={open}
+      size="compact"
+      title={t("settings.gitSetupTitle")}
+      description={t("settings.gitSetupSubtitle")}
+      closeDisabled={loading}
+      onClose={onClose}
+    >
+      {loading && <LoadingState label={t("common.loading")} />}
+      {error && (
+        <p role="alert" className="text-danger mb-4">
+          {error}
+        </p>
+      )}
+      {!hasRemote && (
+        <div className="mb-4 rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_40%,transparent)] bg-[var(--ds-warning-bg)] px-3 py-2 text-[12px] text-[color-mix(in_srgb,var(--ds-warning)_55%,var(--ds-strong))]">
+          {t("settings.gitSetupNeedRemote")}
         </div>
+      )}
 
-        <div className="mt-5 flex justify-end gap-2">
-          <Button
-            onClick={() => !loading && onClose()}
-            disabled={loading}
-          >
-            {t("common.cancel")}
-          </Button>
-          <Button variant="primary"
-            onClick={handleConfirm}
-            busy={loading}
-            disabled={!hasRemote}
-          >
-            {loading ? t("common.loading") : t("settings.gitSetupConfirm")}
-          </Button>
-        </div>
+      <div className="space-y-2">
+        <ChoiceCard
+          icon={<Cloud className="h-4 w-4" />}
+          active={choice === "clone"}
+          disabled={!hasRemote || loading}
+          badge={t("settings.gitSetupCardCloneBadge")}
+          title={t("settings.gitSetupCardCloneTitle")}
+          description={t("settings.gitSetupCardCloneDesc")}
+          onClick={() => setChoice("clone")}
+        />
+        <ChoiceCard
+          icon={<Upload className="h-4 w-4" />}
+          active={choice === "init"}
+          disabled={!hasRemote || loading}
+          badge={t("settings.gitSetupCardInitBadge")}
+          title={t("settings.gitSetupCardInitTitle")}
+          description={t("settings.gitSetupCardInitDesc")}
+          onClick={() => setChoice("init")}
+        />
+      </div>
+
+      <div className="mt-5 flex justify-end gap-2">
+        <Button onClick={() => !loading && onClose()} disabled={loading}>
+          {t("common.cancel")}
+        </Button>
+        <Button variant="primary" onClick={handleConfirm} busy={loading} disabled={!hasRemote}>
+          {loading ? t("common.loading") : t("settings.gitSetupConfirm")}
+        </Button>
+      </div>
     </DetailSheet>
   );
 }
@@ -114,11 +117,18 @@ function ChoiceCard({ icon, active, disabled, badge, title, description, onClick
         "disabled:cursor-not-allowed disabled:opacity-60",
         active
           ? "border-accent bg-accent-bg"
-          : "border-border-subtle bg-bg-secondary hover:bg-surface-hover"
+          : "border-border-subtle bg-bg-secondary hover:bg-surface-hover",
       )}
     >
       <div className="flex items-center gap-2">
-        <span className={cn("rounded-full p-1", active ? "bg-accent/20 text-accent-light" : "bg-surface text-muted")}>{icon}</span>
+        <span
+          className={cn(
+            "rounded-full p-1",
+            active ? "bg-accent/20 text-accent-light" : "bg-surface text-muted",
+          )}
+        >
+          {icon}
+        </span>
         <span className="text-[13px] font-semibold text-primary">{title}</span>
         <span className="ml-auto rounded-full border border-border-subtle bg-surface px-2 py-0.5 text-[11px] text-muted">
           {badge}

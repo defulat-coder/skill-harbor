@@ -41,7 +41,7 @@ describe("mapGitErrorMessage", () => {
 
   it("maps unrelated-history rejections to their dedicated copy", () => {
     expect(mapGitErrorMessage(new Error("fatal: refusing to merge unrelated histories"), t)).toBe(
-      "settings.gitErrorUnrelatedHistories"
+      "settings.gitErrorUnrelatedHistories",
     );
   });
 
@@ -57,19 +57,22 @@ describe("mapGitErrorMessage", () => {
 
   it("maps missing upstream, conflicts, and non-repos to their copies", () => {
     expect(mapGitErrorMessage(new Error("The current branch main has no upstream branch"), t)).toBe(
-      "settings.gitErrorNoUpstream"
+      "settings.gitErrorNoUpstream",
     );
     expect(mapGitErrorMessage(new Error("CONFLICT (content): Merge conflict in SKILL.md"), t)).toBe(
-      "settings.gitErrorConflict"
+      "settings.gitErrorConflict",
     );
-    expect(mapGitErrorMessage(new Error("fatal: not a git repository (or any of the parent directories)"), t)).toBe(
-      "settings.gitErrorNotRepo"
-    );
+    expect(
+      mapGitErrorMessage(
+        new Error("fatal: not a git repository (or any of the parent directories)"),
+        t,
+      ),
+    ).toBe("settings.gitErrorNotRepo");
   });
 
   it("appends the detail to the generic copy, except for a bare 'Error'", () => {
     expect(mapGitErrorMessage(new Error("something odd happened"), t)).toBe(
-      "settings.gitErrorGeneric (something odd happened)"
+      "settings.gitErrorGeneric (something odd happened)",
     );
     expect(mapGitErrorMessage(new Error("Error"), t)).toBe("settings.gitErrorGeneric");
     expect(mapGitErrorMessage(undefined, t)).toBe("settings.gitErrorGeneric");

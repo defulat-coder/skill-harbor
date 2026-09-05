@@ -18,9 +18,7 @@ const stringParam = (value: unknown): string | undefined => {
   return undefined;
 };
 
-export function validateSkillPickerSearch(
-  search: Record<string, unknown>,
-): SkillPickerSearch {
+export function validateSkillPickerSearch(search: Record<string, unknown>): SkillPickerSearch {
   return { skill: stringParam(search.skill) };
 }
 
@@ -32,9 +30,7 @@ export interface InstallSearch {
   project?: string;
 }
 
-export function validateInstallSearch(
-  search: Record<string, unknown>,
-): InstallSearch {
+export function validateInstallSearch(search: Record<string, unknown>): InstallSearch {
   const tab = search.tab;
   return {
     tab: tab === "market" || tab === "local" || tab === "git" ? tab : undefined,
@@ -47,8 +43,6 @@ export interface NewFlagSearch {
   new?: number;
 }
 
-export function validateNewFlagSearch(
-  search: Record<string, unknown>,
-): NewFlagSearch {
+export function validateNewFlagSearch(search: Record<string, unknown>): NewFlagSearch {
   return { new: typeof search.new === "number" ? search.new : undefined };
 }

@@ -21,8 +21,26 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 /** Shared native button; styling follows OpenDesign's primitive contract. */
-export function Button({ variant = "secondary", size = "default", busy, iconOnly, disabled, className = "", children, type = "button", ...props }: Props) {
-  return <button {...props} type={type} disabled={disabled || busy} className={`${styles.button} ${variantClasses[variant]} ${size === "sm" ? styles.sm : ""} ${iconOnly ? styles.icon : ""} ${className}`}>
-    {busy && <Loader2 size={15} className={styles.spinner} aria-hidden />}{children}
-  </button>;
+export function Button({
+  variant = "secondary",
+  size = "default",
+  busy,
+  iconOnly,
+  disabled,
+  className = "",
+  children,
+  type = "button",
+  ...props
+}: Props) {
+  return (
+    <button
+      {...props}
+      type={type}
+      disabled={disabled || busy}
+      className={`${styles.button} ${variantClasses[variant]} ${size === "sm" ? styles.sm : ""} ${iconOnly ? styles.icon : ""} ${className}`}
+    >
+      {busy && <Loader2 size={15} className={styles.spinner} aria-hidden />}
+      {children}
+    </button>
+  );
 }

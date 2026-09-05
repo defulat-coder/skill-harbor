@@ -47,7 +47,13 @@ const PRESET_ICON_COLOR_CLASS = "text-muted";
 const PRESET_ICON_ACTIVE_CLASS = "border-[var(--ds-brand)] bg-[var(--ds-brand-bg)]";
 
 function presetIconOption(key: string, label: string, icon: LucideIcon): PresetIconOption {
-  return { key, label, icon, colorClass: PRESET_ICON_COLOR_CLASS, activeClass: PRESET_ICON_ACTIVE_CLASS };
+  return {
+    key,
+    label,
+    icon,
+    colorClass: PRESET_ICON_COLOR_CLASS,
+    activeClass: PRESET_ICON_ACTIVE_CLASS,
+  };
 }
 
 export const PRESET_ICON_OPTIONS: PresetIconOption[] = [
@@ -84,9 +90,7 @@ export const PRESET_ICON_OPTIONS: PresetIconOption[] = [
   presetIconOption("wrench", "Ops", Wrench),
 ];
 
-const PRESET_ICON_MAP = new Map(
-  PRESET_ICON_OPTIONS.map((option) => [option.key, option] as const)
-);
+const PRESET_ICON_MAP = new Map(PRESET_ICON_OPTIONS.map((option) => [option.key, option] as const));
 
 const PRESET_KEYWORD_RULES: Array<{ key: string; keywords: string[] }> = [
   { key: "briefcase", keywords: ["工作", "work", "office", "client"] },
@@ -122,18 +126,15 @@ export function inferPresetIconKey(preset?: Pick<Preset, "name" | "description" 
 
   const haystack = `${preset?.name || ""} ${preset?.description || ""}`.toLowerCase();
   const matched = PRESET_KEYWORD_RULES.find((rule) =>
-    rule.keywords.some((keyword) => haystack.includes(keyword))
+    rule.keywords.some((keyword) => haystack.includes(keyword)),
   );
 
   return matched?.key || "briefcase";
 }
 
 export function getPresetIconOption(
-  preset?: Pick<Preset, "name" | "description" | "icon"> | string | null
+  preset?: Pick<Preset, "name" | "description" | "icon"> | string | null,
 ) {
-  const key =
-    typeof preset === "string"
-      ? preset
-      : inferPresetIconKey(preset);
+  const key = typeof preset === "string" ? preset : inferPresetIconKey(preset);
   return PRESET_ICON_MAP.get(key) || PRESET_ICON_OPTIONS[0];
 }

@@ -26,7 +26,7 @@ export function AgentIcon({
     <span
       className={cn(
         "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-md border border-border-subtle bg-surface",
-        className
+        className,
       )}
       title={displayName}
       aria-hidden="true"
@@ -39,12 +39,12 @@ export function AgentIcon({
           className={cn(
             "h-full w-full object-contain",
             agentIconNeedsDarkInvert(agentKey) && "dark:invert",
-            imageClassName
+            imageClassName,
           )}
           onError={() => setFailedSrc(src)}
         />
       ) : (
-        fallback ?? <Globe className="h-1/2 w-1/2 text-muted" />
+        (fallback ?? <Globe className="h-1/2 w-1/2 text-muted" />)
       )}
     </span>
   );

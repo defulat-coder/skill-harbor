@@ -34,7 +34,8 @@ export function MarketChinesePreview({ source, skillId }: { source: string; skil
   const [prevScopeKey, setPrevScopeKey] = useState(scopeKey);
   if (prevScopeKey !== scopeKey) {
     setPrevScopeKey(scopeKey);
-    setSlow(false); setOpen(false);
+    setSlow(false);
+    setOpen(false);
   }
   function generate() {
     setOpen(true);
@@ -42,14 +43,48 @@ export function MarketChinesePreview({ source, skillId }: { source: string; skil
     setSlow(false);
     void previewQuery.refetch();
   }
-  return <>
-    <Button variant="ghost" className={styles.trigger} onClick={generate}><Languages size={14} aria-hidden />{busy ? "查看生成进度" : "中文用法预览"}</Button>
-    <DetailSheet open={open} title={`${skillId} · 中文用法`} description={<p>基于 {source} 的源文档由 AI 整理。生成可能需要联网；关闭窗口后仍会继续。</p>} onClose={() => setOpen(false)}>
-      {busy && (slow
-        ? <p role="status" className={styles.loading}>生成已超过一分钟，仍在后台继续；可以先做其他事，稍后重新打开查看结果。</p>
-        : <p role="status" className={styles.loading}><Loader2 size={16} className={styles.spinner} aria-hidden />正在获取原文并整理中文说明，可能需要几分钟…</p>)}
-      {error && <div role="alert" className={styles.error}><p>{error}</p><Button onClick={generate} disabled={busy}>重试中文预览</Button></div>}
-      {content && <><p role="status" className={styles.meta}>中文说明已生成，请结合原文核对。</p><SkillMarkdown content={content} className={styles.reading} /></>}
-    </DetailSheet>
-  </>;
+  return (
+    <>
+      <Button variant="ghost" className={styles.trigger} onClick={generate}>
+        <Languages size={14} aria-hidden />
+        {busy ? "查看生成进度" : "中文用法预览"}
+      </Button>
+      <DetailSheet
+        open={open}
+        title={`${skillId} · 中文用法`}
+        description={
+          <p>基于 {source} 的源文档由 AI 整理。生成可能需要联网；关闭窗口后仍会继续。</p>
+        }
+        onClose={() => setOpen(false)}
+      >
+        {busy &&
+          (slow ? (
+            <p role="status" className={styles.loading}>
+              生成已超过一分钟，仍在后台继续；可以先做其他事，稍后重新打开查看结果。
+            </p>
+          ) : (
+            <p role="status" className={styles.loading}>
+              <Loader2 size={16} className={styles.spinner} aria-hidden />
+              正在获取原文并整理中文说明，可能需要几分钟…
+            </p>
+          ))}
+        {error && (
+          <div role="alert" className={styles.error}>
+            <p>{error}</p>
+            <Button onClick={generate} disabled={busy}>
+              重试中文预览
+            </Button>
+          </div>
+        )}
+        {content && (
+          <>
+            <p role="status" className={styles.meta}>
+              中文说明已生成，请结合原文核对。
+            </p>
+            <SkillMarkdown content={content} className={styles.reading} />
+          </>
+        )}
+      </DetailSheet>
+    </>
+  );
 }

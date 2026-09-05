@@ -4,319 +4,475 @@ import { invoke as __TAURI_INVOKE } from "@tauri-apps/api/core";
 
 /** Commands */
 export const commands = {
-	skillSearchStatus: () => __TAURI_INVOKE<SearchStatus_Serialize>("skill_search_status"),
-	skillSearchIndex: () => __TAURI_INVOKE<SearchStatus_Serialize>("skill_search_index"),
-	skillSearchQuery: (query: string) => __TAURI_INVOKE<SearchResult>("skill_search_query", { query }),
-	skillSearchAnswer: (query: string, hits: AnswerHit[]) => __TAURI_INVOKE<string>("skill_search_answer", { query, hits }),
-	getSkillGuide: (skillId: string, projectId: string | null, skillRelativePath: string | null, agent: string | null) => __TAURI_INVOKE<SkillGuideDto>("get_skill_guide", { skillId, projectId, skillRelativePath, agent }),
-	saveSkillGuide: (skillId: string, content: string, reviewedSourceHash: string | null, projectId: string | null, skillRelativePath: string | null, agent: string | null) => __TAURI_INVOKE<SkillGuideDto>("save_skill_guide", { skillId, content, reviewedSourceHash, projectId, skillRelativePath, agent }),
-	generateSkillGuide: (skillId: string, projectId: string | null, skillRelativePath: string | null, agent: string | null) => __TAURI_INVOKE<SkillGuideDto>("generate_skill_guide", { skillId, projectId, skillRelativePath, agent }),
-	translateMarketQuery: (query: string) => __TAURI_INVOKE<string>("translate_market_query", { query }),
-	previewMarketGuide: (source: string, skillId: string) => __TAURI_INVOKE<string>("preview_market_guide", { source, skillId }),
-	workbenchCreateProject: (path: string, createDirectory: boolean, skillIds: string[], agent: string, mode: string) => __TAURI_INVOKE<CreateResult>("workbench_create_project", { path, createDirectory, skillIds, agent, mode }),
-	workbenchDeploySkills: (projectId: string, skillIds: string[], agent: string, mode: string) => __TAURI_INVOKE<DeployResult[]>("workbench_deploy_skills", { projectId, skillIds, agent, mode }),
-	workbenchProjectBindings: (projectId: string) => __TAURI_INVOKE<Binding[]>("workbench_project_bindings", { projectId }),
-	startTask: (projectId: string, prompt: string, skillIds: string[]) => __TAURI_INVOKE<TaskRun>("start_task", { projectId, prompt, skillIds }),
-	listTasks: (projectId: string) => __TAURI_INVOKE<TaskRun[]>("list_tasks", { projectId }),
-	cancelTask: (runId: string) => __TAURI_INVOKE<TaskRun>("cancel_task", { runId }),
-	getTaskLog: (runId: string) => __TAURI_INVOKE<string>("get_task_log", { runId }),
-	runnerStatus: () => __TAURI_INVOKE<RunnerStatus>("runner_status"),
-	getToolStatus: () => __TAURI_INVOKE<ToolInfoDto[]>("get_tool_status"),
-	setToolEnabled: (key: string, enabled: boolean) => __TAURI_INVOKE<null>("set_tool_enabled", { key, enabled }),
-	setAllToolsEnabled: (enabled: boolean) => __TAURI_INVOKE<null>("set_all_tools_enabled", { enabled }),
-	getToolOrderCmd: () => __TAURI_INVOKE<string[]>("get_tool_order_cmd"),
-	setToolOrderCmd: (order: string[]) => __TAURI_INVOKE<null>("set_tool_order_cmd", { order }),
-	setCustomToolPath: (key: string, path: string) => __TAURI_INVOKE<null>("set_custom_tool_path", { key, path }),
-	resetCustomToolPath: (key: string) => __TAURI_INVOKE<null>("reset_custom_tool_path", { key }),
-	setCustomToolProjectPath: (key: string, projectRelativeSkillsDir: string | null) => __TAURI_INVOKE<null>("set_custom_tool_project_path", { key, projectRelativeSkillsDir }),
-	resetCustomToolProjectPath: (key: string) => __TAURI_INVOKE<null>("reset_custom_tool_project_path", { key }),
-	addCustomTool: (key: string, displayName: string, skillsDir: string, projectRelativeSkillsDir: string | null) => __TAURI_INVOKE<null>("add_custom_tool", { key, displayName, skillsDir, projectRelativeSkillsDir }),
-	removeCustomTool: (key: string) => __TAURI_INVOKE<null>("remove_custom_tool", { key }),
-	getManagedSkills: () => __TAURI_INVOKE<ManagedSkillDto[]>("get_managed_skills"),
-	getSkillsForPreset: (presetId: string) => __TAURI_INVOKE<ManagedSkillDto[]>("get_skills_for_preset", { presetId }),
-	getSkillDocument: (skillId: string) => __TAURI_INVOKE<SkillDocumentDto>("get_skill_document", { skillId }),
-	getSourceSkillDocument: (skillId: string) => __TAURI_INVOKE<SourceSkillDocumentDto>("get_source_skill_document", { skillId }),
-	getSkillSourceDiff: (skillId: string) => __TAURI_INVOKE<SkillSourceDiffDto>("get_skill_source_diff", { skillId }),
-	deleteManagedSkill: (skillId: string) => __TAURI_INVOKE<null>("delete_managed_skill", { skillId }),
-	deleteManagedSkills: (skillIds: string[]) => __TAURI_INVOKE<BatchDeleteSkillsResult>("delete_managed_skills", { skillIds }),
-	installLocal: (sourcePath: string, name: string | null) => __TAURI_INVOKE<null>("install_local", { sourcePath, name }),
-	installGit: (repoUrl: string, name: string | null) => __TAURI_INVOKE<null>("install_git", { repoUrl, name }),
-	/**
-	 *  Clone a git repo and return a preview list of skills found, without installing.
-	 *  The caller must follow up with `confirm_git_install` using the returned `temp_dir`.
-	 */
-	previewGitInstall: (repoUrl: string) => __TAURI_INVOKE<GitPreviewResult>("preview_git_install", { repoUrl }),
-	/**  Install selected skills from a previously cloned temp directory. */
-	confirmGitInstall: (repoUrl: string, tempDir: string, items: SkillInstallItem[]) => __TAURI_INVOKE<null>("confirm_git_install", { repoUrl, tempDir, items }),
-	/**  Clean up temp directory from a cancelled preview session. */
-	cancelGitPreview: (tempDir: string) => __TAURI_INVOKE<null>("cancel_git_preview", { tempDir }),
-	installFromSkillssh: (source: string, skillId: string) => __TAURI_INVOKE<null>("install_from_skillssh", { source, skillId }),
-	checkSkillUpdate: (skillId: string, force: boolean | null) => __TAURI_INVOKE<ManagedSkillDto>("check_skill_update", { skillId, force }),
-	checkAllSkillUpdates: (force: boolean | null) => __TAURI_INVOKE<null>("check_all_skill_updates", { force }),
-	/**
-	 *  Update one skill.
-	 * 
-	 *  `approved_removals` carries back `removal_approval` from a call that
-	 *  declined. The first call from the UI passes `None`; if it comes back with
-	 *  `pending_removals`, the user is shown exactly what would disappear and only
-	 *  then is it called again with that token.
-	 */
-	updateSkill: (skillId: string, approvedRemovals: string | null) => __TAURI_INVOKE<UpdateSkillResult>("update_skill", { skillId, approvedRemovals }),
-	batchUpdateSkills: (skillIds: string[]) => __TAURI_INVOKE<BatchUpdateSkillsResult>("batch_update_skills", { skillIds }),
-	reimportLocalSkill: (skillId: string, approvedRemovals: string | null) => __TAURI_INVOKE<ReimportSkillResult>("reimport_local_skill", { skillId, approvedRemovals }),
-	/**
-	 *  Re-point a local skill at a different source directory.
-	 * 
-	 *  `approved_removals` behaves as on the update paths: choosing a new source is
-	 *  not a statement about discarding what the library has accumulated, so a
-	 *  replacement that would take files away stops and reports them first.
-	 */
-	relinkLocalSkillSource: (skillId: string, sourcePath: string, approvedRemovals: string | null) => __TAURI_INVOKE<ReimportSkillResult>("relink_local_skill_source", { skillId, sourcePath, approvedRemovals }),
-	detachLocalSkillSource: (skillId: string) => __TAURI_INVOKE<ManagedSkillDto>("detach_local_skill_source", { skillId }),
-	getAllTags: () => __TAURI_INVOKE<string[]>("get_all_tags"),
-	setSkillTags: (skillId: string, tags: string[]) => __TAURI_INVOKE<null>("set_skill_tags", { skillId, tags }),
-	/**
-	 *  Globally rename a tag across all skills (used by the tag filter bar). If the
-	 *  new name already exists, the tags are merged.
-	 */
-	renameTag: (oldName: string, newName: string) => __TAURI_INVOKE<null>("rename_tag", { oldName, newName }),
-	/**  Globally delete a tag from all skills (used by the tag filter bar). */
-	deleteTag: (name: string) => __TAURI_INVOKE<null>("delete_tag", { name }),
-	cancelInstall: (key: string) => __TAURI_INVOKE<boolean>("cancel_install", { key }),
-	batchImportFolder: (folderPath: string) => __TAURI_INVOKE<BatchImportResult>("batch_import_folder", { folderPath }),
-	syncSkillToTool: (skillId: string, tool: string) => __TAURI_INVOKE<null>("sync_skill_to_tool", { skillId, tool }),
-	unsyncSkillFromTool: (skillId: string, tool: string) => __TAURI_INVOKE<null>("unsync_skill_from_tool", { skillId, tool }),
-	getSkillToolToggles: (skillId: string, presetId: string) => __TAURI_INVOKE<SkillToolToggleDto[]>("get_skill_tool_toggles", { skillId, presetId }),
-	setSkillToolToggle: (skillId: string, presetId: string, tool: string, enabled: boolean) => __TAURI_INVOKE<null>("set_skill_tool_toggle", { skillId, presetId, tool, enabled }),
-	scanLocalSkills: () => __TAURI_INVOKE<ScanResultDto>("scan_local_skills"),
-	importExistingSkill: (sourcePath: string, name: string | null) => __TAURI_INVOKE<null>("import_existing_skill", { sourcePath, name }),
-	importAllDiscovered: () => __TAURI_INVOKE<null>("import_all_discovered"),
-	fetchLeaderboard: (board: string) => __TAURI_INVOKE<SkillsShSkill[]>("fetch_leaderboard", { board }),
-	searchSkillssh: (query: string, limit: number | null) => __TAURI_INVOKE<SkillsShSkill[]>("search_skillssh", { query, limit }),
-	getSettings: (key: string) => __TAURI_INVOKE<string | null>("get_settings", { key }),
-	setSettings: (key: string, value: string) => __TAURI_INVOKE<null>("set_settings", { key, value }),
-	getCentralRepoPath: () => __TAURI_INVOKE<string>("get_central_repo_path"),
-	getCentralRepoPathOverride: () => __TAURI_INVOKE<string | null>("get_central_repo_path_override"),
-	/**
-	 *  Warning codes recorded while resolving the central repository at startup
-	 *  (e.g. unreadable config, invalid configured path). Non-empty means the app
-	 *  fell back to the default location and the user should be told (#228).
-	 */
-	getCentralRepoWarnings: () => __TAURI_INVOKE<string[]>("get_central_repo_warnings"),
-	setCentralRepoPath: (path: string | null) => __TAURI_INVOKE<string>("set_central_repo_path", { path }),
-	openCentralRepoFolder: () => __TAURI_INVOKE<null>("open_central_repo_folder"),
-	checkAppUpdate: () => __TAURI_INVOKE<AppUpdateInfo>("check_app_update"),
-	/**
-	 *  Report why an in-app update cannot be installed from where the app is
-	 *  running right now, or `None` to let the updater proceed.
-	 * 
-	 *  Deliberately narrow. A general "is the bundle's parent writable" test would
-	 *  be wrong: a `/Applications` copy owned by a different admin account is not
-	 *  writable by this process either, and there the updater's own privileged
-	 *  prompt succeeds. Only the two states below are beyond its reach, because it
-	 *  replaces the `.app` in place.
-	 */
-	updateInstallBlocker: () => __TAURI_INVOKE<string | null>("update_install_blocker"),
-	getDiagnosticInfo: () => __TAURI_INVOKE<DiagnosticInfo>("get_diagnostic_info"),
-	getRecentLogExcerpt: () => __TAURI_INVOKE<LogExcerpt>("get_recent_log_excerpt"),
-	exportLogsZip: () => __TAURI_INVOKE<LogExportResult>("export_logs_zip"),
-	/**
-	 *  Diagnostic-only: let the frontend write a named startup event with elapsed
-	 *  milliseconds into the backend log file. Used to correlate WebView2 boot,
-	 *  first paint, and refreshAppData timing with Rust-side startup logs when
-	 *  debugging slow launches (see issue #153).
-	 * 
-	 *  `label` is sanitized (control chars stripped, capped at 64 chars) so a
-	 *  buggy or malicious caller cannot inject newlines that would corrupt the
-	 *  log file layout.
-	 */
-	logStartupEvent: (label: string, elapsedMs: number) => __TAURI_INVOKE<void>("log_startup_event", { label, elapsedMs }),
-	checkLastPanic: () => __TAURI_INVOKE<{
-	timestamp: string,
-	message: string,
-} | null>("check_last_panic"),
-	clearLastPanic: () => __TAURI_INVOKE<null>("clear_last_panic"),
-	appExit: () => __TAURI_INVOKE<void>("app_exit"),
-	/**
-	 *  Relaunch the app so a freshly installed update takes effect. Only ever
-	 *  invoked from an explicit user confirmation — the updater never restarts on
-	 *  its own.
-	 * 
-	 *  Scheduled onto the main thread for the same reason `app_exit` is: the
-	 *  teardown destroys the main window before the process goes away.
-	 */
-	restartApp: () => __TAURI_INVOKE<void>("restart_app"),
-	hideToTray: () => __TAURI_INVOKE<null>("hide_to_tray"),
-	gitBackupFetch: () => __TAURI_INVOKE<null>("git_backup_fetch"),
-	gitBackupStatus: () => __TAURI_INVOKE<GitBackupStatus>("git_backup_status"),
-	gitBackupInit: () => __TAURI_INVOKE<null>("git_backup_init"),
-	gitBackupSetRemote: (url: string) => __TAURI_INVOKE<string>("git_backup_set_remote", { url }),
-	/**
-	 *  GitHub guided connect (backup redesign Phase 2, PAT mode): validate the
-	 *  token, find or create the private backup repository, store the token in
-	 *  the OS keychain, and save the credential-free URL. The keychain is
-	 *  mandatory here — guided mode never falls back to token-in-URL.
-	 */
-	githubBackupConnect: (token: string, repoName: string) => __TAURI_INVOKE<GithubBackupConnectResult>("github_backup_connect", { token, repoName }),
-	githubDeviceFlowStart: () => __TAURI_INVOKE<DeviceFlowStart>("github_device_flow_start"),
-	/**
-	 *  One device-flow poll. On authorization the OAuth token stays in the
-	 *  backend: it goes straight through `connect_with_token` into the OS
-	 *  keychain and is never returned to the webview.
-	 */
-	githubDeviceFlowPoll: (deviceCode: string, repoName: string) => __TAURI_INVOKE<GithubDevicePollResult>("github_device_flow_poll", { deviceCode, repoName }),
-	/**
-	 *  Sanitize a remote URL before it is persisted anywhere: embedded
-	 *  credentials go to the OS keychain, the returned URL is what the frontend
-	 *  must save and display.
-	 */
-	gitBackupSanitizeRemoteUrl: (url: string) => __TAURI_INVOKE<string>("git_backup_sanitize_remote_url", { url }),
-	/**
-	 *  Migrate credentials embedded in the remote URL (`user:token@host`) into
-	 *  the OS keychain (§3.7). Rewrites `.git/config` and the saved setting to
-	 *  the credential-free URL, verifies authentication still works, and rolls
-	 *  everything back on any failure — no half-migrated state. Returns the
-	 *  sanitized URL when a migration happened, `None` when there was nothing to
-	 *  migrate.
-	 */
-	gitBackupMigrateCredentials: () => __TAURI_INVOKE<string | null>("git_backup_migrate_credentials"),
-	gitBackupSizeReport: () => __TAURI_INVOKE<BackupSizeReport>("git_backup_size_report"),
-	/**
-	 *  Disconnect the local machine from the backup remote (#260, §3.1 断开本机):
-	 *  remove the git origin, clear the saved remote URL setting, and delete the
-	 *  machine's stored access credential. Remote repository data and the local
-	 *  repo are kept; other devices are unaffected.
-	 */
-	gitBackupRemoveRemote: () => __TAURI_INVOKE<null>("git_backup_remove_remote"),
-	gitBackupCommit: (message: string) => __TAURI_INVOKE<null>("git_backup_commit", { message }),
-	gitBackupPush: () => __TAURI_INVOKE<null>("git_backup_push"),
-	gitBackupPull: () => __TAURI_INVOKE<MergeSummary>("git_backup_pull"),
-	gitBackupClone: (url: string) => __TAURI_INVOKE<null>("git_backup_clone", { url }),
-	/**
-	 *  Recovery: discard the local `.git` and re-clone from the configured remote.
-	 *  Existing skill files are preserved via the same backup-then-merge flow
-	 *  used by the regular clone path.
-	 */
-	gitBackupReclone: (url: string) => __TAURI_INVOKE<null>("git_backup_reclone", { url }),
-	gitBackupCreateSnapshot: () => __TAURI_INVOKE<string>("git_backup_create_snapshot"),
-	gitBackupListVersions: (limit: number | null) => __TAURI_INVOKE<GitBackupVersion[]>("git_backup_list_versions", { limit }),
-	/**
-	 *  Restore a snapshot. Returns the safety-point tag that captured the
-	 *  pre-restore state, so the UI can tell the user the restore is undoable.
-	 */
-	gitBackupRestoreVersion: (tag: string) => __TAURI_INVOKE<string>("git_backup_restore_version", { tag }),
-	/**
-	 *  Effective device name (§4.3 设备命名): the saved setting, or a persisted
-	 *  hostname-derived default.
-	 */
-	backupDeviceName: () => __TAURI_INVOKE<string>("backup_device_name"),
-	/**
-	 *  Rename this device. Only affects backups made from now on — history keeps
-	 *  the author it was written with. Returns the sanitized name actually saved.
-	 */
-	backupSetDeviceName: (name: string) => __TAURI_INVOKE<string>("backup_set_device_name", { name }),
-	/**
-	 *  Pending "needs attention" conflicts (merge-engine design §4) for the
-	 *  Backup page. Reads the rebuildable SQLite projection.
-	 */
-	gitBackupPendingConflicts: () => __TAURI_INVOKE<PendingConflictRow[]>("git_backup_pending_conflicts"),
-	/**
-	 *  Resolve one pending conflict (§4 解决动作): action is one of
-	 *  "keep_local" | "use_remote" | "keep_both". Returns the safety snapshot
-	 *  tag taken before the resolution.
-	 */
-	gitBackupResolveConflict: (skillId: string, action: string) => __TAURI_INVOKE<string>("git_backup_resolve_conflict", { skillId, action }),
-	/**
-	 *  Full backup sync as one transaction under a single repo lock (merge-engine
-	 *  design §9 并发收敛): commit → fetch/merge → snapshot → push, retrying the
-	 *  fetch/merge/push tail when another device pushes concurrently. Replaces
-	 *  the frontend-orchestrated commit/pull/push sequence, whose lock gaps let a
-	 *  benign race surface as a non-fast-forward "needs recovery" error.
-	 */
-	gitBackupSync: (message: string) => __TAURI_INVOKE<SyncOutcome>("git_backup_sync", { message }),
-	getProjects: () => __TAURI_INVOKE<ProjectDto[]>("get_projects"),
-	addProject: (path: string) => __TAURI_INVOKE<ProjectDto>("add_project", { path }),
-	addLinkedWorkspace: (name: string, path: string, disabledPath: string | null) => __TAURI_INVOKE<ProjectDto>("add_linked_workspace", { name, path, disabledPath }),
-	removeProject: (id: string) => __TAURI_INVOKE<null>("remove_project", { id }),
-	scanProjects: (root: string) => __TAURI_INVOKE<string[]>("scan_projects", { root }),
-	getProjectAgentTargets: (projectId: string) => __TAURI_INVOKE<ProjectAgentTargetDto[]>("get_project_agent_targets", { projectId }),
-	getProjectSkills: (projectId: string) => __TAURI_INVOKE<ProjectSkillInfo_Serialize[]>("get_project_skills", { projectId }),
-	getProjectSkillDocument: (projectId: string, skillRelativePath: string, agent: string) => __TAURI_INVOKE<ProjectSkillDocumentDto>("get_project_skill_document", { projectId, skillRelativePath, agent }),
-	importProjectSkillToCenter: (projectId: string, skillRelativePath: string, agent: string) => __TAURI_INVOKE<null>("import_project_skill_to_center", { projectId, skillRelativePath, agent }),
-	exportSkillToProject: (skillId: string, projectId: string, agents: string[] | null) => __TAURI_INVOKE<null>("export_skill_to_project", { skillId, projectId, agents }),
-	updateProjectSkillToCenter: (projectId: string, skillRelativePath: string, agent: string) => __TAURI_INVOKE<null>("update_project_skill_to_center", { projectId, skillRelativePath, agent }),
-	updateProjectSkillFromCenter: (projectId: string, skillRelativePath: string, agent: string) => __TAURI_INVOKE<null>("update_project_skill_from_center", { projectId, skillRelativePath, agent }),
-	toggleProjectSkill: (projectId: string, skillRelativePath: string, agent: string, enabled: boolean) => __TAURI_INVOKE<null>("toggle_project_skill", { projectId, skillRelativePath, agent, enabled }),
-	deleteProjectSkill: (projectId: string, skillRelativePath: string, agent: string) => __TAURI_INVOKE<null>("delete_project_skill", { projectId, skillRelativePath, agent }),
-	slugifySkillNames: (names: string[]) => __TAURI_INVOKE<string[]>("slugify_skill_names", { names }),
-	getGlobalLocalSkills: (agent: string) => __TAURI_INVOKE<ProjectSkillInfo_Serialize[]>("get_global_local_skills", { agent }),
-	getGlobalLocalSkillDocument: (agent: string, skillRelativePath: string) => __TAURI_INVOKE<ProjectSkillDocumentDto>("get_global_local_skill_document", { agent, skillRelativePath }),
-	importGlobalLocalSkillToCenter: (agent: string, skillRelativePath: string) => __TAURI_INVOKE<null>("import_global_local_skill_to_center", { agent, skillRelativePath }),
-	updateGlobalLocalSkillFromCenter: (agent: string, skillRelativePath: string) => __TAURI_INVOKE<null>("update_global_local_skill_from_center", { agent, skillRelativePath }),
-	deleteGlobalLocalSkill: (agent: string, skillRelativePath: string) => __TAURI_INVOKE<null>("delete_global_local_skill", { agent, skillRelativePath }),
-	getPresets: () => __TAURI_INVOKE<PresetDto[]>("get_presets"),
-	getActivePreset: () => __TAURI_INVOKE<{
-	id: string,
-	name: string,
-	description: string | null,
-	icon: string | null,
-	sort_order: number,
-	skill_count: number,
-	created_at: number,
-	updated_at: number,
-} | null>("get_active_preset"),
-	createPreset: (name: string, description: string | null, icon: string | null) => __TAURI_INVOKE<PresetDto>("create_preset", { name, description, icon }),
-	updatePreset: (id: string, name: string, description: string | null, icon: string | null) => __TAURI_INVOKE<null>("update_preset", { id, name, description, icon }),
-	deletePreset: (id: string) => __TAURI_INVOKE<null>("delete_preset", { id }),
-	/**
-	 *  Legacy command kept for the CLI and backward compatibility. New callers
-	 *  should use [`apply_preset_to_default`] (or [`apply_preset_to_coding_agents`]
-	 *  for the workspace-scoped variant the tray now uses).
-	 */
-	switchPreset: (id: string) => __TAURI_INVOKE<null>("switch_preset", { id }),
-	/**
-	 *  Apply a preset to the default targets (all enabled agent globals).
-	 * 
-	 *  This is the explicit user-initiated action introduced in v1.16. It performs
-	 *  the same disk-writing work as the legacy [`switch_preset`] command but is
-	 *  only invoked when the user clicks "Apply to Default" — sidebar/command-palette
-	 *  preset clicks no longer call this.
-	 */
-	applyPresetToDefault: (id: string) => __TAURI_INVOKE<null>("apply_preset_to_default", { id }),
-	/**
-	 *  Apply (or remove) every skill in `preset_id` against every enabled coding
-	 *  agent (`ToolCategory::Coding`). Mirrors the PresetBar behavior in the
-	 *  global workspace view but covers all enabled coding agents at once.
-	 * 
-	 *  Lobster agents are intentionally excluded — they have their own workspace
-	 *  and their own preset bar.
-	 */
-	applyPresetToCodingAgents: (presetId: string, mode: PresetApplyMode) => __TAURI_INVOKE<null>("apply_preset_to_coding_agents", { presetId, mode }),
-	addSkillToPreset: (skillId: string, presetId: string) => __TAURI_INVOKE<null>("add_skill_to_preset", { skillId, presetId }),
-	removeSkillFromPreset: (skillId: string, presetId: string) => __TAURI_INVOKE<null>("remove_skill_from_preset", { skillId, presetId }),
-	reorderPresets: (ids: string[]) => __TAURI_INVOKE<null>("reorder_presets", { ids }),
-	reorderProjects: (ids: string[]) => __TAURI_INVOKE<null>("reorder_projects", { ids }),
-	getPresetSkillOrder: (presetId: string) => __TAURI_INVOKE<string[]>("get_preset_skill_order", { presetId }),
-	reorderPresetSkills: (presetId: string, skillIds: string[]) => __TAURI_INVOKE<null>("reorder_preset_skills", { presetId, skillIds }),
+  skillSearchStatus: () => __TAURI_INVOKE<SearchStatus_Serialize>("skill_search_status"),
+  skillSearchIndex: () => __TAURI_INVOKE<SearchStatus_Serialize>("skill_search_index"),
+  skillSearchQuery: (query: string) =>
+    __TAURI_INVOKE<SearchResult>("skill_search_query", { query }),
+  skillSearchAnswer: (query: string, hits: AnswerHit[]) =>
+    __TAURI_INVOKE<string>("skill_search_answer", { query, hits }),
+  getSkillGuide: (
+    skillId: string,
+    projectId: string | null,
+    skillRelativePath: string | null,
+    agent: string | null,
+  ) =>
+    __TAURI_INVOKE<SkillGuideDto>("get_skill_guide", {
+      skillId,
+      projectId,
+      skillRelativePath,
+      agent,
+    }),
+  saveSkillGuide: (
+    skillId: string,
+    content: string,
+    reviewedSourceHash: string | null,
+    projectId: string | null,
+    skillRelativePath: string | null,
+    agent: string | null,
+  ) =>
+    __TAURI_INVOKE<SkillGuideDto>("save_skill_guide", {
+      skillId,
+      content,
+      reviewedSourceHash,
+      projectId,
+      skillRelativePath,
+      agent,
+    }),
+  generateSkillGuide: (
+    skillId: string,
+    projectId: string | null,
+    skillRelativePath: string | null,
+    agent: string | null,
+  ) =>
+    __TAURI_INVOKE<SkillGuideDto>("generate_skill_guide", {
+      skillId,
+      projectId,
+      skillRelativePath,
+      agent,
+    }),
+  translateMarketQuery: (query: string) =>
+    __TAURI_INVOKE<string>("translate_market_query", { query }),
+  previewMarketGuide: (source: string, skillId: string) =>
+    __TAURI_INVOKE<string>("preview_market_guide", { source, skillId }),
+  workbenchCreateProject: (
+    path: string,
+    createDirectory: boolean,
+    skillIds: string[],
+    agent: string,
+    mode: string,
+  ) =>
+    __TAURI_INVOKE<CreateResult>("workbench_create_project", {
+      path,
+      createDirectory,
+      skillIds,
+      agent,
+      mode,
+    }),
+  workbenchDeploySkills: (projectId: string, skillIds: string[], agent: string, mode: string) =>
+    __TAURI_INVOKE<DeployResult[]>("workbench_deploy_skills", { projectId, skillIds, agent, mode }),
+  workbenchProjectBindings: (projectId: string) =>
+    __TAURI_INVOKE<Binding[]>("workbench_project_bindings", { projectId }),
+  startTask: (projectId: string, prompt: string, skillIds: string[]) =>
+    __TAURI_INVOKE<TaskRun>("start_task", { projectId, prompt, skillIds }),
+  listTasks: (projectId: string) => __TAURI_INVOKE<TaskRun[]>("list_tasks", { projectId }),
+  cancelTask: (runId: string) => __TAURI_INVOKE<TaskRun>("cancel_task", { runId }),
+  getTaskLog: (runId: string) => __TAURI_INVOKE<string>("get_task_log", { runId }),
+  runnerStatus: () => __TAURI_INVOKE<RunnerStatus>("runner_status"),
+  getToolStatus: () => __TAURI_INVOKE<ToolInfoDto[]>("get_tool_status"),
+  setToolEnabled: (key: string, enabled: boolean) =>
+    __TAURI_INVOKE<null>("set_tool_enabled", { key, enabled }),
+  setAllToolsEnabled: (enabled: boolean) =>
+    __TAURI_INVOKE<null>("set_all_tools_enabled", { enabled }),
+  getToolOrderCmd: () => __TAURI_INVOKE<string[]>("get_tool_order_cmd"),
+  setToolOrderCmd: (order: string[]) => __TAURI_INVOKE<null>("set_tool_order_cmd", { order }),
+  setCustomToolPath: (key: string, path: string) =>
+    __TAURI_INVOKE<null>("set_custom_tool_path", { key, path }),
+  resetCustomToolPath: (key: string) => __TAURI_INVOKE<null>("reset_custom_tool_path", { key }),
+  setCustomToolProjectPath: (key: string, projectRelativeSkillsDir: string | null) =>
+    __TAURI_INVOKE<null>("set_custom_tool_project_path", { key, projectRelativeSkillsDir }),
+  resetCustomToolProjectPath: (key: string) =>
+    __TAURI_INVOKE<null>("reset_custom_tool_project_path", { key }),
+  addCustomTool: (
+    key: string,
+    displayName: string,
+    skillsDir: string,
+    projectRelativeSkillsDir: string | null,
+  ) =>
+    __TAURI_INVOKE<null>("add_custom_tool", {
+      key,
+      displayName,
+      skillsDir,
+      projectRelativeSkillsDir,
+    }),
+  removeCustomTool: (key: string) => __TAURI_INVOKE<null>("remove_custom_tool", { key }),
+  getManagedSkills: () => __TAURI_INVOKE<ManagedSkillDto[]>("get_managed_skills"),
+  getSkillsForPreset: (presetId: string) =>
+    __TAURI_INVOKE<ManagedSkillDto[]>("get_skills_for_preset", { presetId }),
+  getSkillDocument: (skillId: string) =>
+    __TAURI_INVOKE<SkillDocumentDto>("get_skill_document", { skillId }),
+  getSourceSkillDocument: (skillId: string) =>
+    __TAURI_INVOKE<SourceSkillDocumentDto>("get_source_skill_document", { skillId }),
+  getSkillSourceDiff: (skillId: string) =>
+    __TAURI_INVOKE<SkillSourceDiffDto>("get_skill_source_diff", { skillId }),
+  deleteManagedSkill: (skillId: string) =>
+    __TAURI_INVOKE<null>("delete_managed_skill", { skillId }),
+  deleteManagedSkills: (skillIds: string[]) =>
+    __TAURI_INVOKE<BatchDeleteSkillsResult>("delete_managed_skills", { skillIds }),
+  installLocal: (sourcePath: string, name: string | null) =>
+    __TAURI_INVOKE<null>("install_local", { sourcePath, name }),
+  installGit: (repoUrl: string, name: string | null) =>
+    __TAURI_INVOKE<null>("install_git", { repoUrl, name }),
+  /**
+   *  Clone a git repo and return a preview list of skills found, without installing.
+   *  The caller must follow up with `confirm_git_install` using the returned `temp_dir`.
+   */
+  previewGitInstall: (repoUrl: string) =>
+    __TAURI_INVOKE<GitPreviewResult>("preview_git_install", { repoUrl }),
+  /**  Install selected skills from a previously cloned temp directory. */
+  confirmGitInstall: (repoUrl: string, tempDir: string, items: SkillInstallItem[]) =>
+    __TAURI_INVOKE<null>("confirm_git_install", { repoUrl, tempDir, items }),
+  /**  Clean up temp directory from a cancelled preview session. */
+  cancelGitPreview: (tempDir: string) => __TAURI_INVOKE<null>("cancel_git_preview", { tempDir }),
+  installFromSkillssh: (source: string, skillId: string) =>
+    __TAURI_INVOKE<null>("install_from_skillssh", { source, skillId }),
+  checkSkillUpdate: (skillId: string, force: boolean | null) =>
+    __TAURI_INVOKE<ManagedSkillDto>("check_skill_update", { skillId, force }),
+  checkAllSkillUpdates: (force: boolean | null) =>
+    __TAURI_INVOKE<null>("check_all_skill_updates", { force }),
+  /**
+   *  Update one skill.
+   *
+   *  `approved_removals` carries back `removal_approval` from a call that
+   *  declined. The first call from the UI passes `None`; if it comes back with
+   *  `pending_removals`, the user is shown exactly what would disappear and only
+   *  then is it called again with that token.
+   */
+  updateSkill: (skillId: string, approvedRemovals: string | null) =>
+    __TAURI_INVOKE<UpdateSkillResult>("update_skill", { skillId, approvedRemovals }),
+  batchUpdateSkills: (skillIds: string[]) =>
+    __TAURI_INVOKE<BatchUpdateSkillsResult>("batch_update_skills", { skillIds }),
+  reimportLocalSkill: (skillId: string, approvedRemovals: string | null) =>
+    __TAURI_INVOKE<ReimportSkillResult>("reimport_local_skill", { skillId, approvedRemovals }),
+  /**
+   *  Re-point a local skill at a different source directory.
+   *
+   *  `approved_removals` behaves as on the update paths: choosing a new source is
+   *  not a statement about discarding what the library has accumulated, so a
+   *  replacement that would take files away stops and reports them first.
+   */
+  relinkLocalSkillSource: (skillId: string, sourcePath: string, approvedRemovals: string | null) =>
+    __TAURI_INVOKE<ReimportSkillResult>("relink_local_skill_source", {
+      skillId,
+      sourcePath,
+      approvedRemovals,
+    }),
+  detachLocalSkillSource: (skillId: string) =>
+    __TAURI_INVOKE<ManagedSkillDto>("detach_local_skill_source", { skillId }),
+  getAllTags: () => __TAURI_INVOKE<string[]>("get_all_tags"),
+  setSkillTags: (skillId: string, tags: string[]) =>
+    __TAURI_INVOKE<null>("set_skill_tags", { skillId, tags }),
+  /**
+   *  Globally rename a tag across all skills (used by the tag filter bar). If the
+   *  new name already exists, the tags are merged.
+   */
+  renameTag: (oldName: string, newName: string) =>
+    __TAURI_INVOKE<null>("rename_tag", { oldName, newName }),
+  /**  Globally delete a tag from all skills (used by the tag filter bar). */
+  deleteTag: (name: string) => __TAURI_INVOKE<null>("delete_tag", { name }),
+  cancelInstall: (key: string) => __TAURI_INVOKE<boolean>("cancel_install", { key }),
+  batchImportFolder: (folderPath: string) =>
+    __TAURI_INVOKE<BatchImportResult>("batch_import_folder", { folderPath }),
+  syncSkillToTool: (skillId: string, tool: string) =>
+    __TAURI_INVOKE<null>("sync_skill_to_tool", { skillId, tool }),
+  unsyncSkillFromTool: (skillId: string, tool: string) =>
+    __TAURI_INVOKE<null>("unsync_skill_from_tool", { skillId, tool }),
+  getSkillToolToggles: (skillId: string, presetId: string) =>
+    __TAURI_INVOKE<SkillToolToggleDto[]>("get_skill_tool_toggles", { skillId, presetId }),
+  setSkillToolToggle: (skillId: string, presetId: string, tool: string, enabled: boolean) =>
+    __TAURI_INVOKE<null>("set_skill_tool_toggle", { skillId, presetId, tool, enabled }),
+  scanLocalSkills: () => __TAURI_INVOKE<ScanResultDto>("scan_local_skills"),
+  importExistingSkill: (sourcePath: string, name: string | null) =>
+    __TAURI_INVOKE<null>("import_existing_skill", { sourcePath, name }),
+  importAllDiscovered: () => __TAURI_INVOKE<null>("import_all_discovered"),
+  fetchLeaderboard: (board: string) =>
+    __TAURI_INVOKE<SkillsShSkill[]>("fetch_leaderboard", { board }),
+  searchSkillssh: (query: string, limit: number | null) =>
+    __TAURI_INVOKE<SkillsShSkill[]>("search_skillssh", { query, limit }),
+  getSettings: (key: string) => __TAURI_INVOKE<string | null>("get_settings", { key }),
+  setSettings: (key: string, value: string) => __TAURI_INVOKE<null>("set_settings", { key, value }),
+  getCentralRepoPath: () => __TAURI_INVOKE<string>("get_central_repo_path"),
+  getCentralRepoPathOverride: () => __TAURI_INVOKE<string | null>("get_central_repo_path_override"),
+  /**
+   *  Warning codes recorded while resolving the central repository at startup
+   *  (e.g. unreadable config, invalid configured path). Non-empty means the app
+   *  fell back to the default location and the user should be told (#228).
+   */
+  getCentralRepoWarnings: () => __TAURI_INVOKE<string[]>("get_central_repo_warnings"),
+  setCentralRepoPath: (path: string | null) =>
+    __TAURI_INVOKE<string>("set_central_repo_path", { path }),
+  openCentralRepoFolder: () => __TAURI_INVOKE<null>("open_central_repo_folder"),
+  checkAppUpdate: () => __TAURI_INVOKE<AppUpdateInfo>("check_app_update"),
+  /**
+   *  Report why an in-app update cannot be installed from where the app is
+   *  running right now, or `None` to let the updater proceed.
+   *
+   *  Deliberately narrow. A general "is the bundle's parent writable" test would
+   *  be wrong: a `/Applications` copy owned by a different admin account is not
+   *  writable by this process either, and there the updater's own privileged
+   *  prompt succeeds. Only the two states below are beyond its reach, because it
+   *  replaces the `.app` in place.
+   */
+  updateInstallBlocker: () => __TAURI_INVOKE<string | null>("update_install_blocker"),
+  getDiagnosticInfo: () => __TAURI_INVOKE<DiagnosticInfo>("get_diagnostic_info"),
+  getRecentLogExcerpt: () => __TAURI_INVOKE<LogExcerpt>("get_recent_log_excerpt"),
+  exportLogsZip: () => __TAURI_INVOKE<LogExportResult>("export_logs_zip"),
+  /**
+   *  Diagnostic-only: let the frontend write a named startup event with elapsed
+   *  milliseconds into the backend log file. Used to correlate WebView2 boot,
+   *  first paint, and refreshAppData timing with Rust-side startup logs when
+   *  debugging slow launches (see issue #153).
+   *
+   *  `label` is sanitized (control chars stripped, capped at 64 chars) so a
+   *  buggy or malicious caller cannot inject newlines that would corrupt the
+   *  log file layout.
+   */
+  logStartupEvent: (label: string, elapsedMs: number) =>
+    __TAURI_INVOKE<void>("log_startup_event", { label, elapsedMs }),
+  checkLastPanic: () =>
+    __TAURI_INVOKE<{
+      timestamp: string;
+      message: string;
+    } | null>("check_last_panic"),
+  clearLastPanic: () => __TAURI_INVOKE<null>("clear_last_panic"),
+  appExit: () => __TAURI_INVOKE<void>("app_exit"),
+  /**
+   *  Relaunch the app so a freshly installed update takes effect. Only ever
+   *  invoked from an explicit user confirmation — the updater never restarts on
+   *  its own.
+   *
+   *  Scheduled onto the main thread for the same reason `app_exit` is: the
+   *  teardown destroys the main window before the process goes away.
+   */
+  restartApp: () => __TAURI_INVOKE<void>("restart_app"),
+  hideToTray: () => __TAURI_INVOKE<null>("hide_to_tray"),
+  gitBackupFetch: () => __TAURI_INVOKE<null>("git_backup_fetch"),
+  gitBackupStatus: () => __TAURI_INVOKE<GitBackupStatus>("git_backup_status"),
+  gitBackupInit: () => __TAURI_INVOKE<null>("git_backup_init"),
+  gitBackupSetRemote: (url: string) => __TAURI_INVOKE<string>("git_backup_set_remote", { url }),
+  /**
+   *  GitHub guided connect (backup redesign Phase 2, PAT mode): validate the
+   *  token, find or create the private backup repository, store the token in
+   *  the OS keychain, and save the credential-free URL. The keychain is
+   *  mandatory here — guided mode never falls back to token-in-URL.
+   */
+  githubBackupConnect: (token: string, repoName: string) =>
+    __TAURI_INVOKE<GithubBackupConnectResult>("github_backup_connect", { token, repoName }),
+  githubDeviceFlowStart: () => __TAURI_INVOKE<DeviceFlowStart>("github_device_flow_start"),
+  /**
+   *  One device-flow poll. On authorization the OAuth token stays in the
+   *  backend: it goes straight through `connect_with_token` into the OS
+   *  keychain and is never returned to the webview.
+   */
+  githubDeviceFlowPoll: (deviceCode: string, repoName: string) =>
+    __TAURI_INVOKE<GithubDevicePollResult>("github_device_flow_poll", { deviceCode, repoName }),
+  /**
+   *  Sanitize a remote URL before it is persisted anywhere: embedded
+   *  credentials go to the OS keychain, the returned URL is what the frontend
+   *  must save and display.
+   */
+  gitBackupSanitizeRemoteUrl: (url: string) =>
+    __TAURI_INVOKE<string>("git_backup_sanitize_remote_url", { url }),
+  /**
+   *  Migrate credentials embedded in the remote URL (`user:token@host`) into
+   *  the OS keychain (§3.7). Rewrites `.git/config` and the saved setting to
+   *  the credential-free URL, verifies authentication still works, and rolls
+   *  everything back on any failure — no half-migrated state. Returns the
+   *  sanitized URL when a migration happened, `None` when there was nothing to
+   *  migrate.
+   */
+  gitBackupMigrateCredentials: () =>
+    __TAURI_INVOKE<string | null>("git_backup_migrate_credentials"),
+  gitBackupSizeReport: () => __TAURI_INVOKE<BackupSizeReport>("git_backup_size_report"),
+  /**
+   *  Disconnect the local machine from the backup remote (#260, §3.1 断开本机):
+   *  remove the git origin, clear the saved remote URL setting, and delete the
+   *  machine's stored access credential. Remote repository data and the local
+   *  repo are kept; other devices are unaffected.
+   */
+  gitBackupRemoveRemote: () => __TAURI_INVOKE<null>("git_backup_remove_remote"),
+  gitBackupCommit: (message: string) => __TAURI_INVOKE<null>("git_backup_commit", { message }),
+  gitBackupPush: () => __TAURI_INVOKE<null>("git_backup_push"),
+  gitBackupPull: () => __TAURI_INVOKE<MergeSummary>("git_backup_pull"),
+  gitBackupClone: (url: string) => __TAURI_INVOKE<null>("git_backup_clone", { url }),
+  /**
+   *  Recovery: discard the local `.git` and re-clone from the configured remote.
+   *  Existing skill files are preserved via the same backup-then-merge flow
+   *  used by the regular clone path.
+   */
+  gitBackupReclone: (url: string) => __TAURI_INVOKE<null>("git_backup_reclone", { url }),
+  gitBackupCreateSnapshot: () => __TAURI_INVOKE<string>("git_backup_create_snapshot"),
+  gitBackupListVersions: (limit: number | null) =>
+    __TAURI_INVOKE<GitBackupVersion[]>("git_backup_list_versions", { limit }),
+  /**
+   *  Restore a snapshot. Returns the safety-point tag that captured the
+   *  pre-restore state, so the UI can tell the user the restore is undoable.
+   */
+  gitBackupRestoreVersion: (tag: string) =>
+    __TAURI_INVOKE<string>("git_backup_restore_version", { tag }),
+  /**
+   *  Effective device name (§4.3 设备命名): the saved setting, or a persisted
+   *  hostname-derived default.
+   */
+  backupDeviceName: () => __TAURI_INVOKE<string>("backup_device_name"),
+  /**
+   *  Rename this device. Only affects backups made from now on — history keeps
+   *  the author it was written with. Returns the sanitized name actually saved.
+   */
+  backupSetDeviceName: (name: string) => __TAURI_INVOKE<string>("backup_set_device_name", { name }),
+  /**
+   *  Pending "needs attention" conflicts (merge-engine design §4) for the
+   *  Backup page. Reads the rebuildable SQLite projection.
+   */
+  gitBackupPendingConflicts: () =>
+    __TAURI_INVOKE<PendingConflictRow[]>("git_backup_pending_conflicts"),
+  /**
+   *  Resolve one pending conflict (§4 解决动作): action is one of
+   *  "keep_local" | "use_remote" | "keep_both". Returns the safety snapshot
+   *  tag taken before the resolution.
+   */
+  gitBackupResolveConflict: (skillId: string, action: string) =>
+    __TAURI_INVOKE<string>("git_backup_resolve_conflict", { skillId, action }),
+  /**
+   *  Full backup sync as one transaction under a single repo lock (merge-engine
+   *  design §9 并发收敛): commit → fetch/merge → snapshot → push, retrying the
+   *  fetch/merge/push tail when another device pushes concurrently. Replaces
+   *  the frontend-orchestrated commit/pull/push sequence, whose lock gaps let a
+   *  benign race surface as a non-fast-forward "needs recovery" error.
+   */
+  gitBackupSync: (message: string) => __TAURI_INVOKE<SyncOutcome>("git_backup_sync", { message }),
+  getProjects: () => __TAURI_INVOKE<ProjectDto[]>("get_projects"),
+  addProject: (path: string) => __TAURI_INVOKE<ProjectDto>("add_project", { path }),
+  addLinkedWorkspace: (name: string, path: string, disabledPath: string | null) =>
+    __TAURI_INVOKE<ProjectDto>("add_linked_workspace", { name, path, disabledPath }),
+  removeProject: (id: string) => __TAURI_INVOKE<null>("remove_project", { id }),
+  scanProjects: (root: string) => __TAURI_INVOKE<string[]>("scan_projects", { root }),
+  getProjectAgentTargets: (projectId: string) =>
+    __TAURI_INVOKE<ProjectAgentTargetDto[]>("get_project_agent_targets", { projectId }),
+  getProjectSkills: (projectId: string) =>
+    __TAURI_INVOKE<ProjectSkillInfo_Serialize[]>("get_project_skills", { projectId }),
+  getProjectSkillDocument: (projectId: string, skillRelativePath: string, agent: string) =>
+    __TAURI_INVOKE<ProjectSkillDocumentDto>("get_project_skill_document", {
+      projectId,
+      skillRelativePath,
+      agent,
+    }),
+  importProjectSkillToCenter: (projectId: string, skillRelativePath: string, agent: string) =>
+    __TAURI_INVOKE<null>("import_project_skill_to_center", { projectId, skillRelativePath, agent }),
+  exportSkillToProject: (skillId: string, projectId: string, agents: string[] | null) =>
+    __TAURI_INVOKE<null>("export_skill_to_project", { skillId, projectId, agents }),
+  updateProjectSkillToCenter: (projectId: string, skillRelativePath: string, agent: string) =>
+    __TAURI_INVOKE<null>("update_project_skill_to_center", { projectId, skillRelativePath, agent }),
+  updateProjectSkillFromCenter: (projectId: string, skillRelativePath: string, agent: string) =>
+    __TAURI_INVOKE<null>("update_project_skill_from_center", {
+      projectId,
+      skillRelativePath,
+      agent,
+    }),
+  toggleProjectSkill: (
+    projectId: string,
+    skillRelativePath: string,
+    agent: string,
+    enabled: boolean,
+  ) =>
+    __TAURI_INVOKE<null>("toggle_project_skill", { projectId, skillRelativePath, agent, enabled }),
+  deleteProjectSkill: (projectId: string, skillRelativePath: string, agent: string) =>
+    __TAURI_INVOKE<null>("delete_project_skill", { projectId, skillRelativePath, agent }),
+  slugifySkillNames: (names: string[]) =>
+    __TAURI_INVOKE<string[]>("slugify_skill_names", { names }),
+  getGlobalLocalSkills: (agent: string) =>
+    __TAURI_INVOKE<ProjectSkillInfo_Serialize[]>("get_global_local_skills", { agent }),
+  getGlobalLocalSkillDocument: (agent: string, skillRelativePath: string) =>
+    __TAURI_INVOKE<ProjectSkillDocumentDto>("get_global_local_skill_document", {
+      agent,
+      skillRelativePath,
+    }),
+  importGlobalLocalSkillToCenter: (agent: string, skillRelativePath: string) =>
+    __TAURI_INVOKE<null>("import_global_local_skill_to_center", { agent, skillRelativePath }),
+  updateGlobalLocalSkillFromCenter: (agent: string, skillRelativePath: string) =>
+    __TAURI_INVOKE<null>("update_global_local_skill_from_center", { agent, skillRelativePath }),
+  deleteGlobalLocalSkill: (agent: string, skillRelativePath: string) =>
+    __TAURI_INVOKE<null>("delete_global_local_skill", { agent, skillRelativePath }),
+  getPresets: () => __TAURI_INVOKE<PresetDto[]>("get_presets"),
+  getActivePreset: () =>
+    __TAURI_INVOKE<{
+      id: string;
+      name: string;
+      description: string | null;
+      icon: string | null;
+      sort_order: number;
+      skill_count: number;
+      created_at: number;
+      updated_at: number;
+    } | null>("get_active_preset"),
+  createPreset: (name: string, description: string | null, icon: string | null) =>
+    __TAURI_INVOKE<PresetDto>("create_preset", { name, description, icon }),
+  updatePreset: (id: string, name: string, description: string | null, icon: string | null) =>
+    __TAURI_INVOKE<null>("update_preset", { id, name, description, icon }),
+  deletePreset: (id: string) => __TAURI_INVOKE<null>("delete_preset", { id }),
+  /**
+   *  Legacy command kept for the CLI and backward compatibility. New callers
+   *  should use [`apply_preset_to_default`] (or [`apply_preset_to_coding_agents`]
+   *  for the workspace-scoped variant the tray now uses).
+   */
+  switchPreset: (id: string) => __TAURI_INVOKE<null>("switch_preset", { id }),
+  /**
+   *  Apply a preset to the default targets (all enabled agent globals).
+   *
+   *  This is the explicit user-initiated action introduced in v1.16. It performs
+   *  the same disk-writing work as the legacy [`switch_preset`] command but is
+   *  only invoked when the user clicks "Apply to Default" — sidebar/command-palette
+   *  preset clicks no longer call this.
+   */
+  applyPresetToDefault: (id: string) => __TAURI_INVOKE<null>("apply_preset_to_default", { id }),
+  /**
+   *  Apply (or remove) every skill in `preset_id` against every enabled coding
+   *  agent (`ToolCategory::Coding`). Mirrors the PresetBar behavior in the
+   *  global workspace view but covers all enabled coding agents at once.
+   *
+   *  Lobster agents are intentionally excluded — they have their own workspace
+   *  and their own preset bar.
+   */
+  applyPresetToCodingAgents: (presetId: string, mode: PresetApplyMode) =>
+    __TAURI_INVOKE<null>("apply_preset_to_coding_agents", { presetId, mode }),
+  addSkillToPreset: (skillId: string, presetId: string) =>
+    __TAURI_INVOKE<null>("add_skill_to_preset", { skillId, presetId }),
+  removeSkillFromPreset: (skillId: string, presetId: string) =>
+    __TAURI_INVOKE<null>("remove_skill_from_preset", { skillId, presetId }),
+  reorderPresets: (ids: string[]) => __TAURI_INVOKE<null>("reorder_presets", { ids }),
+  reorderProjects: (ids: string[]) => __TAURI_INVOKE<null>("reorder_projects", { ids }),
+  getPresetSkillOrder: (presetId: string) =>
+    __TAURI_INVOKE<string[]>("get_preset_skill_order", { presetId }),
+  reorderPresetSkills: (presetId: string, skillIds: string[]) =>
+    __TAURI_INVOKE<null>("reorder_preset_skills", { presetId, skillIds }),
 };
 
 /* Types */
 export type AnswerHit = {
-	skill_id: string,
-	name: string,
-	path: string,
-	line_start: number,
-	line_end: number,
-	text: string,
-	score: number | null,
+  skill_id: string;
+  name: string;
+  path: string;
+  line_start: number;
+  line_end: number;
+  text: string;
+  score: number | null;
 };
 
 /**
  *  Structured error type for Tauri commands.
- * 
+ *
  *  Serialized as `{"kind": "Database", "message": "..."}` so the frontend
  *  can branch on `kind` while still showing a human-readable `message`.
- * 
+ *
  *  `details` carries machine-readable specifics for the few kinds where the
  *  caller has to do more than print the message. It is omitted from the wire
  *  format when absent, so every existing consumer is unaffected.
@@ -325,126 +481,126 @@ export type AppError = AppError_Serialize | AppError_Deserialize;
 
 /**
  *  Structured error type for Tauri commands.
- * 
+ *
  *  Serialized as `{"kind": "Database", "message": "..."}` so the frontend
  *  can branch on `kind` while still showing a human-readable `message`.
- * 
+ *
  *  `details` carries machine-readable specifics for the few kinds where the
  *  caller has to do more than print the message. It is omitted from the wire
  *  format when absent, so every existing consumer is unaffected.
  */
 export type AppError_Deserialize = {
-	kind: ErrorKind,
-	message: string,
-	details: ErrorDetails | null,
+  kind: ErrorKind;
+  message: string;
+  details: ErrorDetails | null;
 };
 
 /**
  *  Structured error type for Tauri commands.
- * 
+ *
  *  Serialized as `{"kind": "Database", "message": "..."}` so the frontend
  *  can branch on `kind` while still showing a human-readable `message`.
- * 
+ *
  *  `details` carries machine-readable specifics for the few kinds where the
  *  caller has to do more than print the message. It is omitted from the wire
  *  format when absent, so every existing consumer is unaffected.
  */
 export type AppError_Serialize = {
-	kind: ErrorKind,
-	message: string,
-	details?: ErrorDetails | null,
+  kind: ErrorKind;
+  message: string;
+  details?: ErrorDetails | null;
 };
 
 export type AppUpdateInfo = {
-	has_update: boolean,
-	current_version: string,
-	latest_version: string,
-	release_url: string,
+  has_update: boolean;
+  current_version: string;
+  latest_version: string;
+  release_url: string;
 };
 
 export type BackupSizeReport = {
-	/**  Total size of backed-up content (working tree, `.git` excluded). */
-	total_bytes: number,
-	/**  Skill directories above `skill_limit_bytes`. */
-	oversized: OversizedSkill[],
-	skill_limit_bytes: number,
-	repo_warn_bytes: number,
+  /**  Total size of backed-up content (working tree, `.git` excluded). */
+  total_bytes: number;
+  /**  Skill directories above `skill_limit_bytes`. */
+  oversized: OversizedSkill[];
+  skill_limit_bytes: number;
+  repo_warn_bytes: number;
 };
 
 export type BatchDeleteSkillsResult = {
-	deleted: number,
-	failed: string[],
+  deleted: number;
+  failed: string[];
 };
 
 export type BatchImportResult = {
-	imported: number,
-	skipped: number,
-	errors: string[],
+  imported: number;
+  skipped: number;
+  errors: string[];
 };
 
 export type BatchUpdateSkillsResult = {
-	refreshed: number,
-	unchanged: number,
-	failed: string[],
-	/**
-	 *  Skills left alone because updating would have removed files the new
-	 *  version does not have. Named so the user can go and look, rather than
-	 *  wondering why the badge did not clear.
-	 */
-	held_back: string[],
+  refreshed: number;
+  unchanged: number;
+  failed: string[];
+  /**
+   *  Skills left alone because updating would have removed files the new
+   *  version does not have. Named so the user can go and look, rather than
+   *  wondering why the badge did not clear.
+   */
+  held_back: string[];
 };
 
 export type Binding = {
-	skill_id: string,
-	agent: string,
-	target_path: string,
-	mode: string,
-	status: string,
+  skill_id: string;
+  agent: string;
+  target_path: string;
+  mode: string;
+  status: string;
 };
 
 export type CreateResult = {
-	project_id: string,
-	results: DeployResult[],
+  project_id: string;
+  results: DeployResult[];
 };
 
 export type DeployResult = {
-	skill_id: string,
-	ok: boolean,
-	error: string | null,
+  skill_id: string;
+  ok: boolean;
+  error: string | null;
 };
 
 export type DeviceFlowStart = {
-	device_code: string,
-	/**  The 8-character code the user types at `verification_uri`. */
-	user_code: string,
-	verification_uri: string,
-	/**  Seconds until the codes expire (GitHub: 900). */
-	expires_in: number,
-	/**  Minimum seconds between polls (GitHub: 5). */
-	interval: number,
+  device_code: string;
+  /**  The 8-character code the user types at `verification_uri`. */
+  user_code: string;
+  verification_uri: string;
+  /**  Seconds until the codes expire (GitHub: 900). */
+  expires_in: number;
+  /**  Minimum seconds between polls (GitHub: 5). */
+  interval: number;
 };
 
 export type DiagnosticInfo = {
-	app_version: string,
-	os: string,
-	os_version: string,
-	arch: string,
-	central_repo_path: string,
-	central_repo_path_overridden: boolean,
+  app_version: string;
+  os: string;
+  os_version: string;
+  arch: string;
+  central_repo_path: string;
+  central_repo_path_overridden: boolean;
 };
 
 export type DiscoveredGroup = {
-	name: string,
-	fingerprint: string | null,
-	locations: DiscoveredLocation[],
-	imported: boolean,
-	found_at: number,
+  name: string;
+  fingerprint: string | null;
+  locations: DiscoveredLocation[];
+  imported: boolean;
+  found_at: number;
 };
 
 export type DiscoveredLocation = {
-	id: string,
-	tool: string,
-	found_path: string,
+  id: string;
+  tool: string;
+  found_path: string;
 };
 
 /**
@@ -455,135 +611,143 @@ export type DiscoveredLocation = {
  *  every error.
  */
 export type ErrorDetails = {
-	conflicts: TargetConflictDetail[],
+  conflicts: TargetConflictDetail[];
 };
 
-export type ErrorKind = "database" | "io" | "network" | "git" | "not_found" | "invalid_input" | "cancelled" | "internal" | 
-/**
- *  A write was refused because the target is not ours to replace. Always
- *  carries `ErrorDetails::TargetConflict`.
- */
-"target_conflict";
+export type ErrorKind =
+  | "database"
+  | "io"
+  | "network"
+  | "git"
+  | "not_found"
+  | "invalid_input"
+  | "cancelled"
+  | "internal"
+  /**
+   *  A write was refused because the target is not ours to replace. Always
+   *  carries `ErrorDetails::TargetConflict`.
+   */
+  | "target_conflict";
 
 export type GitBackupStatus = {
-	/**  Whether the skills directory is a git repository */
-	is_repo: boolean,
-	/**  The configured remote URL (if any) */
-	remote_url: string | null,
-	/**  Current branch name */
-	branch: string | null,
-	/**  Whether there are uncommitted changes */
-	has_changes: boolean,
-	/**
-	 *  Number of distinct top-level skill directories with uncommitted changes.
-	 *  Drives the "N skills have unbacked changes" status copy; 0 when only
-	 *  metadata or root files changed.
-	 */
-	changed_skill_count: number,
-	/**  Number of commits ahead of remote */
-	ahead: number,
-	/**  Number of commits behind remote */
-	behind: number,
-	/**  Last commit message */
-	last_commit: string | null,
-	/**  Last commit timestamp (ISO 8601) */
-	last_commit_time: string | null,
-	/**  Snapshot tag that points at current HEAD (if any) */
-	current_snapshot_tag: string | null,
-	/**  Snapshot tag restored most recently (when HEAD is a restore commit) */
-	restored_from_tag: string | null,
-	/**
-	 *  Health of the relationship to the configured remote.
-	 *  One of: "healthy", "no_remote", "no_upstream", "unrelated_histories", "detached".
-	 */
-	upstream_health: string,
+  /**  Whether the skills directory is a git repository */
+  is_repo: boolean;
+  /**  The configured remote URL (if any) */
+  remote_url: string | null;
+  /**  Current branch name */
+  branch: string | null;
+  /**  Whether there are uncommitted changes */
+  has_changes: boolean;
+  /**
+   *  Number of distinct top-level skill directories with uncommitted changes.
+   *  Drives the "N skills have unbacked changes" status copy; 0 when only
+   *  metadata or root files changed.
+   */
+  changed_skill_count: number;
+  /**  Number of commits ahead of remote */
+  ahead: number;
+  /**  Number of commits behind remote */
+  behind: number;
+  /**  Last commit message */
+  last_commit: string | null;
+  /**  Last commit timestamp (ISO 8601) */
+  last_commit_time: string | null;
+  /**  Snapshot tag that points at current HEAD (if any) */
+  current_snapshot_tag: string | null;
+  /**  Snapshot tag restored most recently (when HEAD is a restore commit) */
+  restored_from_tag: string | null;
+  /**
+   *  Health of the relationship to the configured remote.
+   *  One of: "healthy", "no_remote", "no_upstream", "unrelated_histories", "detached".
+   */
+  upstream_health: string;
 };
 
 export type GitBackupVersion = {
-	/**  Snapshot tag name (e.g. sm-v-20260318-153012-abc1234) */
-	tag: string,
-	/**  Commit SHA this snapshot points to (short) */
-	commit: string,
-	/**  Commit message at this snapshot */
-	message: string,
-	/**  Commit timestamp (ISO 8601) */
-	committed_at: string,
-	/**
-	 *  Commit author name — the device name of the machine that made this
-	 *  backup (§4.3). Empty for commits from before device naming existed.
-	 */
-	author: string,
+  /**  Snapshot tag name (e.g. sm-v-20260318-153012-abc1234) */
+  tag: string;
+  /**  Commit SHA this snapshot points to (short) */
+  commit: string;
+  /**  Commit message at this snapshot */
+  message: string;
+  /**  Commit timestamp (ISO 8601) */
+  committed_at: string;
+  /**
+   *  Commit author name — the device name of the machine that made this
+   *  backup (§4.3). Empty for commits from before device naming existed.
+   */
+  author: string;
 };
 
 export type GitPreviewResult = {
-	temp_dir: string,
-	skills: GitSkillPreview[],
+  temp_dir: string;
+  skills: GitSkillPreview[];
 };
 
 export type GitSkillPreview = {
-	/**  Path relative to the resolved scan root, using `/` separators. Stable key. */
-	rel_path: string,
-	name: string,
-	description: string | null,
+  /**  Path relative to the resolved scan root, using `/` separators. Stable key. */
+  rel_path: string;
+  name: string;
+  description: string | null;
 };
 
 export type GithubBackupConnectResult = {
-	/**  Credential-free HTTPS URL of the backup repository. */
-	url: string,
-	login: string,
-	repo_created: boolean,
-	/**
-	 *  False when a pre-existing PUBLIC repository was connected — the UI
-	 *  warns; app-created repositories are always private.
-	 */
-	repo_private: boolean,
-	/**
-	 *  True when the remote already has commits — the frontend restores
-	 *  (clones) instead of initializing a fresh backup.
-	 */
-	remote_has_content: boolean,
+  /**  Credential-free HTTPS URL of the backup repository. */
+  url: string;
+  login: string;
+  repo_created: boolean;
+  /**
+   *  False when a pre-existing PUBLIC repository was connected — the UI
+   *  warns; app-created repositories are always private.
+   */
+  repo_private: boolean;
+  /**
+   *  True when the remote already has commits — the frontend restores
+   *  (clones) instead of initializing a fresh backup.
+   */
+  remote_has_content: boolean;
 };
 
 export type GithubDevicePollResult = {
-	/**  "pending" | "slow_down" | "connected" */
-	status: string,
-	result: GithubBackupConnectResult | null,
+  /**  "pending" | "slow_down" | "connected" */
+  status: string;
+  result: GithubBackupConnectResult | null;
 };
 
 export type LogExcerpt = {
-	log_path: string,
-	excerpt: string,
-	line_count: number,
-	has_warnings: boolean,
+  log_path: string;
+  excerpt: string;
+  line_count: number;
+  has_warnings: boolean;
 };
 
 export type LogExportResult = {
-	zip_path: string,
-	file_count: number,
+  zip_path: string;
+  file_count: number;
 };
 
 export type ManagedSkillDto = {
-	id: string,
-	name: string,
-	description: string | null,
-	source_type: string,
-	source_ref: string | null,
-	source_ref_resolved: string | null,
-	source_subpath: string | null,
-	source_branch: string | null,
-	source_revision: string | null,
-	remote_revision: string | null,
-	update_status: string,
-	last_checked_at: number | null,
-	last_check_error: string | null,
-	central_path: string,
-	enabled: boolean,
-	created_at: number,
-	updated_at: number,
-	status: string,
-	targets: TargetDto[],
-	preset_ids: string[],
-	tags: string[],
+  id: string;
+  name: string;
+  description: string | null;
+  source_type: string;
+  source_ref: string | null;
+  source_ref_resolved: string | null;
+  source_subpath: string | null;
+  source_branch: string | null;
+  source_revision: string | null;
+  remote_revision: string | null;
+  update_status: string;
+  last_checked_at: number | null;
+  last_check_error: string | null;
+  central_path: string;
+  enabled: boolean;
+  created_at: number;
+  updated_at: number;
+  status: string;
+  targets: TargetDto[];
+  preset_ids: string[];
+  tags: string[];
 };
 
 /**
@@ -591,216 +755,216 @@ export type ManagedSkillDto = {
  *  frontend by the pull command; commit messages only carry the count line.
  */
 export type MergeSummary = {
-	/**  "object" or "system" (legacy fallback keeps the old line-merge path). */
-	engine: string,
-	up_to_date: boolean,
-	fast_forward: boolean,
-	updated: UpdatedSkill[],
-	/**  Skill ids whose local version was kept over a conflicting remote one. */
-	kept_local: string[],
-	/**  Skill ids newly declared "needs attention" by this merge. */
-	new_conflicts: string[],
-	/**  Total pendings (old + new) after the merge. */
-	pending_total: number,
-	/**  Set when an old-client write was tolerated with a warning (§6). */
-	old_client_warning: string | null,
-	legacy_fallback: boolean,
+  /**  "object" or "system" (legacy fallback keeps the old line-merge path). */
+  engine: string;
+  up_to_date: boolean;
+  fast_forward: boolean;
+  updated: UpdatedSkill[];
+  /**  Skill ids whose local version was kept over a conflicting remote one. */
+  kept_local: string[];
+  /**  Skill ids newly declared "needs attention" by this merge. */
+  new_conflicts: string[];
+  /**  Total pendings (old + new) after the merge. */
+  pending_total: number;
+  /**  Set when an old-client write was tolerated with a warning (§6). */
+  old_client_warning: string | null;
+  legacy_fallback: boolean;
 };
 
 export type OversizedSkill = {
-	name: string,
-	bytes: number,
-	/**
-	 *  True when the skill is excluded from backup (§3.6: oversized and not
-	 *  yet tracked by git). False = already backed up, warning only.
-	 */
-	excluded: boolean,
+  name: string;
+  bytes: number;
+  /**
+   *  True when the skill is excluded from backup (§3.6: oversized and not
+   *  yet tracked by git). False = already backed up, warning only.
+   */
+  excluded: boolean;
 };
 
 export type PanicInfo = {
-	timestamp: string,
-	message: string,
+  timestamp: string;
+  message: string;
 };
 
 /**  One row of the pending-conflict projection (merge-engine design §4). */
 export type PendingConflictRow = {
-	skill_id: string,
-	theirs_commit: string,
-	theirs_path: string | null,
-	detected_at: number,
+  skill_id: string;
+  theirs_commit: string;
+  theirs_path: string | null;
+  detected_at: number;
 };
 
 /**  Where a path about to be removed lives. */
 export type PendingRemoval = {
-	/**
-	 *  [`LIBRARY_LOCATION`], or the key of the agent whose deployed copy holds
-	 *  it. The user needs to know which directory to go and rescue.
-	 */
-	location: string,
-	path: string,
+  /**
+   *  [`LIBRARY_LOCATION`], or the key of the agent whose deployed copy holds
+   *  it. The user needs to know which directory to go and rescue.
+   */
+  location: string;
+  path: string;
 };
 
 export type PresetApplyMode = "add" | "remove";
 
 export type PresetDto = {
-	id: string,
-	name: string,
-	description: string | null,
-	icon: string | null,
-	sort_order: number,
-	skill_count: number,
-	created_at: number,
-	updated_at: number,
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  sort_order: number;
+  skill_count: number;
+  created_at: number;
+  updated_at: number;
 };
 
 export type ProjectAgentTargetDto = {
-	key: string,
-	display_name: string,
-	enabled: boolean,
-	installed: boolean,
-	is_custom: boolean,
+  key: string;
+  display_name: string;
+  enabled: boolean;
+  installed: boolean;
+  is_custom: boolean;
 };
 
 export type ProjectDto = {
-	id: string,
-	name: string,
-	path: string,
-	workspace_type: string,
-	linked_agent_name: string | null,
-	supports_skill_toggle: boolean,
-	sort_order: number,
-	skill_count: number,
-	sync_health: SyncHealthDto,
-	created_at: number,
-	updated_at: number,
+  id: string;
+  name: string;
+  path: string;
+  workspace_type: string;
+  linked_agent_name: string | null;
+  supports_skill_toggle: boolean;
+  sort_order: number;
+  skill_count: number;
+  sync_health: SyncHealthDto;
+  created_at: number;
+  updated_at: number;
 };
 
 export type ProjectSkillDocumentDto = {
-	skill_name: string,
-	filename: string,
-	content: string,
+  skill_name: string;
+  filename: string;
+  content: string;
 };
 
 export type ProjectSkillInfo = ProjectSkillInfo_Serialize | ProjectSkillInfo_Deserialize;
 
 export type ProjectSkillInfo_Deserialize = {
-	name: string,
-	dir_name: string,
-	relative_path?: string,
-	description: string | null,
-	path: string,
-	files: string[],
-	enabled: boolean,
-	/**  Agent key that owns this skill (e.g. "claude_code", "cursor"). */
-	agent?: string,
-	/**  Human-readable agent name (e.g. "Claude Code", "Cursor"). */
-	agent_display_name?: string,
-	tags?: string[],
-	in_center?: boolean,
-	sync_status?: string,
-	center_skill_id?: string | null,
-	last_modified_at: number | null,
-	content_hash: string | null,
+  name: string;
+  dir_name: string;
+  relative_path?: string;
+  description: string | null;
+  path: string;
+  files: string[];
+  enabled: boolean;
+  /**  Agent key that owns this skill (e.g. "claude_code", "cursor"). */
+  agent?: string;
+  /**  Human-readable agent name (e.g. "Claude Code", "Cursor"). */
+  agent_display_name?: string;
+  tags?: string[];
+  in_center?: boolean;
+  sync_status?: string;
+  center_skill_id?: string | null;
+  last_modified_at: number | null;
+  content_hash: string | null;
 };
 
 export type ProjectSkillInfo_Serialize = {
-	name: string,
-	dir_name: string,
-	relative_path: string,
-	description: string | null,
-	path: string,
-	files: string[],
-	enabled: boolean,
-	/**  Agent key that owns this skill (e.g. "claude_code", "cursor"). */
-	agent: string,
-	/**  Human-readable agent name (e.g. "Claude Code", "Cursor"). */
-	agent_display_name: string,
-	tags: string[],
-	in_center: boolean,
-	sync_status: string,
-	center_skill_id: string | null,
+  name: string;
+  dir_name: string;
+  relative_path: string;
+  description: string | null;
+  path: string;
+  files: string[];
+  enabled: boolean;
+  /**  Agent key that owns this skill (e.g. "claude_code", "cursor"). */
+  agent: string;
+  /**  Human-readable agent name (e.g. "Claude Code", "Cursor"). */
+  agent_display_name: string;
+  tags: string[];
+  in_center: boolean;
+  sync_status: string;
+  center_skill_id: string | null;
 };
 
 /**  Result of re-importing a local skill from its source path. */
 export type ReimportSkillResult = {
-	skill: ManagedSkillDto,
-	/**  Non-empty means **nothing was changed** — see [`UpdateSkillResult`]. */
-	pending_removals: PendingRemoval[],
-	/**  Approves exactly `pending_removals` — see [`UpdateSkillResult`]. */
-	removal_approval: string | null,
+  skill: ManagedSkillDto;
+  /**  Non-empty means **nothing was changed** — see [`UpdateSkillResult`]. */
+  pending_removals: PendingRemoval[];
+  /**  Approves exactly `pending_removals` — see [`UpdateSkillResult`]. */
+  removal_approval: string | null;
 };
 
 export type RunnerStatus = {
-	available: boolean,
-	executable: string,
-	version: string | null,
-	error: string | null,
+  available: boolean;
+  executable: string;
+  version: string | null;
+  error: string | null;
 };
 
 export type ScanResultDto = {
-	tools_scanned: number,
-	skills_found: number,
-	groups: DiscoveredGroup[],
+  tools_scanned: number;
+  skills_found: number;
+  groups: DiscoveredGroup[];
 };
 
 export type SearchHit = {
-	skill_id: string,
-	name: string,
-	path: string,
-	line_start: number,
-	line_end: number,
-	text: string,
-	score: number | null,
+  skill_id: string;
+  name: string;
+  path: string;
+  line_start: number;
+  line_end: number;
+  text: string;
+  score: number | null;
 };
 
 export type SearchResult = {
-	query: string,
-	hits: SearchHit[],
-	warning: string | null,
+  query: string;
+  hits: SearchHit[];
+  warning: string | null;
 };
 
 export type SearchStatus = SearchStatus_Serialize | SearchStatus_Deserialize;
 
 export type SearchStatus_Deserialize = {
-	root: string,
-	available: boolean,
-	ready: boolean,
-	model: string,
-	files: number,
-	error: string | null,
+  root: string;
+  available: boolean;
+  ready: boolean;
+  model: string;
+  files: number;
+  error: string | null;
 };
 
 export type SearchStatus_Serialize = {
-	root: string,
-	available: boolean,
-	ready: boolean,
-	model: string,
-	files: number,
-	error?: string | null,
+  root: string;
+  available: boolean;
+  ready: boolean;
+  model: string;
+  files: number;
+  error?: string | null;
 };
 
 export type SkillDocumentDto = {
-	skill_id: string,
-	filename: string,
-	content: string,
-	central_path: string,
+  skill_id: string;
+  filename: string;
+  content: string;
+  central_path: string;
 };
 
 export type SkillGuideDto = {
-	skill_id: string,
-	content: string | null,
-	source_hash: string,
-	stale: boolean,
-	manually_edited: boolean,
-	updated_at: number | null,
-	generated_content: string | null,
-	guide_source_hash: string | null,
-	generated_source_hash: string | null,
+  skill_id: string;
+  content: string | null;
+  source_hash: string;
+  stale: boolean;
+  manually_edited: boolean;
+  updated_at: number | null;
+  generated_content: string | null;
+  guide_source_hash: string | null;
+  generated_source_hash: string | null;
 };
 
 export type SkillInstallItem = {
-	rel_path: string,
-	name: string,
+  rel_path: string;
+  name: string;
 };
 
 /**
@@ -809,147 +973,146 @@ export type SkillInstallItem = {
  *  the diff can never come back empty while the badge says "update available".
  */
 export type SkillSourceDiffDto = {
-	skill_id: string,
-	source_label: string,
-	revision: string,
-	entries: SkillSourceDiffEntryDto[],
+  skill_id: string;
+  source_label: string;
+  revision: string;
+  entries: SkillSourceDiffEntryDto[];
 };
 
 export type SkillSourceDiffEntryDto = {
-	relative_path: string,
-	/**  "added" | "removed" | "modified" */
-	status: string,
-	/**  "text" | "binary" | "too_large" | "permission_only" */
-	content_kind: string,
-	/**  Present only when `content_kind == "text"`. */
-	original_text: string | null,
-	updated_text: string | null,
-	executable_before: boolean,
-	executable_after: boolean,
+  relative_path: string;
+  /**  "added" | "removed" | "modified" */
+  status: string;
+  /**  "text" | "binary" | "too_large" | "permission_only" */
+  content_kind: string;
+  /**  Present only when `content_kind == "text"`. */
+  original_text: string | null;
+  updated_text: string | null;
+  executable_before: boolean;
+  executable_after: boolean;
 };
 
 export type SkillToolToggleDto = {
-	tool: string,
-	display_name: string,
-	installed: boolean,
-	globally_enabled: boolean,
-	enabled: boolean,
+  tool: string;
+  display_name: string;
+  installed: boolean;
+  globally_enabled: boolean;
+  enabled: boolean;
 };
 
 export type SkillsShSkill = {
-	id: string,
-	skill_id: string,
-	name: string,
-	source: string,
-	installs: number,
+  id: string;
+  skill_id: string;
+  name: string;
+  source: string;
+  installs: number;
 };
 
 export type SourceSkillDocumentDto = {
-	skill_id: string,
-	filename: string,
-	content: string,
-	source_label: string,
-	revision: string,
+  skill_id: string;
+  filename: string;
+  content: string;
+  source_label: string;
+  revision: string;
 };
 
 export type SyncHealthDto = {
-	in_sync: number,
-	project_newer: number,
-	center_newer: number,
-	diverged: number,
-	project_only: number,
+  in_sync: number;
+  project_newer: number;
+  center_newer: number;
+  diverged: number;
+  project_only: number;
 };
 
 /**  Outcome of a full sync transaction for the frontend. */
 export type SyncOutcome = {
-	/**  Local changes were committed as part of this sync. */
-	committed: boolean,
-	/**  Merge result when a merge ran (None when nothing to pull). */
-	merge: MergeSummary | null,
-	pushed: boolean,
-	/**  Snapshot tag on the pushed state (None when nothing was pushed). */
-	snapshot_tag: string | null,
+  /**  Local changes were committed as part of this sync. */
+  committed: boolean;
+  /**  Merge result when a merge ran (None when nothing to pull). */
+  merge: MergeSummary | null;
+  pushed: boolean;
+  /**  Snapshot tag on the pushed state (None when nothing was pushed). */
+  snapshot_tag: string | null;
 };
 
 export type TargetConflictDetail = {
-	path: string,
-	reason: string,
+  path: string;
+  reason: string;
 };
 
 export type TargetDto = {
-	id: string,
-	skill_id: string,
-	tool: string,
-	target_path: string,
-	mode: string,
-	status: string,
-	synced_at: number | null,
+  id: string;
+  skill_id: string;
+  tool: string;
+  target_path: string;
+  mode: string;
+  status: string;
+  synced_at: number | null;
 };
 
 export type TaskRun = {
-	id: string,
-	project_id: string,
-	prompt: string,
-	skill_ids: string[],
-	model?: string | null,
-	status: string,
-	created_at: number,
-	finished_at: number | null,
-	exit_code: number | null,
-	error: string | null,
+  id: string;
+  project_id: string;
+  prompt: string;
+  skill_ids: string[];
+  model?: string | null;
+  status: string;
+  created_at: number;
+  finished_at: number | null;
+  exit_code: number | null;
+  error: string | null;
 };
 
 /**
  *  Top-level grouping for sidebar/overview display. Does not affect skill
  *  deployment, sync, or any other backend behavior — purely a UI taxonomy.
  */
-export type ToolCategory = 
-/**  Coding agents (Claude Code, Cursor, Codex, etc.). The default. */
-"coding" | 
-/**  Lobster-class personal AI assistants (OpenClaw ecosystem, Hermes Agent). */
-"lobster";
+export type ToolCategory =
+  /**  Coding agents (Claude Code, Cursor, Codex, etc.). The default. */
+  | "coding"
+  /**  Lobster-class personal AI assistants (OpenClaw ecosystem, Hermes Agent). */
+  | "lobster";
 
 export type ToolInfoDto = {
-	key: string,
-	display_name: string,
-	installed: boolean,
-	skills_dir: string,
-	enabled: boolean,
-	is_custom: boolean,
-	has_path_override: boolean,
-	project_relative_skills_dir: string | null,
-	has_project_path_override: boolean,
-	category: ToolCategory,
+  key: string;
+  display_name: string;
+  installed: boolean;
+  skills_dir: string;
+  enabled: boolean;
+  is_custom: boolean;
+  has_path_override: boolean;
+  project_relative_skills_dir: string | null;
+  has_project_path_override: boolean;
+  category: ToolCategory;
 };
 
 export type UpdateSkillResult = {
-	skill: ManagedSkillDto,
-	/**
-	 *  Whether the skill's file content actually changed.
-	 *  False when a monorepo commit didn't touch this skill's subdirectory.
-	 */
-	content_changed: boolean,
-	/**
-	 *  What the update would remove, when it declined because of it (#256).
-	 *  Non-empty means **nothing was changed**: show these and call again with
-	 *  `approved_removals` set to `removal_approval` if the user accepts.
-	 * 
-	 *  Empty on every ordinary update, including approved ones.
-	 */
-	pending_removals: PendingRemoval[],
-	/**
-	 *  Identifies exactly what `pending_removals` describes. Passing it back
-	 *  approves *that* list against *that* revision and nothing else — if the
-	 *  remote moves on, or the skill writes another file while the dialog is
-	 *  open, the approval no longer matches and the user is asked again.
-	 */
-	removal_approval: string | null,
+  skill: ManagedSkillDto;
+  /**
+   *  Whether the skill's file content actually changed.
+   *  False when a monorepo commit didn't touch this skill's subdirectory.
+   */
+  content_changed: boolean;
+  /**
+   *  What the update would remove, when it declined because of it (#256).
+   *  Non-empty means **nothing was changed**: show these and call again with
+   *  `approved_removals` set to `removal_approval` if the user accepts.
+   *
+   *  Empty on every ordinary update, including approved ones.
+   */
+  pending_removals: PendingRemoval[];
+  /**
+   *  Identifies exactly what `pending_removals` describes. Passing it back
+   *  approves *that* list against *that* revision and nothing else — if the
+   *  remote moves on, or the skill writes another file while the dialog is
+   *  open, the approval no longer matches and the user is asked again.
+   */
+  removal_approval: string | null;
 };
 
 export type UpdatedSkill = {
-	skill_id: string,
-	path: string,
-	/**  Device (commit author) that last touched this skill on the remote. */
-	from_device: string,
+  skill_id: string;
+  path: string;
+  /**  Device (commit author) that last touched this skill on the remote. */
+  from_device: string;
 };
-

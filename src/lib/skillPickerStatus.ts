@@ -46,10 +46,7 @@ export function classifySkill(skill: ManagedSkill, ctx: PickerContext): PickerSt
   return "available";
 }
 
-export function targetsToInstall(
-  skill: ManagedSkill,
-  ctx: ProjectPickerContext,
-): string[] {
+export function targetsToInstall(skill: ManagedSkill, ctx: ProjectPickerContext): string[] {
   return ctx.selectedAgents.filter((agent) => {
     const installed = ctx.projectCenterSkillIdsByAgent[agent] ?? [];
     return !installed.includes(skill.id);

@@ -51,15 +51,15 @@ export function BatchTagDialog({ open, skills, allTags, onClose, onApply }: Prop
   const suggestions = useMemo(() => {
     const needle = input.trim().toLowerCase();
     const existing = new Set(tagCounts.map(([t]) => t));
-    return allTags.filter((tag) => {
-      if (adds.includes(tag)) return false;
-      if (existing.has(tag)) return false;
-      if (!needle) return true;
-      return tag.toLowerCase().includes(needle);
-    }).slice(0, 8);
+    return allTags
+      .filter((tag) => {
+        if (adds.includes(tag)) return false;
+        if (existing.has(tag)) return false;
+        if (!needle) return true;
+        return tag.toLowerCase().includes(needle);
+      })
+      .slice(0, 8);
   }, [allTags, adds, input, tagCounts]);
-
-
 
   const addTag = (value: string) => {
     const trimmed = value.trim();
@@ -70,9 +70,7 @@ export function BatchTagDialog({ open, skills, allTags, onClose, onApply }: Prop
   };
 
   const toggleRemove = (tag: string) => {
-    setRemoves((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
+    setRemoves((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
   };
 
   const handleApply = async () => {
@@ -98,8 +96,23 @@ export function BatchTagDialog({ open, skills, allTags, onClose, onApply }: Prop
   const hasChanges = adds.length > 0 || removes.length > 0;
 
   return (
-    <DetailSheet open={open} title={t("mySkills.batchTagDialog.title", { count: skills.length })} onClose={() => { if (!pending.current) { setError(""); onClose(); } }} size="compact" closeDisabled={loading}>
-      {error && <p role="alert" className="text-danger mb-3">{error}</p>}
+    <DetailSheet
+      open={open}
+      title={t("mySkills.batchTagDialog.title", { count: skills.length })}
+      onClose={() => {
+        if (!pending.current) {
+          setError("");
+          onClose();
+        }
+      }}
+      size="compact"
+      closeDisabled={loading}
+    >
+      {error && (
+        <p role="alert" className="text-danger mb-3">
+          {error}
+        </p>
+      )}
       <fieldset disabled={loading} className="min-w-0 border-0 p-0 m-0">
         <div className="space-y-4">
           <div>
@@ -121,7 +134,7 @@ export function BatchTagDialog({ open, skills, allTags, onClose, onApply }: Prop
                         "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-medium transition-colors",
                         marked
                           ? "bg-[var(--ds-danger-bg)] text-[var(--ds-danger)] line-through"
-                          : "bg-accent-bg text-accent-light hover:bg-[var(--ds-danger-bg)] hover:text-[var(--ds-danger)]"
+                          : "bg-accent-bg text-accent-light hover:bg-[var(--ds-danger-bg)] hover:text-[var(--ds-danger)]",
                       )}
                       title={
                         marked
@@ -179,7 +192,11 @@ export function BatchTagDialog({ open, skills, allTags, onClose, onApply }: Prop
                   className="app-input w-40 px-2 text-[12px]"
                 />
                 {suggestions.length > 0 && input && (
-                  <div className="mt-2 flex max-w-[280px] flex-wrap gap-1 rounded-md border border-border-subtle bg-surface p-1" role="group" aria-label="建议标签">
+                  <div
+                    className="mt-2 flex max-w-[280px] flex-wrap gap-1 rounded-md border border-border-subtle bg-surface p-1"
+                    role="group"
+                    aria-label="建议标签"
+                  >
                     {suggestions.map((suggestion) => (
                       <button
                         key={suggestion}
@@ -209,15 +226,22 @@ export function BatchTagDialog({ open, skills, allTags, onClose, onApply }: Prop
 
         <div className="flex justify-end gap-2 pt-5">
           <Button
-            onClick={() => { if (!pending.current) { setError(""); onClose(); } }}
-            variant="ghost" disabled={loading}
+            onClick={() => {
+              if (!pending.current) {
+                setError("");
+                onClose();
+              }
+            }}
+            variant="ghost"
+            disabled={loading}
           >
             {t("common.cancel")}
           </Button>
           <Button
             onClick={handleApply}
             disabled={loading || !hasChanges}
-            variant="primary" busy={loading}
+            variant="primary"
+            busy={loading}
           >
             {loading ? t("common.loading") : t("mySkills.batchTagDialog.apply")}
           </Button>

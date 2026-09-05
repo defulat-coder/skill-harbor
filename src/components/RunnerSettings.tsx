@@ -58,9 +58,7 @@ export function RunnerSettings() {
         );
       else {
         setStatus("");
-        setSaveError(
-          `设置已保存，但无法连接：${result.error ?? "未找到 Codex CLI，请检查路径。"}`,
-        );
+        setSaveError(`设置已保存，但无法连接：${result.error ?? "未找到 Codex CLI，请检查路径。"}`);
       }
     } catch (e) {
       setStatus("");
@@ -70,15 +68,11 @@ export function RunnerSettings() {
     }
   }
   return (
-    <section
-      className={`ds-panel ${styles.panel}`}
-      aria-label="本地执行与中文说明设置"
-    >
+    <section className={`ds-panel ${styles.panel}`} aria-label="本地执行与中文说明设置">
       <div>
         <h3>Codex CLI</h3>
         <p className={styles.help}>
-          使用本机 CLI 执行项目任务和生成中文用法。沿用 CLI
-          的登录；模型调用可能联网。
+          使用本机 CLI 执行项目任务和生成中文用法。沿用 CLI 的登录；模型调用可能联网。
         </p>
       </div>
       <form
@@ -87,10 +81,7 @@ export function RunnerSettings() {
           void save();
         }}
       >
-        <fieldset
-          disabled={busy || loading || !loaded}
-          className={styles.fields}
-        >
+        <fieldset disabled={busy || loading || !loaded} className={styles.fields}>
           <div className={styles.field}>
             <label htmlFor="codex-path">可执行文件路径</label>
             <input
@@ -130,11 +121,7 @@ export function RunnerSettings() {
         </fieldset>
       </form>
       {(loading || busy) && (
-        <LoadingState
-          label={
-            loading ? "正在读取本地执行设置…" : "正在保存并检查 Codex CLI…"
-          }
-        />
+        <LoadingState label={loading ? "正在读取本地执行设置…" : "正在保存并检查 Codex CLI…"} />
       )}
       {!loading && !busy && (
         <p role="status" className={styles.help}>
@@ -146,12 +133,9 @@ export function RunnerSettings() {
           {error}
         </div>
       )}
-      {!loading && !loaded && (
-        <Button onClick={reload}>重新读取设置</Button>
-      )}
+      {!loading && !loaded && <Button onClick={reload}>重新读取设置</Button>}
       <p className={styles.help}>
-        运行记录和中文说明保存在本机。CLI
-        自身决定可见的全局技能，项目技能列表不代表隔离环境。
+        运行记录和中文说明保存在本机。CLI 自身决定可见的全局技能，项目技能列表不代表隔离环境。
       </p>
     </section>
   );

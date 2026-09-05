@@ -1,38 +1,208 @@
 /* Project content owns its composition; shared shell/tokens/controls stay global. */
-.page { min-width: 0; }
-.projectGrid { display: grid; grid-template-columns: repeat(auto-fill,minmax(280px,1fr)); gap: 14px; }
-.projectCard { display: flex; flex-direction: column; padding: 16px; min-width: 0; border: 1px solid var(--ds-border); border-radius: var(--ds-radius); color: var(--ds-text); background: var(--ds-bg); text-decoration: none; transition: border-color var(--ds-duration-exit) var(--ds-ease-out); }
-.projectCard:hover { border-color: var(--ds-border-selected); }
-.projectCard h3 { margin: 12px 0 4px; font-size: 16px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
-.projectCard p { margin: 0 0 20px; color: var(--ds-muted); font-size: 12px; overflow-wrap: anywhere; }
-.projectCard footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--ds-border-soft); font-size: 12px; color: var(--ds-muted); }
-.projectCard footer span:last-child { display: inline-flex; align-items: center; gap: 4px; }
-.page .libraryLink { margin-top: 24px; padding: 16px 0; border: 0; border-top: 1px solid var(--ds-border-soft); border-radius: 0; background: transparent; }
-.page .workspace { grid-template-columns: minmax(220px,280px) minmax(0,1fr); align-items: stretch; border-radius: var(--ds-radius); border-color: var(--ds-border); }
-.workspace :global(.wb-skill-list) { background: var(--ds-panel); padding: 12px; }
-.workspace :global(.wb-skill-row) { padding: 12px; margin: 4px 0; border-radius: var(--ds-radius); }
-.workspace :global(.wb-skill-row strong) { font-size: 14px; line-height: 1.5; }
-.workspace :global(.wb-skill-row span) { font-size: 13px; line-height: 1.6; }
-.workspace :global(.wb-detail) { min-width: 0; background: var(--ds-bg); }
-.workspace .detailHeading { padding: 24px; }
-.workspace .detailHeading h2 { font-size: 20px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
-.workspace .detailHeading p { font-size: 14px; line-height: 1.7; max-width: 65ch; }
-.workspace :global(.wb-detail-content) { padding: 24px; }
-.workspace :global(.wb-detail-footer) { flex-wrap: wrap; gap: 12px; padding: 16px 24px; }
-@media(max-width:760px) { .page .workspace { grid-template-columns: 1fr; } .workspace :global(.wb-skill-list) { border-right: 0; border-bottom: 1px solid var(--ds-border); max-height: 300px; overflow-y: auto; } }
-@media(prefers-reduced-motion:reduce) { .projectCard { transition: none; } }
+.page {
+  min-width: 0;
+}
+.projectGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+.projectCard {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  min-width: 0;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius);
+  color: var(--ds-text);
+  background: var(--ds-bg);
+  text-decoration: none;
+  transition: border-color var(--ds-duration-exit) var(--ds-ease-out);
+}
+.projectCard:hover {
+  border-color: var(--ds-border-selected);
+}
+.projectCard h3 {
+  margin: 12px 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.projectCard p {
+  margin: 0 0 20px;
+  color: var(--ds-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.projectCard footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--ds-border-soft);
+  font-size: 12px;
+  color: var(--ds-muted);
+}
+.projectCard footer span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.page .libraryLink {
+  margin-top: 24px;
+  padding: 16px 0;
+  border: 0;
+  border-top: 1px solid var(--ds-border-soft);
+  border-radius: 0;
+  background: transparent;
+}
+.page .workspace {
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  align-items: stretch;
+  border-radius: var(--ds-radius);
+  border-color: var(--ds-border);
+}
+.workspace :global(.wb-skill-list) {
+  background: var(--ds-panel);
+  padding: 12px;
+}
+.workspace :global(.wb-skill-row) {
+  padding: 12px;
+  margin: 4px 0;
+  border-radius: var(--ds-radius);
+}
+.workspace :global(.wb-skill-row strong) {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.workspace :global(.wb-skill-row span) {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.workspace :global(.wb-detail) {
+  min-width: 0;
+  background: var(--ds-bg);
+}
+.workspace .detailHeading {
+  padding: 24px;
+}
+.workspace .detailHeading h2 {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.workspace .detailHeading p {
+  font-size: 14px;
+  line-height: 1.7;
+  max-width: 65ch;
+}
+.workspace :global(.wb-detail-content) {
+  padding: 24px;
+}
+.workspace :global(.wb-detail-footer) {
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 24px;
+}
+@media (max-width: 760px) {
+  .page .workspace {
+    grid-template-columns: 1fr;
+  }
+  .workspace :global(.wb-skill-list) {
+    border-right: 0;
+    border-bottom: 1px solid var(--ds-border);
+    max-height: 300px;
+    overflow-y: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .projectCard {
+    transition: none;
+  }
+}
 /* Wizard form layout moved from the old modal wrapper; native dialog owns focus. */
-.wizard fieldset { margin: 0 0 24px; border: 0; min-width: 0; }
-.wizard legend { margin-bottom: 12px; font-size: 14px; font-weight: 600; }
-.wizard legend span { margin-left: 8px; font-size: 12px; font-weight: 400; }
-.wizard label:not(:global(.wb-check)):not(:global(.wb-pick-row)):not(:global(.wb-search)) { font-size: 13px; color: var(--ds-muted); }
-.wizard select { display: block; width: 100%; margin-top: 8px; }
-.wizard input:not([type="checkbox"]), .wizard select { min-width: 0; min-height: 36px; border: 1px solid var(--ds-border); border-radius: var(--ds-radius); background-color: var(--ds-panel); color: var(--ds-text); padding: 7px 10px; font-size: 13px; }
-.wizard :global(.wb-search) input { border: 0; padding: 0; background: transparent; }
-.page :global(.wb-search):focus-within, .wizard :global(.wb-search):focus-within { border-color: var(--ds-accent); }
-.wizardFooter { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--ds-border-soft); }
+.wizard fieldset {
+  margin: 0 0 24px;
+  border: 0;
+  min-width: 0;
+}
+.wizard legend {
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.wizard legend span {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 400;
+}
+.wizard label:not(:global(.wb-check)):not(:global(.wb-pick-row)):not(:global(.wb-search)) {
+  font-size: 13px;
+  color: var(--ds-muted);
+}
+.wizard select {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+}
+.wizard input:not([type="checkbox"]),
+.wizard select {
+  min-width: 0;
+  min-height: 36px;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius);
+  background-color: var(--ds-panel);
+  color: var(--ds-text);
+  padding: 7px 10px;
+  font-size: 13px;
+}
+.wizard :global(.wb-search) input {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.page :global(.wb-search):focus-within,
+.wizard :global(.wb-search):focus-within {
+  border-color: var(--ds-accent);
+}
+.wizardFooter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ds-border-soft);
+}
 
-.projectOpen { display: flex; flex: 1; flex-direction: column; color: inherit; text-decoration: none; min-width: 0; }
-.projectOpen:hover h3 { text-decoration: underline; text-underline-offset: 3px; }
-.libraryHint { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; color: var(--ds-muted); font-size: 13px; }
-.libraryHint a { display: inline-flex; align-items: center; gap: 4px; text-decoration: underline; text-underline-offset: 3px; }
+.projectOpen {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
+}
+.projectOpen:hover h3 {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.libraryHint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+  color: var(--ds-muted);
+  font-size: 13px;
+}
+.libraryHint a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

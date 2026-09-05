@@ -9,7 +9,6 @@ export type SkillSearchResult = SearchResult;
 
 export const getSkillSearchStatus = () => commands.skillSearchStatus();
 export const indexSkillSearch = () => commands.skillSearchIndex();
-export const querySkillSearch = (query: string) =>
-  commands.skillSearchQuery(query);
+export const querySkillSearch = (query: string) => commands.skillSearchQuery(query);
 export const answerSkillSearch = (query: string, hits: SearchHit[]) =>
   commands.skillSearchAnswer(query, hits);

@@ -43,7 +43,12 @@ function makeSkill(id: string, presetIds: string[]): ManagedSkill {
 
 describe("computePresetStatus", () => {
   it("reports empty when the preset has no skills", () => {
-    const result = computePresetStatus(makePreset("p"), [makeSkill("s", ["other"])], ["claude_code"], () => true);
+    const result = computePresetStatus(
+      makePreset("p"),
+      [makeSkill("s", ["other"])],
+      ["claude_code"],
+      () => true,
+    );
     expect(result).toEqual({ status: "empty", installed: 0, total: 0 });
   });
 
@@ -54,7 +59,12 @@ describe("computePresetStatus", () => {
 
   it("reports active when every skill is installed for every agent", () => {
     const skills = [makeSkill("a", ["p"]), makeSkill("b", ["p"])];
-    const result = computePresetStatus(makePreset("p"), skills, ["claude_code", "codex"], () => true);
+    const result = computePresetStatus(
+      makePreset("p"),
+      skills,
+      ["claude_code", "codex"],
+      () => true,
+    );
     expect(result).toEqual({ status: "active", installed: 4, total: 4 });
   });
 
@@ -69,7 +79,7 @@ describe("computePresetStatus", () => {
     const agents = ["claude_code", "codex"];
     const installed = new Set(["a:claude_code", "b:codex", "c:claude_code", "c:codex"]);
     const result = computePresetStatus(makePreset("p"), skills, agents, (skill, agentKey) =>
-      installed.has(`${skill.id}:${agentKey}`)
+      installed.has(`${skill.id}:${agentKey}`),
     );
     expect(result).toEqual({ status: "partial", installed: 4, total: 6 });
   });

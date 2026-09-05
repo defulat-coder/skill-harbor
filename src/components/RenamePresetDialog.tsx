@@ -14,13 +14,7 @@ interface Props {
   onRename: (newName: string, icon?: string) => Promise<void>;
 }
 
-export function RenamePresetDialog({
-  open,
-  currentName,
-  currentIcon,
-  onClose,
-  onRename,
-}: Props) {
+export function RenamePresetDialog({ open, currentName, currentIcon, onClose, onRename }: Props) {
   const { t } = useTranslation();
   const [name, setName] = useState(currentName);
   const [icon, setIcon] = useState(currentIcon || PRESET_ICON_OPTIONS[0].key);
@@ -41,10 +35,12 @@ export function RenamePresetDialog({
     }
   }
 
-
-
   const handleRename = async () => {
-    if (pending.current || !name.trim() || (name.trim() === currentName && icon === (currentIcon || PRESET_ICON_OPTIONS[0].key))) {
+    if (
+      pending.current ||
+      !name.trim() ||
+      (name.trim() === currentName && icon === (currentIcon || PRESET_ICON_OPTIONS[0].key))
+    ) {
       return;
     }
     pending.current = true;
@@ -64,12 +60,29 @@ export function RenamePresetDialog({
   const inputClass = "app-input w-full";
 
   return (
-    <DetailSheet open={open} title={t("common.rename")} onClose={() => { if (!pending.current) { setError(""); onClose(); } }} size="compact" closeDisabled={loading}>
-      {error && <p role="alert" className="text-danger mb-3">{error}</p>}
+    <DetailSheet
+      open={open}
+      title={t("common.rename")}
+      onClose={() => {
+        if (!pending.current) {
+          setError("");
+          onClose();
+        }
+      }}
+      size="compact"
+      closeDisabled={loading}
+    >
+      {error && (
+        <p role="alert" className="text-danger mb-3">
+          {error}
+        </p>
+      )}
       <fieldset disabled={loading} className="min-w-0 border-0 p-0 m-0">
         <div className="space-y-3">
           <div>
-            <label className="block text-[13px] font-medium text-tertiary mb-1">{t("preset.name")}</label>
+            <label className="block text-[13px] font-medium text-tertiary mb-1">
+              {t("preset.name")}
+            </label>
             <input
               type="text"
               aria-label={t("preset.name")}
@@ -78,17 +91,27 @@ export function RenamePresetDialog({
               placeholder={t("preset.namePlaceholder")}
               className={inputClass}
               autoFocus
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) void handleRename(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.nativeEvent.isComposing) void handleRename();
+              }}
             />
           </div>
           <div>
-            <label className="block text-[13px] font-medium text-tertiary mb-1.5">{t("preset.icon")}</label>
+            <label className="block text-[13px] font-medium text-tertiary mb-1.5">
+              {t("preset.icon")}
+            </label>
             <PresetIconPicker value={icon} onChange={setIcon} />
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button
-              onClick={() => { if (!pending.current) { setError(""); onClose(); } }}
-              variant="ghost" disabled={loading}
+              onClick={() => {
+                if (!pending.current) {
+                  setError("");
+                  onClose();
+                }
+              }}
+              variant="ghost"
+              disabled={loading}
             >
               {t("common.cancel")}
             </Button>
@@ -96,10 +119,12 @@ export function RenamePresetDialog({
               onClick={handleRename}
               disabled={
                 !name.trim() ||
-                (name.trim() === currentName && icon === (currentIcon || PRESET_ICON_OPTIONS[0].key)) ||
+                (name.trim() === currentName &&
+                  icon === (currentIcon || PRESET_ICON_OPTIONS[0].key)) ||
                 loading
               }
-              variant="primary" busy={loading}
+              variant="primary"
+              busy={loading}
             >
               {loading ? t("common.loading") : t("common.save")}
             </Button>

@@ -31,13 +31,7 @@ interface PaletteItem {
 export function CommandPalette() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const {
-    managedSkills,
-    presets,
-    projects,
-    viewedPreset,
-    setViewedPresetId,
-  } = useApp();
+  const { managedSkills, presets, projects, viewedPreset, setViewedPresetId } = useApp();
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -56,9 +50,7 @@ export function CommandPalette() {
       const target = e.target instanceof HTMLElement ? e.target : null;
       const typing =
         target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable);
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
 
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         if (typing && !open) return;
@@ -72,7 +64,10 @@ export function CommandPalette() {
     const show = () => setOpen(true);
     window.addEventListener("workbench:search", show);
     window.addEventListener("keydown", onKey);
-    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("workbench:search", show); };
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("workbench:search", show);
+    };
   }, [open, close]);
 
   const [prevOpen, setPrevOpen] = useState(open);
@@ -93,9 +88,7 @@ export function CommandPalette() {
     const skillItems: PaletteItem[] = managedSkills
       .filter(
         (s) =>
-          !q ||
-          s.name.toLowerCase().includes(q) ||
-          (s.description || "").toLowerCase().includes(q),
+          !q || s.name.toLowerCase().includes(q) || (s.description || "").toLowerCase().includes(q),
       )
       .slice(0, 8)
       .map((s) => ({
@@ -133,12 +126,7 @@ export function CommandPalette() {
       });
 
     const projectItems: PaletteItem[] = projects
-      .filter(
-        (p) =>
-          !q ||
-          p.name.toLowerCase().includes(q) ||
-          p.path.toLowerCase().includes(q),
-      )
+      .filter((p) => !q || p.name.toLowerCase().includes(q) || p.path.toLowerCase().includes(q))
       .slice(0, 5)
       .map((p) => ({
         id: `proj:${p.id}`,
@@ -150,8 +138,20 @@ export function CommandPalette() {
       }));
 
     const actionDefs: PaletteItem[] = [
-      { id: "action:search-index", kind: "action", label: "索引管理", icon: <Layers className="h-3.5 w-3.5" />, run: () => navigate({ to: "/search-index" }) },
-      { id: "action:search-home", kind: "action", label: "问答检索", icon: <Home className="h-3.5 w-3.5" />, run: () => navigate({ to: "/" }) },
+      {
+        id: "action:search-index",
+        kind: "action",
+        label: "索引管理",
+        icon: <Layers className="h-3.5 w-3.5" />,
+        run: () => navigate({ to: "/search-index" }),
+      },
+      {
+        id: "action:search-home",
+        kind: "action",
+        label: "问答检索",
+        icon: <Home className="h-3.5 w-3.5" />,
+        run: () => navigate({ to: "/" }),
+      },
       {
         id: "action:dashboard",
         kind: "action",
@@ -192,16 +192,7 @@ export function CommandPalette() {
     const actions = actionDefs.filter((a) => !q || a.label.toLowerCase().includes(q));
 
     return [...skillItems, ...presetItems, ...projectItems, ...actions];
-  }, [
-    query,
-    managedSkills,
-    presets,
-    projects,
-    viewedPreset?.id,
-    setViewedPresetId,
-    navigate,
-    t,
-  ]);
+  }, [query, managedSkills, presets, projects, viewedPreset?.id, setViewedPresetId, navigate, t]);
 
   if (activeIndex > 0 && activeIndex >= items.length) setActiveIndex(0);
 
@@ -213,8 +204,6 @@ export function CommandPalette() {
     );
     el?.scrollIntoView({ block: "nearest" });
   }, [activeIndex, open]);
-
-
 
   const groups: { kind: ItemKind; label: string }[] = [
     { kind: "skill", label: t("commandPalette.skills") },
@@ -286,9 +275,7 @@ export function CommandPalette() {
                     {item.label}
                   </div>
                   {item.sublabel && (
-                    <div className="truncate text-[12px] text-muted">
-                      {item.sublabel}
-                    </div>
+                    <div className="truncate text-[12px] text-muted">{item.sublabel}</div>
                   )}
                 </div>
                 {item.shortcut && (
@@ -296,9 +283,7 @@ export function CommandPalette() {
                     {item.shortcut}
                   </span>
                 )}
-                {active && (
-                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted" />
-                )}
+                {active && <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted" />}
               </div>
             );
           })}
@@ -308,13 +293,23 @@ export function CommandPalette() {
     .filter(Boolean);
 
   return (
-    <DetailSheet open={open} title="快速查找" description="查找全局技能、预设、项目和操作" onClose={close}>
+    <DetailSheet
+      open={open}
+      title="快速查找"
+      description="查找全局技能、预设、项目和操作"
+      onClose={close}
+    >
       <div onKeyDown={handleKeyDown}>
         <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
           <Search className="h-4 w-4 text-muted" />
           <input
             ref={inputRef}
-            role="combobox" aria-label={t("commandPalette.placeholder")} aria-expanded={open} aria-controls="palette-results" aria-autocomplete="list" aria-activedescendant={items.length ? `palette-option-${activeIndex}` : undefined}
+            role="combobox"
+            aria-label={t("commandPalette.placeholder")}
+            aria-expanded={open}
+            aria-controls="palette-results"
+            aria-autocomplete="list"
+            aria-activedescendant={items.length ? `palette-option-${activeIndex}` : undefined}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("commandPalette.placeholder")}
@@ -328,7 +323,9 @@ export function CommandPalette() {
         <div
           ref={listRef}
           className="max-h-[60vh] overflow-y-auto pb-2"
-          role="listbox" id="palette-results" aria-label="查找结果"
+          role="listbox"
+          id="palette-results"
+          aria-label="查找结果"
         >
           {items.length === 0 ? (
             <div className="px-4 py-10 text-center text-[13px] text-muted">

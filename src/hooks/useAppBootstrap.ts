@@ -41,17 +41,14 @@ function notifyUpdatableSkills(skills: ManagedSkill[]) {
   }
 
   lastUpdateNotification = notificationSignature;
-  toast.info(
-    i18n.t("mySkills.updateNotification", { count: updatable.length }),
-    {
-      id: SKILL_UPDATE_TOAST_ID,
-      duration: 8000,
-      action: {
-        label: i18n.t("mySkills.viewUpdates"),
-        onClick: () => navigateTo("/my-skills"),
-      },
-    }
-  );
+  toast.info(i18n.t("mySkills.updateNotification", { count: updatable.length }), {
+    id: SKILL_UPDATE_TOAST_ID,
+    duration: 8000,
+    action: {
+      label: i18n.t("mySkills.viewUpdates"),
+      onClick: () => navigateTo("/my-skills"),
+    },
+  });
 }
 
 /**
@@ -105,7 +102,8 @@ export function useAppBootstrap() {
     // initial query round settles (see startupDoneLoggedRef effect below).
     api.logStartupEvent("refresh_app_data_start", performance.now()).catch(() => {});
     // Apply saved text size on startup
-    api.getSettings("text_size")
+    api
+      .getSettings("text_size")
       .then((savedSize) => {
         if (savedSize) applyTextSize(savedSize);
       })
@@ -147,25 +145,24 @@ export function useAppBootstrap() {
     if (loading || appUpdateCheckedRef.current) return undefined;
     const timer = setTimeout(() => {
       appUpdateCheckedRef.current = true;
-      useUIStore.getState().refreshAppUpdate()
+      useUIStore
+        .getState()
+        .refreshAppUpdate()
         .then((info) => {
           if (!info.has_update) return;
-          toast.info(
-            i18n.t("settings.updateAvailable", { version: info.latest_version }),
-            {
-              id: APP_UPDATE_TOAST_ID,
-              duration: 8000,
-              action: {
-                label: i18n.t("settings.viewUpdate"),
-                onClick: () => {
-                  if (!window.location.pathname.endsWith("/settings")) {
-                    window.history.pushState(null, "", "/settings");
-                    window.dispatchEvent(new PopStateEvent("popstate"));
-                  }
-                },
+          toast.info(i18n.t("settings.updateAvailable", { version: info.latest_version }), {
+            id: APP_UPDATE_TOAST_ID,
+            duration: 8000,
+            action: {
+              label: i18n.t("settings.viewUpdate"),
+              onClick: () => {
+                if (!window.location.pathname.endsWith("/settings")) {
+                  window.history.pushState(null, "", "/settings");
+                  window.dispatchEvent(new PopStateEvent("popstate"));
+                }
               },
-            }
-          );
+            },
+          });
         })
         .catch((err) => {
           console.error("Startup app update check failed:", err);
@@ -180,7 +177,7 @@ export function useAppBootstrap() {
   useEffect(() => {
     if (loading || managedSkills.length === 0 || skillUpdateRoundDoneRef.current) return undefined;
     const hasGitSkills = managedSkills.some(
-      (s) => s.source_type === "git" || s.source_type === "skillssh"
+      (s) => s.source_type === "git" || s.source_type === "skillssh",
     );
     if (!hasGitSkills || autoCheckInFlightRef.current) return undefined;
 
@@ -193,24 +190,20 @@ export function useAppBootstrap() {
           await api.checkAllSkillUpdates(false);
           let skills = await api.getManagedSkills();
 
-          const autoUpdate = await api
-            .getSettings("auto_update_apply")
-            .catch(() => null);
+          const autoUpdate = await api.getSettings("auto_update_apply").catch(() => null);
           if (autoUpdate === "on") {
             const ids = skills
               .filter(
                 (s) =>
                   s.update_status === "update_available" &&
-                  (s.source_type === "git" || s.source_type === "skillssh")
+                  (s.source_type === "git" || s.source_type === "skillssh"),
               )
               .map((s) => s.id);
             if (ids.length > 0) {
               const result = await api.batchUpdateSkills(ids);
               skills = await api.getManagedSkills();
               if (result.refreshed > 0) {
-                toast.success(
-                  i18n.t("mySkills.autoUpdated", { count: result.refreshed })
-                );
+                toast.success(i18n.t("mySkills.autoUpdated", { count: result.refreshed }));
               }
               // Held back rather than applied: updating would have removed
               // files the new version does not have, and nobody was here to ask.
@@ -219,7 +212,7 @@ export function useAppBootstrap() {
                   i18n.t("mySkills.batchHeldBack", {
                     count: result.held_back.length,
                     names: result.held_back.slice(0, 3).join("、"),
-                  })
+                  }),
                 );
               }
               if (result.failed.length > 0) {
@@ -227,7 +220,7 @@ export function useAppBootstrap() {
                 toast.error(
                   i18n.t("mySkills.autoUpdateFailed", {
                     count: result.failed.length,
-                  })
+                  }),
                 );
               }
             }
@@ -238,8 +231,7 @@ export function useAppBootstrap() {
           queryClient.setQueryData(queryKeys.skills.list(), skills);
           await queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
           notifyUpdatableSkills(skills);
-          api.setSettings("auto_update_last_run_at", new Date().toISOString())
-            .catch(() => {});
+          api.setSettings("auto_update_last_run_at", new Date().toISOString()).catch(() => {});
         } catch (err) {
           // Startup round is non-blocking and does not toast on failure, but
           // log so a broken check/update is still diagnosable.

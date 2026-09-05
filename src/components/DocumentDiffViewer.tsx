@@ -9,8 +9,20 @@ interface DocumentDiffViewerProps {
 }
 
 type DiffRow =
-  | { type: "context"; leftNumber: number; rightNumber: number; leftContent: string; rightContent: string }
-  | { type: "removed"; leftNumber: number; rightNumber: null; leftContent: string; rightContent: "" }
+  | {
+      type: "context";
+      leftNumber: number;
+      rightNumber: number;
+      leftContent: string;
+      rightContent: string;
+    }
+  | {
+      type: "removed";
+      leftNumber: number;
+      rightNumber: null;
+      leftContent: string;
+      rightContent: "";
+    }
   | { type: "added"; leftNumber: null; rightNumber: number; leftContent: ""; rightContent: string };
 
 interface DiffHunk {
@@ -139,7 +151,9 @@ function buildHunks(rows: DiffRow[]): DiffHunk[] {
 function createHunk(rows: DiffRow[], start: number, end: number, index: number): DiffHunk {
   const hunkRows = rows.slice(start, end + 1);
   const leftNumbers = hunkRows.flatMap((row) => (row.leftNumber == null ? [] : [row.leftNumber]));
-  const rightNumbers = hunkRows.flatMap((row) => (row.rightNumber == null ? [] : [row.rightNumber]));
+  const rightNumbers = hunkRows.flatMap((row) =>
+    row.rightNumber == null ? [] : [row.rightNumber],
+  );
 
   return {
     id: `hunk-${index}-${start}-${end}`,
@@ -157,7 +171,10 @@ function cellTone(type: DiffRow["type"], side: "left" | "right") {
       lineNoClass: "text-[var(--diff-remove-ink-soft)]",
       lineNoStyle: { backgroundColor: "var(--diff-remove-gutter)" },
       codeClass: "text-[var(--diff-remove-ink)]",
-      codeStyle: { backgroundColor: "var(--diff-remove-bg)", boxShadow: "inset 3px 0 0 var(--ds-danger)" },
+      codeStyle: {
+        backgroundColor: "var(--diff-remove-bg)",
+        boxShadow: "inset 3px 0 0 var(--ds-danger)",
+      },
       markerClass: "text-[var(--ds-danger)]",
     };
   }
@@ -166,7 +183,10 @@ function cellTone(type: DiffRow["type"], side: "left" | "right") {
       lineNoClass: "text-[var(--diff-add-ink-soft)]",
       lineNoStyle: { backgroundColor: "var(--diff-add-gutter)" },
       codeClass: "text-[var(--diff-add-ink)]",
-      codeStyle: { backgroundColor: "var(--diff-add-bg)", boxShadow: "inset 3px 0 0 var(--ds-brand)" },
+      codeStyle: {
+        backgroundColor: "var(--diff-add-bg)",
+        boxShadow: "inset 3px 0 0 var(--ds-brand)",
+      },
       markerClass: "text-[var(--ds-brand)]",
     };
   }
@@ -191,21 +211,32 @@ function DiffCell({
   side: "left" | "right";
 }) {
   const tone = cellTone(type, side);
-  const marker = side === "left" ? (type === "removed" ? "-" : " ") : (type === "added" ? "+" : " ");
+  const marker = side === "left" ? (type === "removed" ? "-" : " ") : type === "added" ? "+" : " ";
 
   return (
     <>
       <td
-        className={cn("w-14 select-none border-r border-border-subtle px-3 text-right font-mono text-[12px]", tone.lineNoClass)}
+        className={cn(
+          "w-14 select-none border-r border-border-subtle px-3 text-right font-mono text-[12px]",
+          tone.lineNoClass,
+        )}
         style={tone.lineNoStyle}
       >
         {number ?? ""}
       </td>
       <td
-        className={cn("border-r border-border-subtle px-3 font-mono text-[12.5px] leading-6", tone.codeClass)}
+        className={cn(
+          "border-r border-border-subtle px-3 font-mono text-[12.5px] leading-6",
+          tone.codeClass,
+        )}
         style={tone.codeStyle}
       >
-        <span className={cn("mr-3 inline-block w-3 select-none text-center font-semibold", tone.markerClass)}>
+        <span
+          className={cn(
+            "mr-3 inline-block w-3 select-none text-center font-semibold",
+            tone.markerClass,
+          )}
+        >
           {marker}
         </span>
         <span className="whitespace-pre-wrap break-words">{content || " "}</span>
@@ -220,7 +251,12 @@ export function DocumentDiffViewer({ original, updated, className }: DocumentDif
 
   if (hunks.length === 0) {
     return (
-      <div className={cn("rounded-xl border border-border-subtle bg-bg-secondary px-4 py-6 text-center", className)}>
+      <div
+        className={cn(
+          "rounded-xl border border-border-subtle bg-bg-secondary px-4 py-6 text-center",
+          className,
+        )}
+      >
         <div className="text-[13px] font-medium text-secondary">内容没有变化</div>
       </div>
     );
@@ -229,8 +265,14 @@ export function DocumentDiffViewer({ original, updated, className }: DocumentDif
   return (
     <div className={cn(styles.viewer, "space-y-4", className)}>
       {hunks.map((hunk) => (
-        <div key={hunk.id} className="overflow-hidden rounded-xl border border-border-subtle bg-bg-secondary">
-          <div className="grid grid-cols-2 border-b border-border-subtle" style={{ backgroundColor: "var(--ds-panel)" }}>
+        <div
+          key={hunk.id}
+          className="overflow-hidden rounded-xl border border-border-subtle bg-bg-secondary"
+        >
+          <div
+            className="grid grid-cols-2 border-b border-border-subtle"
+            style={{ backgroundColor: "var(--ds-panel)" }}
+          >
             <div className="border-r border-border-subtle px-3 py-2 font-mono text-[11px] text-secondary">
               @@ -{hunk.leftStart},{hunk.leftCount}
             </div>
@@ -240,10 +282,16 @@ export function DocumentDiffViewer({ original, updated, className }: DocumentDif
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full border-collapse" aria-label="左侧原文与右侧更新内容对比"><caption className="text-left px-3 py-2 text-[12px] text-muted">左：原文（− 删除） · 右：更新后（+ 新增）</caption>
+            <table className="min-w-full border-collapse" aria-label="左侧原文与右侧更新内容对比">
+              <caption className="text-left px-3 py-2 text-[12px] text-muted">
+                左：原文（− 删除） · 右：更新后（+ 新增）
+              </caption>
               <tbody>
                 {hunk.rows.map((row, index) => (
-                  <tr key={`${hunk.id}-${index}`} className="border-b border-border-subtle/80 last:border-b-0">
+                  <tr
+                    key={`${hunk.id}-${index}`}
+                    className="border-b border-border-subtle/80 last:border-b-0"
+                  >
                     <DiffCell
                       number={row.leftNumber}
                       content={row.leftContent}

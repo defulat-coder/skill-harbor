@@ -40,74 +40,96 @@ export function PresetBar({
 
   const visiblePresets = useMemo(
     () => presets.filter((p) => statuses.get(p.id)?.status !== "empty"),
-    [presets, statuses]
+    [presets, statuses],
   );
 
-  const handleActivate = useCallback(async (preset: Preset) => {
-    setLoadingKey(`${preset.id}-add`);
-    try {
-      const presetSkills = managedSkills.filter((s) => s.preset_ids.includes(preset.id));
-      let added = 0, skipped = 0, failed = 0;
-      const failures: string[] = [];
-      for (const skill of presetSkills) {
-        for (const agentKey of agentKeys) {
-          if (existsInWorkspace(skill, agentKey)) { skipped++; continue; }
-          try { await onAddSkill(skill, agentKey); added++; }
-          catch (e) { failed++; failures.push(getErrorMessage(e, t("common.error"))); }
+  const handleActivate = useCallback(
+    async (preset: Preset) => {
+      setLoadingKey(`${preset.id}-add`);
+      try {
+        const presetSkills = managedSkills.filter((s) => s.preset_ids.includes(preset.id));
+        let added = 0,
+          skipped = 0,
+          failed = 0;
+        const failures: string[] = [];
+        for (const skill of presetSkills) {
+          for (const agentKey of agentKeys) {
+            if (existsInWorkspace(skill, agentKey)) {
+              skipped++;
+              continue;
+            }
+            try {
+              await onAddSkill(skill, agentKey);
+              added++;
+            } catch (e) {
+              failed++;
+              failures.push(getErrorMessage(e, t("common.error")));
+            }
+          }
         }
+        if (added > 0) {
+          toast.success(t("presetActions.addedToast", { added, skipped }));
+        } else if (failed === 0) {
+          toast.info(t("presetActions.nothingToAdd"));
+        }
+        if (failed > 0) {
+          toast.error(
+            [t("presetActions.partialFailedToast", { count: failed }), failures[0]]
+              .filter(Boolean)
+              .join(" — "),
+          );
+        }
+        await onComplete();
+      } catch (error) {
+        toast.error(getErrorMessage(error, t("common.error")));
+      } finally {
+        setLoadingKey(null);
       }
-      if (added > 0) {
-        toast.success(t("presetActions.addedToast", { added, skipped }));
-      } else if (failed === 0) {
-        toast.info(t("presetActions.nothingToAdd"));
-      }
-      if (failed > 0) {
-        toast.error(
-          [t("presetActions.partialFailedToast", { count: failed }), failures[0]]
-            .filter(Boolean)
-            .join(" — "),
-        );
-      }
-      await onComplete();
-    } catch (error) {
-      toast.error(getErrorMessage(error, t("common.error")));
-    } finally {
-      setLoadingKey(null);
-    }
-  }, [agentKeys, existsInWorkspace, managedSkills, onAddSkill, onComplete, t]);
+    },
+    [agentKeys, existsInWorkspace, managedSkills, onAddSkill, onComplete, t],
+  );
 
-  const handleDeactivate = useCallback(async (preset: Preset) => {
-    setLoadingKey(`${preset.id}-remove`);
-    try {
-      const presetSkills = managedSkills.filter((s) => s.preset_ids.includes(preset.id));
-      let removed = 0, failed = 0;
-      const failures: string[] = [];
-      for (const skill of presetSkills) {
-        for (const agentKey of agentKeys) {
-          if (!existsInWorkspace(skill, agentKey)) continue;
-          try { await onRemoveSkill(skill, agentKey); removed++; }
-          catch (e) { failed++; failures.push(getErrorMessage(e, t("common.error"))); }
+  const handleDeactivate = useCallback(
+    async (preset: Preset) => {
+      setLoadingKey(`${preset.id}-remove`);
+      try {
+        const presetSkills = managedSkills.filter((s) => s.preset_ids.includes(preset.id));
+        let removed = 0,
+          failed = 0;
+        const failures: string[] = [];
+        for (const skill of presetSkills) {
+          for (const agentKey of agentKeys) {
+            if (!existsInWorkspace(skill, agentKey)) continue;
+            try {
+              await onRemoveSkill(skill, agentKey);
+              removed++;
+            } catch (e) {
+              failed++;
+              failures.push(getErrorMessage(e, t("common.error")));
+            }
+          }
         }
+        if (removed > 0) {
+          toast.success(t("presetActions.removedToast", { removed }));
+        } else if (failed === 0) {
+          toast.info(t("presetActions.nothingToRemove"));
+        }
+        if (failed > 0) {
+          toast.error(
+            [t("presetActions.partialFailedToast", { count: failed }), failures[0]]
+              .filter(Boolean)
+              .join(" — "),
+          );
+        }
+        await onComplete();
+      } catch (error) {
+        toast.error(getErrorMessage(error, t("common.error")));
+      } finally {
+        setLoadingKey(null);
       }
-      if (removed > 0) {
-        toast.success(t("presetActions.removedToast", { removed }));
-      } else if (failed === 0) {
-        toast.info(t("presetActions.nothingToRemove"));
-      }
-      if (failed > 0) {
-        toast.error(
-          [t("presetActions.partialFailedToast", { count: failed }), failures[0]]
-            .filter(Boolean)
-            .join(" — "),
-        );
-      }
-      await onComplete();
-    } catch (error) {
-      toast.error(getErrorMessage(error, t("common.error")));
-    } finally {
-      setLoadingKey(null);
-    }
-  }, [agentKeys, existsInWorkspace, managedSkills, onComplete, onRemoveSkill, t]);
+    },
+    [agentKeys, existsInWorkspace, managedSkills, onComplete, onRemoveSkill, t],
+  );
 
   if (visiblePresets.length === 0) return null;
 
@@ -139,13 +161,15 @@ export function PresetBar({
                 s.status === "active"
                   ? `${presetIcon.activeClass} ${presetIcon.colorClass}`
                   : s.status === "partial"
-                  ? "border-[var(--ds-warning)] bg-[var(--ds-warning-bg)] text-[var(--ds-warning)] hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)]"
-                  : "border-border-subtle text-faint hover:border-border hover:text-muted"
+                    ? "border-[var(--ds-warning)] bg-[var(--ds-warning-bg)] text-[var(--ds-warning)] hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)]"
+                    : "border-border-subtle text-faint hover:border-border hover:text-muted",
               )}
             >
-              {isLoading
-                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                : <Icon className="h-3.5 w-3.5" />}
+              {isLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Icon className="h-3.5 w-3.5" />
+              )}
               <span className="max-w-[140px] truncate">{preset.name}</span>
               {s.status === "active" && <Check className="h-3.5 w-3.5 shrink-0" />}
               {s.status === "partial" && (

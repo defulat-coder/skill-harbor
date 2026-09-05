@@ -1,6 +1,12 @@
 import type { ProjectAgentTarget } from "./tauri";
 
-const PROJECT_EXPORT_AGENT_PRIORITY = ["claude_code", "codex", "cursor", "gemini_cli", "github_copilot"];
+const PROJECT_EXPORT_AGENT_PRIORITY = [
+  "claude_code",
+  "codex",
+  "cursor",
+  "gemini_cli",
+  "github_copilot",
+];
 
 // Keys of project agents that can actually receive skills right now: both
 // installed on disk and enabled by the user. Used everywhere export targets

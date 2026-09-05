@@ -60,10 +60,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { listen } from "@tauri-apps/api/event";
 import { writeText as clipboardWriteText } from "@tauri-apps/plugin-clipboard-manager";
 import { check as checkUpdater } from "@tauri-apps/plugin-updater";
-import {
-  open as dialogOpen,
-  confirm as dialogConfirm,
-} from "@tauri-apps/plugin-dialog";
+import { open as dialogOpen, confirm as dialogConfirm } from "@tauri-apps/plugin-dialog";
 import { useNavigate } from "@tanstack/react-router";
 import { cn } from "../utils";
 import { useApp } from "../hooks/useApp";
@@ -153,11 +150,7 @@ interface SortableAgentCardProps {
   children: (dragHandle: React.ReactNode) => React.ReactNode;
 }
 
-function SortableAgentCard({
-  agentKey,
-  dragLabel,
-  children,
-}: SortableAgentCardProps) {
+function SortableAgentCard({ agentKey, dragLabel, children }: SortableAgentCardProps) {
   const {
     attributes,
     listeners,
@@ -201,10 +194,7 @@ interface AgentGroupDndProps {
   sensors: ReturnType<typeof useSensors>;
   dragLabel: string;
   onDragEnd: (event: DragEndEvent, groupKeys: string[]) => void;
-  renderAgentCard: (
-    agent: api.ToolInfo,
-    dragHandle?: React.ReactNode,
-  ) => React.ReactNode;
+  renderAgentCard: (agent: api.ToolInfo, dragHandle?: React.ReactNode) => React.ReactNode;
 }
 
 function AgentGroupDnd({
@@ -224,11 +214,7 @@ function AgentGroupDnd({
       <SortableContext items={groupKeys} strategy={rectSortingStrategy}>
         <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2 xl:grid-cols-3">
           {items.map((agent) => (
-            <SortableAgentCard
-              key={agent.key}
-              agentKey={agent.key}
-              dragLabel={dragLabel}
-            >
+            <SortableAgentCard key={agent.key} agentKey={agent.key} dragLabel={dragLabel}>
               {(handle) => renderAgentCard(agent, handle)}
             </SortableAgentCard>
           ))}
@@ -283,11 +269,8 @@ export function Settings() {
       icon: Info,
     },
   ];
-  const currentSection = sections.find(
-    (section) => section.id === activeSection,
-  )!;
-  const { tools, refreshTools, openHelp, appUpdate, refreshAppUpdate } =
-    useApp();
+  const currentSection = sections.find((section) => section.id === activeSection)!;
+  const { tools, refreshTools, openHelp, appUpdate, refreshAppUpdate } = useApp();
   const [togglingTools, setTogglingTools] = useState<Set<string>>(new Set());
   const { theme, setTheme } = useTheme();
   const queryClient = useQueryClient();
@@ -313,9 +296,7 @@ export function Settings() {
   const [reportingIssue, setReportingIssue] = useState(false);
   const [exportingLogs, setExportingLogs] = useState(false);
   const [centralRepoPath, setCentralRepoPath] = useState("");
-  const [centralRepoPathOverride, setCentralRepoPathOverride] = useState<
-    string | null
-  >(null);
+  const [centralRepoPathOverride, setCentralRepoPathOverride] = useState<string | null>(null);
   const [editingCentralRepoPath, setEditingCentralRepoPath] = useState(false);
   const [centralRepoPathInput, setCentralRepoPathInput] = useState("");
   const [savingCentralRepoPath, setSavingCentralRepoPath] = useState(false);
@@ -332,16 +313,12 @@ export function Settings() {
   const [textSize, setTextSize] = useState("default");
   const [autoUpdateInterval, setAutoUpdateInterval] = useState("off");
   const [autoUpdateApply, setAutoUpdateApply] = useState("off");
-  const [autoUpdateLastRun, setAutoUpdateLastRun] = useState<string | null>(
-    null,
-  );
+  const [autoUpdateLastRun, setAutoUpdateLastRun] = useState<string | null>(null);
   // Agent path editing
   const [editingPathKey, setEditingPathKey] = useState<string | null>(null);
   const [editingPathValue, setEditingPathValue] = useState("");
   // Project path editing (custom agents only)
-  const [editingProjectPathKey, setEditingProjectPathKey] = useState<
-    string | null
-  >(null);
+  const [editingProjectPathKey, setEditingProjectPathKey] = useState<string | null>(null);
   const [editingProjectPathValue, setEditingProjectPathValue] = useState("");
   // Custom agent dialog
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -375,23 +352,17 @@ export function Settings() {
     }
   };
 
-  const startEditProjectPath = useCallback(
-    (key: string, currentPath: string | null) => {
-      setEditingProjectPathKey(key);
-      setEditingProjectPathValue(currentPath ?? "");
-    },
-    [],
-  );
+  const startEditProjectPath = useCallback((key: string, currentPath: string | null) => {
+    setEditingProjectPathKey(key);
+    setEditingProjectPathValue(currentPath ?? "");
+  }, []);
 
   const handleSaveProjectPath = async () => {
     if (pathSaving || !editingProjectPathKey) return;
     setPathSaving(true);
     const trimmed = editingProjectPathValue.trim();
     try {
-      await api.setCustomToolProjectPath(
-        editingProjectPathKey,
-        trimmed || null,
-      );
+      await api.setCustomToolProjectPath(editingProjectPathKey, trimmed || null);
       await refreshTools();
       toast.success(t("settings.pathSaved"));
       setEditingProjectPathKey(null);
@@ -452,12 +423,7 @@ export function Settings() {
     const trimKey = generateCustomAgentKey(trimName);
     setAddingCustom(true);
     try {
-      await api.addCustomTool(
-        trimKey,
-        trimName,
-        trimPath,
-        trimProjectPath || undefined,
-      );
+      await api.addCustomTool(trimKey, trimName, trimPath, trimProjectPath || undefined);
       await refreshTools();
       setCustomError("");
       toast.success(t("settings.customAgentAdded"));
@@ -473,9 +439,7 @@ export function Settings() {
   };
 
   const handleRemoveCustomAgent = async (key: string, name: string) => {
-    const shouldRemove = await dialogConfirm(
-      t("settings.removeCustomAgentConfirm", { name }),
-    );
+    const shouldRemove = await dialogConfirm(t("settings.removeCustomAgentConfirm", { name }));
     if (!shouldRemove) return;
     try {
       await api.removeCustomTool(key);
@@ -640,15 +604,12 @@ export function Settings() {
   // avoids a follow-up DB roundtrip.
   useEffect(() => {
     type AutoUpdatedPayload = { ran_at?: string };
-    const unlistenPromise = listen<AutoUpdatedPayload>(
-      "skills-auto-updated",
-      (event) => {
-        const ranAt = event.payload?.ran_at;
-        if (ranAt) {
-          setAutoUpdateLastRun(ranAt);
-        }
-      },
-    );
+    const unlistenPromise = listen<AutoUpdatedPayload>("skills-auto-updated", (event) => {
+      const ranAt = event.payload?.ran_at;
+      if (ranAt) {
+        setAutoUpdateLastRun(ranAt);
+      }
+    });
     return () => {
       unlistenPromise.then((unlisten) => unlisten()).catch(() => {});
     };
@@ -713,12 +674,9 @@ export function Settings() {
     setExportingLogs(true);
     try {
       const result = await api.exportLogsZip();
-      toast.success(
-        t("settings.exportLogsDone", { count: result.file_count }),
-        {
-          description: result.zip_path,
-        },
-      );
+      toast.success(t("settings.exportLogsDone", { count: result.file_count }), {
+        description: result.zip_path,
+      });
     } catch (error) {
       console.error("Failed to export logs", error);
       toast.error(t("settings.exportLogsFailed"));
@@ -747,12 +705,8 @@ export function Settings() {
         }),
         api.checkLastPanic().catch(() => null),
       ]);
-      const enabledBuiltin = enabledTools
-        .filter((tool) => !tool.is_custom)
-        .map((tool) => tool.key);
-      const enabledCustomCount = enabledTools.filter(
-        (tool) => tool.is_custom,
-      ).length;
+      const enabledBuiltin = enabledTools.filter((tool) => !tool.is_custom).map((tool) => tool.key);
+      const enabledCustomCount = enabledTools.filter((tool) => tool.is_custom).length;
       const agentsLine =
         enabledBuiltin.length === 0 && enabledCustomCount === 0
           ? "(none)"
@@ -833,9 +787,7 @@ export function Settings() {
     try {
       const info = await refreshAppUpdate();
       if (info.has_update) {
-        toast.info(
-          t("settings.updateAvailable", { version: info.latest_version }),
-        );
+        toast.info(t("settings.updateAvailable", { version: info.latest_version }));
       } else {
         toast.success(t("settings.noUpdate"));
       }
@@ -901,9 +853,7 @@ export function Settings() {
       // Credentials embedded in the URL go to the OS keychain; only the
       // sanitized URL is persisted (backup redesign §3.7).
       const trimmed = gitRemoteInput.trim();
-      const effective = trimmed
-        ? await api.gitBackupSanitizeRemoteUrl(trimmed)
-        : "";
+      const effective = trimmed ? await api.gitBackupSanitizeRemoteUrl(trimmed) : "";
       await api.setSettings("git_backup_remote_url", effective);
       setGitRemoteInput(effective);
       toast.success(t("settings.gitConfigSaved"));
@@ -950,16 +900,12 @@ export function Settings() {
   const actionButtonClass = "ds-button ds-button-secondary gap-1.5";
   const segmentedButtonClass = "app-segmented-button flex items-center gap-1.5";
 
-  const themeOptions: Array<{ value: Theme; label: string; icon: typeof Sun }> =
-    [
-      { value: "light", label: t("settings.themeLight"), icon: Sun },
-      { value: "dark", label: t("settings.themeDark"), icon: Moon },
-      { value: "system", label: t("settings.themeSystem"), icon: Monitor },
-    ];
-  const installedTools = useMemo(
-    () => tools.filter((tool) => tool.installed),
-    [tools],
-  );
+  const themeOptions: Array<{ value: Theme; label: string; icon: typeof Sun }> = [
+    { value: "light", label: t("settings.themeLight"), icon: Sun },
+    { value: "dark", label: t("settings.themeDark"), icon: Moon },
+    { value: "system", label: t("settings.themeSystem"), icon: Monitor },
+  ];
+  const installedTools = useMemo(() => tools.filter((tool) => tool.installed), [tools]);
   // No manual memoization here: the compiler could not preserve this useMemo,
   // and it memoizes the filter itself.
   const enabledTools = installedTools.filter((tool) => tool.enabled);
@@ -973,14 +919,8 @@ export function Settings() {
     { value: "off", label: t("settings.autoUpdate.applyOff") },
     { value: "on", label: t("settings.autoUpdate.applyOn") },
   ] as const;
-  const customTools = useMemo(
-    () => tools.filter((tool) => tool.is_custom),
-    [tools],
-  );
-  const builtInTools = useMemo(
-    () => tools.filter((tool) => !tool.is_custom),
-    [tools],
-  );
+  const customTools = useMemo(() => tools.filter((tool) => tool.is_custom), [tools]);
+  const builtInTools = useMemo(() => tools.filter((tool) => !tool.is_custom), [tools]);
   // Grouped by what is actually on this machine rather than by a hand-kept
   // "mainstream" list. A settings page reader cares about the agents they have,
   // and that list stays correct without anyone re-curating it as products rise
@@ -1015,9 +955,7 @@ export function Settings() {
       const fullOrder = tools.map((t) => t.key);
       const groupKeySet = new Set(groupKeys);
       let cursor = 0;
-      const newFullOrder = fullOrder.map((k) =>
-        groupKeySet.has(k) ? newGroupKeys[cursor++] : k,
-      );
+      const newFullOrder = fullOrder.map((k) => (groupKeySet.has(k) ? newGroupKeys[cursor++] : k));
 
       try {
         await api.setToolOrder(newFullOrder);
@@ -1032,10 +970,7 @@ export function Settings() {
     ? compactHomePath(centralRepoPath)
     : t("common.loading");
 
-  const renderAgentCard = (
-    agent: (typeof tools)[number],
-    dragHandle?: React.ReactNode,
-  ) => (
+  const renderAgentCard = (agent: (typeof tools)[number], dragHandle?: React.ReactNode) => (
     <div
       className={cn(
         "group relative flex h-full flex-col gap-1.5 rounded-xl border px-3.5 py-3 transition-colors",
@@ -1093,9 +1028,7 @@ export function Settings() {
 
         {agent.is_custom && (
           <Button
-            onClick={() =>
-              handleRemoveCustomAgent(agent.key, agent.display_name)
-            }
+            onClick={() => handleRemoveCustomAgent(agent.key, agent.display_name)}
             className="mt-0.5 shrink-0 text-muted transition-opacity hover:text-[var(--ds-danger)]"
             title={t("settings.removeCustomAgent")}
           >
@@ -1228,10 +1161,7 @@ export function Settings() {
           <div className="flex items-center gap-1">
             <p
               className="min-w-0 flex-1 truncate text-[12px] font-mono leading-tight text-muted"
-              title={
-                agent.project_relative_skills_dir ??
-                t("settings.projectSkillsPathDesc")
-              }
+              title={agent.project_relative_skills_dir ?? t("settings.projectSkillsPathDesc")}
             >
               {agent.project_relative_skills_dir
                 ? !agent.is_custom && !agent.has_project_path_override
@@ -1245,12 +1175,7 @@ export function Settings() {
             </p>
             <Button
               type="button"
-              onClick={() =>
-                startEditProjectPath(
-                  agent.key,
-                  agent.project_relative_skills_dir,
-                )
-              }
+              onClick={() => startEditProjectPath(agent.key, agent.project_relative_skills_dir)}
               className="shrink-0 text-muted hover:text-accent transition-opacity"
               title={t("settings.editPath")}
             >
@@ -1274,9 +1199,7 @@ export function Settings() {
 
   return (
     <div className={`app-page ${styles.page}`}>
-      <PageHeader
-        title={t("settings.title")}
-      />
+      <PageHeader title={t("settings.title")} />
 
       <div className="ds-settings-layout">
         <nav className="ds-settings-nav" aria-label="设置分类">
@@ -1293,75 +1216,48 @@ export function Settings() {
             </Button>
           ))}
         </nav>
-        <div
-          className="ds-settings-content space-y-6"
-          aria-labelledby="settings-section-title"
-        >
+        <div className="ds-settings-content space-y-6" aria-labelledby="settings-section-title">
           <div>
-            <h2
-              id="settings-section-title"
-              className="text-lg font-semibold text-primary"
-            >
+            <h2 id="settings-section-title" className="text-lg font-semibold text-primary">
               {currentSection.label}
             </h2>
-            <p className="mt-1 text-sm text-muted">
-              {currentSection.description}
-            </p>
+            <p className="mt-1 text-sm text-muted">{currentSection.description}</p>
           </div>
           <div hidden={activeSection !== "runner"}>
             <RunnerSettings />
           </div>
-          {activeSection !== "runner" && settingsLoading && (
-            <LoadingState label="正在读取设置…" />
-          )}
+          {activeSection !== "runner" && settingsLoading && <LoadingState label="正在读取设置…" />}
           {activeSection !== "runner" && settingsLoadError && (
             <div role="alert" className={styles.error}>
               {settingsLoadError}
-              <Button onClick={retrySettingsLoad}>
-                重新读取
-              </Button>
+              <Button onClick={retrySettingsLoad}>重新读取</Button>
             </div>
           )}
           {preferenceBusy && <LoadingState label="正在保存设置…" />}
           <fieldset
             className={styles.settingsFields}
-            disabled={
-              settingsLoading || Boolean(settingsLoadError) || preferenceBusy
-            }
+            disabled={settingsLoading || Boolean(settingsLoadError) || preferenceBusy}
           >
             {/* Agent status */}
             <section hidden={activeSection !== "tools"}>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="app-section-title">
-                    {t("settings.supportedAgents")} ({installedTools.length}/
-                    {tools.length})
+                    {t("settings.supportedAgents")} ({installedTools.length}/{tools.length})
                   </h2>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <Button
-                    variant="primary"
-                    onClick={() => setShowAddCustom(true)}
-                  >
+                  <Button variant="primary" onClick={() => setShowAddCustom(true)}>
                     <Plus className="w-3.5 h-3.5" />
                     {t("settings.addCustomAgent")}
                   </Button>
-                  <Button
-                    disabled={bulkBusy}
-                    onClick={() => handleToggleAllTools(true)}
-                  >
+                  <Button disabled={bulkBusy} onClick={() => handleToggleAllTools(true)}>
                     {t("settings.enableAll")}
                   </Button>
-                  <Button
-                    disabled={bulkBusy}
-                    onClick={() => handleToggleAllTools(false)}
-                  >
+                  <Button disabled={bulkBusy} onClick={() => handleToggleAllTools(false)}>
                     {t("settings.disableAll")}
                   </Button>
-                  <Button
-                    onClick={handleRefresh}
-                    disabled={refreshing}
-                  >
+                  <Button onClick={handleRefresh} disabled={refreshing}>
                     {refreshing ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
@@ -1375,21 +1271,15 @@ export function Settings() {
               <div className="mb-3 flex flex-wrap items-center gap-3 text-[13px] text-muted">
                 <span>
                   {t("settings.detectedAgents")}{" "}
-                  <span className="font-medium text-secondary">
-                    {installedTools.length}
-                  </span>
+                  <span className="font-medium text-secondary">{installedTools.length}</span>
                 </span>
                 <span>
                   {t("settings.enabledAgents")}{" "}
-                  <span className="font-medium text-secondary">
-                    {enabledTools.length}
-                  </span>
+                  <span className="font-medium text-secondary">{enabledTools.length}</span>
                 </span>
                 <span>
                   {t("settings.customAgents")}{" "}
-                  <span className="font-medium text-secondary">
-                    {customTools.length}
-                  </span>
+                  <span className="font-medium text-secondary">{customTools.length}</span>
                 </span>
               </div>
 
@@ -1409,10 +1299,7 @@ export function Settings() {
                   }}
                 >
                   <div>
-                    <label
-                      htmlFor="customName"
-                      className="text-[12px] text-muted mb-1 block"
-                    >
+                    <label htmlFor="customName" className="text-[12px] text-muted mb-1 block">
                       {t("settings.agentName")}
                     </label>
                     <input
@@ -1428,10 +1315,7 @@ export function Settings() {
                     />
                   </div>
                   <div>
-                    <label
-                      htmlFor="customPath"
-                      className="text-[12px] text-muted mb-1 block"
-                    >
+                    <label htmlFor="customPath" className="text-[12px] text-muted mb-1 block">
                       {t("settings.skillsPath")}
                     </label>
                     <div className="flex flex-wrap items-center gap-2">
@@ -1478,11 +1362,7 @@ export function Settings() {
                     </p>
                   </div>
                   <div className="flex justify-end">
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      disabled={addingCustom}
-                    >
+                    <Button type="submit" variant="primary" disabled={addingCustom}>
                       {addingCustom ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
@@ -1546,9 +1426,7 @@ export function Settings() {
                       <h3 className="text-[13px] font-medium text-secondary">
                         {t("settings.customAgentsSection")}
                       </h3>
-                      <span className="text-[12px] text-muted">
-                        {customTools.length}
-                      </span>
+                      <span className="text-[12px] text-muted">{customTools.length}</span>
                     </div>
                     <AgentGroupDnd
                       items={customTools}
@@ -1564,9 +1442,7 @@ export function Settings() {
 
             {/* Global config */}
             <section hidden={activeSection !== "tools"}>
-              <h2 className="app-section-title mb-3">
-                {t("settings.globalConfig")}
-              </h2>
+              <h2 className="app-section-title mb-3">{t("settings.globalConfig")}</h2>
               <div className="ds-panel overflow-hidden divide-y divide-border-faint">
                 {/* Repo path */}
                 <div className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
@@ -1574,9 +1450,7 @@ export function Settings() {
                     <h3 className="text-[14px] font-semibold text-primary">
                       {t("settings.repoPath")}
                     </h3>
-                    <p className="mt-0.5 text-[12px] text-muted">
-                      {t("settings.repoPathDesc")}
-                    </p>
+                    <p className="mt-0.5 text-[12px] text-muted">{t("settings.repoPathDesc")}</p>
                   </div>
                   <div className="flex max-w-full flex-wrap items-center gap-2">
                     {editingCentralRepoPath ? (
@@ -1585,27 +1459,20 @@ export function Settings() {
                           type="text"
                           aria-label={t("settings.repoPath")}
                           value={centralRepoPathInput}
-                          onChange={(e) =>
-                            setCentralRepoPathInput(e.target.value)
-                          }
+                          onChange={(e) => setCentralRepoPathInput(e.target.value)}
                           className={`${fieldClass} min-w-0 flex-1 font-mono`}
                           autoFocus
                           onKeyDown={(e) => {
-                            if (e.key === "Enter")
-                              void handleSaveCentralRepoPath();
+                            if (e.key === "Enter") void handleSaveCentralRepoPath();
                             if (e.key === "Escape") {
-                              setCentralRepoPathInput(
-                                centralRepoPathOverride ?? centralRepoPath,
-                              );
+                              setCentralRepoPathInput(centralRepoPathOverride ?? centralRepoPath);
                               setEditingCentralRepoPath(false);
                             }
                           }}
                         />
                         <Button
                           type="button"
-                          onClick={() =>
-                            handleBrowsePath(setCentralRepoPathInput)
-                          }
+                          onClick={() => handleBrowsePath(setCentralRepoPathInput)}
                           disabled={savingCentralRepoPath}
                           className={actionButtonClass}
                         >
@@ -1628,9 +1495,7 @@ export function Settings() {
                         <Button
                           type="button"
                           onClick={() => {
-                            setCentralRepoPathInput(
-                              centralRepoPathOverride ?? centralRepoPath,
-                            );
+                            setCentralRepoPathInput(centralRepoPathOverride ?? centralRepoPath);
                             setEditingCentralRepoPath(false);
                           }}
                           disabled={savingCentralRepoPath}
@@ -1700,8 +1565,7 @@ export function Settings() {
                       {t("settings.syncMode")}
                     </h3>
                     <p className="mt-0.5 text-[12px] text-muted">
-                      {t("settings.syncModeDesc")}{" "}
-                      项目添加始终使用软链接；此选项用于旧同步流程。
+                      {t("settings.syncModeDesc")} 项目添加始终使用软链接；此选项用于旧同步流程。
                     </p>
                   </div>
                   <div className="app-segmented flex-wrap bg-background">
@@ -1797,15 +1661,9 @@ export function Settings() {
                             : "text-muted hover:text-tertiary",
                         )}
                       >
-                        {opt.value === "small" && (
-                          <Type className="w-2.5 h-2.5" />
-                        )}
-                        {opt.value === "default" && (
-                          <Type className="w-3 h-3" />
-                        )}
-                        {opt.value === "large" && (
-                          <Type className="w-3.5 h-3.5" />
-                        )}
+                        {opt.value === "small" && <Type className="w-2.5 h-2.5" />}
+                        {opt.value === "default" && <Type className="w-3 h-3" />}
+                        {opt.value === "large" && <Type className="w-3.5 h-3.5" />}
                         {opt.value === "xlarge" && <Type className="w-4 h-4" />}
                         {opt.label}
                       </Button>
@@ -1851,13 +1709,9 @@ export function Settings() {
                     <h3 className="text-[14px] font-semibold text-primary">
                       {t("settings.closeAction")}
                     </h3>
-                    <p className="mt-0.5 text-[12px] text-muted">
-                      {t("settings.closeActionDesc")}
-                    </p>
+                    <p className="mt-0.5 text-[12px] text-muted">{t("settings.closeActionDesc")}</p>
                     {!showTrayIcon && (
-                      <p className="text-[12px] text-muted mt-1">
-                        {t("settings.trayIconOffHint")}
-                      </p>
+                      <p className="text-[12px] text-muted mt-1">{t("settings.trayIconOffHint")}</p>
                     )}
                   </div>
                   <div className="app-segmented flex-wrap bg-background">
@@ -1889,19 +1743,13 @@ export function Settings() {
                     <h3 className="text-[14px] font-semibold text-primary">
                       {t("settings.trayIcon")}
                     </h3>
-                    <p className="mt-0.5 text-[12px] text-muted">
-                      {t("settings.trayIconDesc")}
-                    </p>
+                    <p className="mt-0.5 text-[12px] text-muted">{t("settings.trayIconDesc")}</p>
                   </div>
                   <ToggleSwitch
                     className="mt-1"
                     checked={showTrayIcon}
                     onChange={() => handleShowTrayIconChange(!showTrayIcon)}
-                    title={
-                      showTrayIcon
-                        ? t("settings.trayIcon_on")
-                        : t("settings.trayIcon_off")
-                    }
+                    title={showTrayIcon ? t("settings.trayIcon_on") : t("settings.trayIcon_off")}
                   />
                 </div>
               </div>
@@ -1909,17 +1757,13 @@ export function Settings() {
 
             {/* Proxy config */}
             <section hidden={activeSection !== "sync"}>
-              <h2 className="app-section-title mb-3">
-                {t("settings.proxyConfig")}
-              </h2>
+              <h2 className="app-section-title mb-3">{t("settings.proxyConfig")}</h2>
               <div className="ds-panel overflow-hidden divide-y divide-border-faint">
                 <div className="px-4 py-3">
                   <h3 className="text-[14px] font-semibold text-primary">
                     {t("settings.proxyUrl")}
                   </h3>
-                  <p className="mt-0.5 mb-2 text-[12px] text-muted">
-                    {t("settings.proxyUrlDesc")}
-                  </p>
+                  <p className="mt-0.5 mb-2 text-[12px] text-muted">{t("settings.proxyUrlDesc")}</p>
                   <div className="flex flex-wrap items-center gap-2">
                     <input
                       type="text"
@@ -1948,9 +1792,7 @@ export function Settings() {
 
             {/* Skill auto-update */}
             <section hidden={activeSection !== "sync"}>
-              <h2 className="app-section-title mb-3">
-                {t("settings.autoUpdate.title")}
-              </h2>
+              <h2 className="app-section-title mb-3">{t("settings.autoUpdate.title")}</h2>
               <div className="ds-panel overflow-hidden divide-y divide-border-faint">
                 <div className="flex items-center justify-between gap-4 px-4 py-2.5">
                   <div className="min-w-0">
@@ -1972,9 +1814,7 @@ export function Settings() {
                         key={option.value}
                         type="button"
                         aria-pressed={autoUpdateInterval === option.value}
-                        onClick={() =>
-                          handleAutoUpdateIntervalChange(option.value)
-                        }
+                        onClick={() => handleAutoUpdateIntervalChange(option.value)}
                         className={cn(
                           segmentedButtonClass,
                           autoUpdateInterval === option.value
@@ -1992,9 +1832,7 @@ export function Settings() {
                     <h3 className="text-[14px] font-semibold text-primary">
                       {t("settings.autoUpdate.applyLabel")}
                     </h3>
-                    <p className="text-[12px] text-muted">
-                      {t("settings.autoUpdate.applyDesc")}
-                    </p>
+                    <p className="text-[12px] text-muted">{t("settings.autoUpdate.applyDesc")}</p>
                   </div>
                   <div className="app-segmented flex-wrap bg-background">
                     {autoUpdateApplyOptions.map((option) => (
@@ -2002,9 +1840,7 @@ export function Settings() {
                         key={option.value}
                         type="button"
                         aria-pressed={autoUpdateApply === option.value}
-                        onClick={() =>
-                          handleAutoUpdateApplyChange(option.value)
-                        }
+                        onClick={() => handleAutoUpdateApplyChange(option.value)}
                         className={cn(
                           segmentedButtonClass,
                           autoUpdateApply === option.value
@@ -2022,9 +1858,7 @@ export function Settings() {
 
             {/* Git sync config */}
             <section hidden={activeSection !== "sync"}>
-              <h2 className="app-section-title mb-3">
-                {t("settings.gitSyncConfig")}
-              </h2>
+              <h2 className="app-section-title mb-3">{t("settings.gitSyncConfig")}</h2>
               <div className="ds-panel overflow-hidden divide-y divide-border-faint">
                 <div className="px-4 py-3">
                   <h3 className="text-[14px] font-semibold text-primary">
@@ -2077,9 +1911,7 @@ export function Settings() {
                       {t("settings.gitDisconnect")}
                     </Button>
                   </div>
-                  <p className="text-[12px] text-muted mt-2">
-                    {t("settings.gitDisconnectHint")}
-                  </p>
+                  <p className="text-[12px] text-muted mt-2">{t("settings.gitDisconnectHint")}</p>
                   <div className="mt-3 flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-[14px] font-semibold text-primary">
@@ -2097,10 +1929,7 @@ export function Settings() {
                         const next = !gitEngineGit2;
                         setGitEngineGit2(next);
                         try {
-                          await api.setSettings(
-                            "git_backup_engine",
-                            next ? "git2" : "system",
-                          );
+                          await api.setSettings("git_backup_engine", next ? "git2" : "system");
                           toast.success(t("common.success"));
                         } catch {
                           setGitEngineGit2(!next);
@@ -2126,10 +1955,7 @@ export function Settings() {
                         const next = !gitMergeEngineObject;
                         setGitMergeEngineObject(next);
                         try {
-                          await api.setSettings(
-                            "merge_engine",
-                            next ? "object" : "system",
-                          );
+                          await api.setSettings("merge_engine", next ? "object" : "system");
                           toast.success(t("common.success"));
                         } catch {
                           setGitMergeEngineObject(!next);
@@ -2158,9 +1984,7 @@ export function Settings() {
                 <div className="ds-panel flex flex-wrap items-center justify-between gap-2 p-3 border border-[color-mix(in_srgb,var(--ds-danger)_40%,transparent)] bg-[var(--ds-danger-bg)]">
                   <div className="flex min-w-0 items-center gap-2 text-[13px] text-[var(--ds-danger)]">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
-                    <span>
-                      {t("settings.panicBanner", { time: lastPanic.timestamp })}
-                    </span>
+                    <span>{t("settings.panicBanner", { time: lastPanic.timestamp })}</span>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -2222,9 +2046,7 @@ export function Settings() {
                           ) : (
                             <Download className="w-3.5 h-3.5" />
                           )}
-                          {installing
-                            ? t("settings.installing")
-                            : t("settings.installUpdate")}
+                          {installing ? t("settings.installing") : t("settings.installUpdate")}
                         </Button>
                         <Button
                           type="button"
@@ -2233,8 +2055,7 @@ export function Settings() {
                           }}
                           className={actionButtonClass}
                         >
-                          <ExternalLink className="w-3.5 h-3.5" />{" "}
-                          {t("settings.download")}
+                          <ExternalLink className="w-3.5 h-3.5" /> {t("settings.download")}
                         </Button>
                       </>
                     ) : (
@@ -2245,8 +2066,7 @@ export function Settings() {
                           openUrl(appUpdate.release_url).catch(() => {});
                         }}
                       >
-                        <Download className="w-3.5 h-3.5" />{" "}
-                        {t("settings.download")}
+                        <Download className="w-3.5 h-3.5" /> {t("settings.download")}
                       </Button>
                     )
                   ) : (
@@ -2261,16 +2081,10 @@ export function Settings() {
                       ) : (
                         <RefreshCw className="w-3.5 h-3.5" />
                       )}
-                      {checkingUpdate
-                        ? t("settings.checking")
-                        : t("settings.checkUpdate")}
+                      {checkingUpdate ? t("settings.checking") : t("settings.checkUpdate")}
                     </Button>
                   )}
-                  <Button
-                    type="button"
-                    onClick={openHelp}
-                    className={actionButtonClass}
-                  >
+                  <Button type="button" onClick={openHelp} className={actionButtonClass}>
                     <BookOpen className="w-3.5 h-3.5" /> {t("settings.help")}
                   </Button>
                   <Button

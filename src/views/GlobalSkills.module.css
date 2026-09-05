@@ -1,14 +1,46 @@
-.library { min-width:0; }
-.skill { min-height:172px; display:flex; flex-direction:column; }
-.skill footer { margin-top:auto; }
-.skill :global(.ds-skill-open) { flex:1; padding:2px 0 16px; }
-.library :global(.ds-skills-list) .skill { min-height:84px; }
-.library :global(.ds-skills-list) .skill :global(.ds-skill-open) { padding:0; }
-.library :global(.ds-skills-list) .skill footer { margin-top:0; }
-.library :global(.ds-selection-bar) { min-height:64px; }
+.library {
+  min-width: 0;
+}
+.skill {
+  min-height: 172px;
+  display: flex;
+  flex-direction: column;
+}
+.skill footer {
+  margin-top: auto;
+}
+.skill :global(.ds-skill-open) {
+  flex: 1;
+  padding: 2px 0 16px;
+}
+.library :global(.ds-skills-list) .skill {
+  min-height: 84px;
+}
+.library :global(.ds-skills-list) .skill :global(.ds-skill-open) {
+  padding: 0;
+}
+.library :global(.ds-skills-list) .skill footer {
+  margin-top: 0;
+}
+.library :global(.ds-selection-bar) {
+  min-height: 64px;
+}
 
-.library :global(.ds-filters) { padding: 12px 0 20px; flex-wrap: wrap; }
-.library :global(.ds-skills) { margin-top: 16px; }
-.library :global(.ds-skills-list) .skill { grid-template-columns: 100px minmax(0,1fr); }
-.library :global(.ds-skills-list) .skill footer { display: none; }
-@media(max-width:760px) { .library :global(.ds-skills-list) .skill { grid-template-columns: 1fr; } }
+.library :global(.ds-filters) {
+  padding: 12px 0 20px;
+  flex-wrap: wrap;
+}
+.library :global(.ds-skills) {
+  margin-top: 16px;
+}
+.library :global(.ds-skills-list) .skill {
+  grid-template-columns: 100px minmax(0, 1fr);
+}
+.library :global(.ds-skills-list) .skill footer {
+  display: none;
+}
+@media (max-width: 760px) {
+  .library :global(.ds-skills-list) .skill {
+    grid-template-columns: 1fr;
+  }
+}

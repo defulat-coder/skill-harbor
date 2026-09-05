@@ -26,8 +26,6 @@ export function TagRenameDialog({ open, currentName, onClose, onRename }: Props)
     if (open) setName(currentName);
   }
 
-
-
   const canSave = name.trim().length > 0 && name.trim() !== currentName;
 
   const handleRename = async () => {
@@ -49,8 +47,23 @@ export function TagRenameDialog({ open, currentName, onClose, onRename }: Props)
   const inputClass = "app-input w-full";
 
   return (
-    <DetailSheet open={open} title={t("mySkills.tags.renameTag")} onClose={() => { if (!pending.current) { setError(""); onClose(); } }} size="compact" closeDisabled={loading}>
-      {error && <p role="alert" className="text-danger mb-3">{error}</p>}
+    <DetailSheet
+      open={open}
+      title={t("mySkills.tags.renameTag")}
+      onClose={() => {
+        if (!pending.current) {
+          setError("");
+          onClose();
+        }
+      }}
+      size="compact"
+      closeDisabled={loading}
+    >
+      {error && (
+        <p role="alert" className="text-danger mb-3">
+          {error}
+        </p>
+      )}
       <fieldset disabled={loading} className="min-w-0 border-0 p-0 m-0">
         <div className="space-y-3">
           <div>
@@ -64,20 +77,29 @@ export function TagRenameDialog({ open, currentName, onClose, onRename }: Props)
               onChange={(e) => setName(e.target.value)}
               className={inputClass}
               autoFocus
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) void handleRename(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.nativeEvent.isComposing) void handleRename();
+              }}
             />
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button
-              onClick={() => { if (!pending.current) { setError(""); onClose(); } }}
-              variant="ghost" disabled={loading}
+              onClick={() => {
+                if (!pending.current) {
+                  setError("");
+                  onClose();
+                }
+              }}
+              variant="ghost"
+              disabled={loading}
             >
               {t("common.cancel")}
             </Button>
             <Button
               onClick={handleRename}
               disabled={!canSave || loading}
-              variant="primary" busy={loading}
+              variant="primary"
+              busy={loading}
             >
               {loading ? t("common.loading") : t("common.save")}
             </Button>

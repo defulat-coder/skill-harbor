@@ -4,11 +4,7 @@ import { Button } from "./ui/Button";
 import { ChineseGuide } from "./ChineseGuide";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Folder,
-  HardDrive,
-  Globe,
-} from "lucide-react";
+import { Folder, HardDrive, Globe } from "lucide-react";
 import { GithubIcon } from "./GithubIcon";
 import { useTranslation } from "react-i18next";
 import { cn } from "../utils";
@@ -117,9 +113,9 @@ function SkillDetailPanelContent({
   const [contentTab, setContentTab] = useState<"zh" | "local" | "diff" | "source">("zh");
   const skillId = skill.id;
   const supportsSourceDiff =
-    skill.source_type === "git"
-    || skill.source_type === "skillssh"
-    || ((skill.source_type === "local" || skill.source_type === "import") && !!skill.source_ref);
+    skill.source_type === "git" ||
+    skill.source_type === "skillssh" ||
+    ((skill.source_type === "local" || skill.source_type === "import") && !!skill.source_ref);
 
   const docQuery = useQuery({
     queryKey: queryKeys.skills.document(skillId),
@@ -198,26 +194,33 @@ function SkillDetailPanelContent({
         </span>
       </div>
       {metadataItems.length > 0 && (
-        <Disclosure open={isMetadataExpanded} onOpenChange={setIsMetadataExpanded}
-          title={<span className="flex items-center gap-2">{sourceIcon(skill.source_type)}{t("mySkills.sourceType")} · {sourceTypeLabel(skill.source_type)}</span>}>
-
-            <div id="skill-source-metadata" className="border-t border-border-subtle px-4 py-3">
-              <div className="grid gap-2 md:grid-cols-2">
-                {metadataItems.map((item) => (
-                  <div key={item.label} className="min-w-0">
-                    <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-faint">
-                      {item.label}
-                    </div>
-                    <div
-                      className="mt-0.5 truncate font-mono text-[12px] text-secondary"
-                      title={item.value ?? undefined}
-                    >
-                      {item.value}
-                    </div>
+        <Disclosure
+          open={isMetadataExpanded}
+          onOpenChange={setIsMetadataExpanded}
+          title={
+            <span className="flex items-center gap-2">
+              {sourceIcon(skill.source_type)}
+              {t("mySkills.sourceType")} · {sourceTypeLabel(skill.source_type)}
+            </span>
+          }
+        >
+          <div id="skill-source-metadata" className="border-t border-border-subtle px-4 py-3">
+            <div className="grid gap-2 md:grid-cols-2">
+              {metadataItems.map((item) => (
+                <div key={item.label} className="min-w-0">
+                  <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-faint">
+                    {item.label}
                   </div>
-                ))}
-              </div>
+                  <div
+                    className="mt-0.5 truncate font-mono text-[12px] text-secondary"
+                    title={item.value ?? undefined}
+                  >
+                    {item.value}
+                  </div>
+                </div>
+              ))}
             </div>
+          </div>
         </Disclosure>
       )}
     </>
@@ -227,7 +230,9 @@ function SkillDetailPanelContent({
     <DetailSheet
       open={true}
       title={skill.name}
-      description={skill.description ? <p className="line-clamp-3">{skill.description}</p> : undefined}
+      description={
+        skill.description ? <p className="line-clamp-3">{skill.description}</p> : undefined
+      }
       meta={meta}
       onClose={onClose}
     >
@@ -241,16 +246,14 @@ function SkillDetailPanelContent({
       )}
 
       {projects && projects.length > 0 && (
-        <SkillProjectsSection
-          skill={skill}
-          projects={projects}
-          onChanged={onProjectsChanged}
-        />
+        <SkillProjectsSection skill={skill} projects={projects} onChanged={onProjectsChanged} />
       )}
 
-      {(
+      {
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          {(["zh", "local", ...(supportsSourceDiff ? ["diff", "source"] as const : [])] as const).map((tab) => (
+          {(
+            ["zh", "local", ...(supportsSourceDiff ? (["diff", "source"] as const) : [])] as const
+          ).map((tab) => (
             <button
               key={tab}
               type="button"
@@ -260,15 +263,17 @@ function SkillDetailPanelContent({
                 "rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors",
                 contentTab === tab
                   ? "bg-accent text-[var(--ds-on-accent)]"
-                  : "bg-surface-hover text-muted hover:text-secondary"
+                  : "bg-surface-hover text-muted hover:text-secondary",
               )}
               disabled={tab === "source" && sourceLoading}
             >
-              {tab === "zh" ? "中文用法" : tab === "local"
-                ? t("mySkills.docTabs.local")
-                : tab === "diff"
-                  ? t("mySkills.docTabs.diff")
-                  : t("mySkills.docTabs.source")}
+              {tab === "zh"
+                ? "中文用法"
+                : tab === "local"
+                  ? t("mySkills.docTabs.local")
+                  : tab === "diff"
+                    ? t("mySkills.docTabs.diff")
+                    : t("mySkills.docTabs.source")}
             </button>
           ))}
           {activeSourceDoc && (
@@ -277,9 +282,11 @@ function SkillDetailPanelContent({
             </span>
           )}
         </div>
-      )}
+      }
 
-      {contentTab === "zh" ? <ChineseGuide skillId={skill.id} /> : loading ? (
+      {contentTab === "zh" ? (
+        <ChineseGuide skillId={skill.id} />
+      ) : loading ? (
         <LoadingState label={t("common.loading")} />
       ) : contentTab === "diff" ? (
         sourceDiffLoading ? (
@@ -287,7 +294,20 @@ function SkillDetailPanelContent({
         ) : activeSourceDiff ? (
           <SkillSourceDiffViewer entries={activeSourceDiff.entries} />
         ) : sourceDiffFailed ? (
-          <div className="mt-8 space-y-3 text-center text-[13px] text-muted" role="alert"><p>{t("mySkills.sourceDiffUnavailable")}</p><Button onClick={() => { if (contentTab === "diff") { void sourceDiffQuery.refetch(); } else { void sourceDocQuery.refetch(); } }}>重新加载</Button></div>
+          <div className="mt-8 space-y-3 text-center text-[13px] text-muted" role="alert">
+            <p>{t("mySkills.sourceDiffUnavailable")}</p>
+            <Button
+              onClick={() => {
+                if (contentTab === "diff") {
+                  void sourceDiffQuery.refetch();
+                } else {
+                  void sourceDocQuery.refetch();
+                }
+              }}
+            >
+              重新加载
+            </Button>
+          </div>
         ) : (
           <LoadingState label={t("common.loading")} />
         )
@@ -297,12 +317,18 @@ function SkillDetailPanelContent({
         ) : activeSourceDoc ? (
           <SkillMarkdown content={activeSourceDoc.content} />
         ) : (
-          <div className="mt-8 space-y-3 text-center text-[13px] text-muted" role="alert"><p>{t("mySkills.sourceDiffUnavailable")}</p><Button onClick={() => void sourceDocQuery.refetch()}>重新加载</Button></div>
+          <div className="mt-8 space-y-3 text-center text-[13px] text-muted" role="alert">
+            <p>{t("mySkills.sourceDiffUnavailable")}</p>
+            <Button onClick={() => void sourceDocQuery.refetch()}>重新加载</Button>
+          </div>
         )
       ) : activeDoc ? (
         <SkillMarkdown content={activeDoc.content} />
       ) : (
-        <div className="mt-8 space-y-3 text-center text-[13px] text-muted" role="alert"><p>{t("common.documentMissing")}</p><Button onClick={() => void docQuery.refetch()}>重新加载</Button></div>
+        <div className="mt-8 space-y-3 text-center text-[13px] text-muted" role="alert">
+          <p>{t("common.documentMissing")}</p>
+          <Button onClick={() => void docQuery.refetch()}>重新加载</Button>
+        </div>
       )}
     </DetailSheet>
   );

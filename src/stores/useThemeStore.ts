@@ -7,9 +7,7 @@ export type ResolvedTheme = "light" | "dark";
 const STORAGE_KEY = "theme";
 
 export function getSystemTheme(): ResolvedTheme {
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 function isTheme(value: string | null): value is Theme {

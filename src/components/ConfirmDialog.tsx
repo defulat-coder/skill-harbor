@@ -28,8 +28,6 @@ export function ConfirmDialog({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-
-
   const handleConfirm = async () => {
     if (loading) return;
     setLoading(true);
@@ -44,9 +42,52 @@ export function ConfirmDialog({
     }
   };
 
-  return <DetailSheet open={open} size="compact" title={title || t("common.confirm")} description={message} onClose={() => { setError(""); onClose(); }} closeDisabled={loading}>
-    {error && <p role="alert" className="text-danger mb-4">{error}</p>}
-    {details && details.length > 0 && <div className="mb-5 flex flex-wrap gap-2">{details.map(detail => <span key={detail} className="ds-tag">{detail}</span>)}</div>}
-    <div className="flex justify-end gap-2"><Button onClick={() => { setError(""); onClose(); }} disabled={loading}>{t("common.cancel")}</Button><Button variant={tone === "warning" ? "danger-ghost" : "danger"} onClick={handleConfirm} busy={loading}>{loading ? t("common.loading") : confirmLabel || (tone === "warning" ? t("common.confirm") : t("common.delete"))}</Button></div>
-  </DetailSheet>;
+  return (
+    <DetailSheet
+      open={open}
+      size="compact"
+      title={title || t("common.confirm")}
+      description={message}
+      onClose={() => {
+        setError("");
+        onClose();
+      }}
+      closeDisabled={loading}
+    >
+      {error && (
+        <p role="alert" className="text-danger mb-4">
+          {error}
+        </p>
+      )}
+      {details && details.length > 0 && (
+        <div className="mb-5 flex flex-wrap gap-2">
+          {details.map((detail) => (
+            <span key={detail} className="ds-tag">
+              {detail}
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="flex justify-end gap-2">
+        <Button
+          onClick={() => {
+            setError("");
+            onClose();
+          }}
+          disabled={loading}
+        >
+          {t("common.cancel")}
+        </Button>
+        <Button
+          variant={tone === "warning" ? "danger-ghost" : "danger"}
+          onClick={handleConfirm}
+          busy={loading}
+        >
+          {loading
+            ? t("common.loading")
+            : confirmLabel || (tone === "warning" ? t("common.confirm") : t("common.delete"))}
+        </Button>
+      </div>
+    </DetailSheet>
+  );
 }

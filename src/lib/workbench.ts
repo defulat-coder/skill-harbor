@@ -26,20 +26,14 @@ export const deployWorkbenchSkills = (
   mode: string,
 ) => commands.workbenchDeploySkills(projectId, skillIds, agent, mode);
 
-export const projectBindings = (projectId: string) =>
-  commands.workbenchProjectBindings(projectId);
+export const projectBindings = (projectId: string) => commands.workbenchProjectBindings(projectId);
 
-export const startTask = (
-  projectId: string,
-  prompt: string,
-  skillIds: string[],
-) => commands.startTask(projectId, prompt, skillIds) as Promise<TaskRun>;
+export const startTask = (projectId: string, prompt: string, skillIds: string[]) =>
+  commands.startTask(projectId, prompt, skillIds) as Promise<TaskRun>;
 
-export const listTasks = (projectId: string) =>
-  commands.listTasks(projectId) as Promise<TaskRun[]>;
+export const listTasks = (projectId: string) => commands.listTasks(projectId) as Promise<TaskRun[]>;
 
-export const cancelTask = (runId: string) =>
-  commands.cancelTask(runId) as Promise<TaskRun>;
+export const cancelTask = (runId: string) => commands.cancelTask(runId) as Promise<TaskRun>;
 
 export const getTaskLog = (runId: string) => commands.getTaskLog(runId);
 

@@ -331,7 +331,7 @@
 }
 .wb-danger:hover:not(:disabled) {
   background: var(--ds-danger);
-  filter: brightness(.92);
+  filter: brightness(0.92);
 }
 .wb-danger:disabled {
   opacity: 0.5;

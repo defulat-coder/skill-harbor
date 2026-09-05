@@ -1,5 +1,24 @@
-.row { display:flex; gap:12px; align-items:center; padding:14px 16px; cursor:pointer; background:var(--ds-bg); }
-.row:hover,.row:focus-within { background:var(--ds-panel); }
-.row:has(input:checked) { background:var(--ds-subtle); }
-.unavailable { cursor:default; }
-.checkbox { width:16px; height:16px; flex-shrink:0; accent-color:var(--ds-accent); }
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  cursor: pointer;
+  background: var(--ds-bg);
+}
+.row:hover,
+.row:focus-within {
+  background: var(--ds-panel);
+}
+.row:has(input:checked) {
+  background: var(--ds-subtle);
+}
+.unavailable {
+  cursor: default;
+}
+.checkbox {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  accent-color: var(--ds-accent);
+}

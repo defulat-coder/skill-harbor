@@ -67,16 +67,9 @@ export type {
 // state unions) compiling; if the backend gains a value, widen the union.
 
 export type SkillSourceDiffStatus = "added" | "removed" | "modified";
-export type SkillSourceDiffContentKind =
-  | "text"
-  | "binary"
-  | "too_large"
-  | "permission_only";
+export type SkillSourceDiffContentKind = "text" | "binary" | "too_large" | "permission_only";
 
-export type SkillSourceDiffEntry = Omit<
-  SkillSourceDiffEntryDto,
-  "status" | "content_kind"
-> & {
+export type SkillSourceDiffEntry = Omit<SkillSourceDiffEntryDto, "status" | "content_kind"> & {
   status: SkillSourceDiffStatus;
   content_kind: SkillSourceDiffContentKind;
 };
@@ -92,10 +85,7 @@ export type GitUpstreamHealth =
   | "unrelated_histories"
   | "detached";
 
-export type GitBackupStatus = Omit<
-  GeneratedGitBackupStatus,
-  "upstream_health"
-> & {
+export type GitBackupStatus = Omit<GeneratedGitBackupStatus, "upstream_health"> & {
   upstream_health: GitUpstreamHealth;
 };
 
@@ -104,18 +94,10 @@ export type Project = Omit<ProjectDto, "workspace_type"> & {
 };
 
 export type ProjectSkill = Omit<ProjectSkillInfo_Serialize, "sync_status"> & {
-  sync_status:
-    | "project_only"
-    | "in_sync"
-    | "project_newer"
-    | "center_newer"
-    | "diverged";
+  sync_status: "project_only" | "in_sync" | "project_newer" | "center_newer" | "diverged";
 };
 
-export type GithubDevicePollResult = Omit<
-  GeneratedGithubDevicePollResult,
-  "status"
-> & {
+export type GithubDevicePollResult = Omit<GeneratedGithubDevicePollResult, "status"> & {
   status: "pending" | "slow_down" | "connected";
 };
 
@@ -137,65 +119,47 @@ export const getToolStatus = () => commands.getToolStatus();
 export const setToolEnabled = (key: string, enabled: boolean) =>
   commands.setToolEnabled(key, enabled);
 
-export const setAllToolsEnabled = (enabled: boolean) =>
-  commands.setAllToolsEnabled(enabled);
+export const setAllToolsEnabled = (enabled: boolean) => commands.setAllToolsEnabled(enabled);
 
 export const getToolOrder = () => commands.getToolOrderCmd();
 
-export const setToolOrder = (order: string[]) =>
-  commands.setToolOrderCmd(order);
+export const setToolOrder = (order: string[]) => commands.setToolOrderCmd(order);
 
 export const setCustomToolPath = (key: string, path: string) =>
   commands.setCustomToolPath(key, path);
 
-export const resetCustomToolPath = (key: string) =>
-  commands.resetCustomToolPath(key);
+export const resetCustomToolPath = (key: string) => commands.resetCustomToolPath(key);
 
-export const setCustomToolProjectPath = (
-  key: string,
-  projectRelativeSkillsDir: string | null,
-) => commands.setCustomToolProjectPath(key, projectRelativeSkillsDir);
+export const setCustomToolProjectPath = (key: string, projectRelativeSkillsDir: string | null) =>
+  commands.setCustomToolProjectPath(key, projectRelativeSkillsDir);
 
-export const resetCustomToolProjectPath = (key: string) =>
-  commands.resetCustomToolProjectPath(key);
+export const resetCustomToolProjectPath = (key: string) => commands.resetCustomToolProjectPath(key);
 
 export const addCustomTool = (
   key: string,
   displayName: string,
   skillsDir: string,
   projectRelativeSkillsDir?: string,
-) =>
-  commands.addCustomTool(
-    key,
-    displayName,
-    skillsDir,
-    projectRelativeSkillsDir ?? null,
-  );
+) => commands.addCustomTool(key, displayName, skillsDir, projectRelativeSkillsDir ?? null);
 
-export const removeCustomTool = (key: string) =>
-  commands.removeCustomTool(key);
+export const removeCustomTool = (key: string) => commands.removeCustomTool(key);
 
 // ── Skills ──
 
 export const getManagedSkills = () => commands.getManagedSkills();
 
-export const getSkillsForPreset = (presetId: string) =>
-  commands.getSkillsForPreset(presetId);
+export const getSkillsForPreset = (presetId: string) => commands.getSkillsForPreset(presetId);
 
-export const getSkillDocument = (skillId: string) =>
-  commands.getSkillDocument(skillId);
+export const getSkillDocument = (skillId: string) => commands.getSkillDocument(skillId);
 
-export const getSourceSkillDocument = (skillId: string) =>
-  commands.getSourceSkillDocument(skillId);
+export const getSourceSkillDocument = (skillId: string) => commands.getSourceSkillDocument(skillId);
 
 export const getSkillSourceDiff = (skillId: string) =>
   commands.getSkillSourceDiff(skillId) as Promise<SkillSourceDiff>;
 
-export const deleteManagedSkill = (skillId: string) =>
-  commands.deleteManagedSkill(skillId);
+export const deleteManagedSkill = (skillId: string) => commands.deleteManagedSkill(skillId);
 
-export const deleteManagedSkills = (skillIds: string[]) =>
-  commands.deleteManagedSkills(skillIds);
+export const deleteManagedSkills = (skillIds: string[]) => commands.deleteManagedSkills(skillIds);
 
 export const installLocal = (sourcePath: string, name?: string) =>
   commands.installLocal(sourcePath, name || null);
@@ -203,17 +167,12 @@ export const installLocal = (sourcePath: string, name?: string) =>
 export const installGit = (repoUrl: string, name?: string) =>
   commands.installGit(repoUrl, name || null);
 
-export const previewGitInstall = (repoUrl: string) =>
-  commands.previewGitInstall(repoUrl);
+export const previewGitInstall = (repoUrl: string) => commands.previewGitInstall(repoUrl);
 
-export const confirmGitInstall = (
-  repoUrl: string,
-  tempDir: string,
-  items: SkillInstallItem[],
-) => commands.confirmGitInstall(repoUrl, tempDir, items);
+export const confirmGitInstall = (repoUrl: string, tempDir: string, items: SkillInstallItem[]) =>
+  commands.confirmGitInstall(repoUrl, tempDir, items);
 
-export const cancelGitPreview = (tempDir: string) =>
-  commands.cancelGitPreview(tempDir);
+export const cancelGitPreview = (tempDir: string) => commands.cancelGitPreview(tempDir);
 
 export const installFromSkillssh = (source: string, skillId: string) =>
   commands.installFromSkillssh(source, skillId);
@@ -230,13 +189,10 @@ export const checkAllSkillUpdates = (force?: boolean) =>
 export const updateSkill = (skillId: string, approvedRemovals?: string | null) =>
   commands.updateSkill(skillId, approvedRemovals ?? null);
 
-export const batchUpdateSkills = (skillIds: string[]) =>
-  commands.batchUpdateSkills(skillIds);
+export const batchUpdateSkills = (skillIds: string[]) => commands.batchUpdateSkills(skillIds);
 
-export const reimportLocalSkill = (
-  skillId: string,
-  approvedRemovals?: string | null,
-) => commands.reimportLocalSkill(skillId, approvedRemovals ?? null);
+export const reimportLocalSkill = (skillId: string, approvedRemovals?: string | null) =>
+  commands.reimportLocalSkill(skillId, approvedRemovals ?? null);
 
 export const relinkLocalSkillSource = (
   skillId: string,
@@ -244,19 +200,16 @@ export const relinkLocalSkillSource = (
   approvedRemovals?: string | null,
 ) => commands.relinkLocalSkillSource(skillId, sourcePath, approvedRemovals ?? null);
 
-export const detachLocalSkillSource = (skillId: string) =>
-  commands.detachLocalSkillSource(skillId);
+export const detachLocalSkillSource = (skillId: string) => commands.detachLocalSkillSource(skillId);
 
-export const batchImportFolder = (folderPath: string) =>
-  commands.batchImportFolder(folderPath);
+export const batchImportFolder = (folderPath: string) => commands.batchImportFolder(folderPath);
 
 export const getAllTags = () => commands.getAllTags();
 
 export const setSkillTags = (skillId: string, tags: string[]) =>
   commands.setSkillTags(skillId, tags);
 
-export const renameTag = (oldName: string, newName: string) =>
-  commands.renameTag(oldName, newName);
+export const renameTag = (oldName: string, newName: string) => commands.renameTag(oldName, newName);
 
 export const deleteTag = (name: string) => commands.deleteTag(name);
 
@@ -289,8 +242,7 @@ export const importAllDiscovered = () => commands.importAllDiscovered();
 
 // ── Browse ──
 
-export const fetchLeaderboard = (board: string) =>
-  commands.fetchLeaderboard(board);
+export const fetchLeaderboard = (board: string) => commands.fetchLeaderboard(board);
 
 export const searchSkillssh = (query: string, limit?: number) =>
   commands.searchSkillssh(query, limit ?? null);
@@ -299,13 +251,11 @@ export const searchSkillssh = (query: string, limit?: number) =>
 
 export const getSettings = (key: string) => commands.getSettings(key);
 
-export const setSettings = (key: string, value: string) =>
-  commands.setSettings(key, value);
+export const setSettings = (key: string, value: string) => commands.setSettings(key, value);
 
 export const getCentralRepoPath = () => commands.getCentralRepoPath();
 
-export const getCentralRepoPathOverride = () =>
-  commands.getCentralRepoPathOverride();
+export const getCentralRepoPathOverride = () => commands.getCentralRepoPathOverride();
 
 export const getCentralRepoWarnings = () => commands.getCentralRepoWarnings();
 
@@ -346,20 +296,17 @@ export const logStartupEvent = (label: string, elapsedMs: number) =>
 
 // ── Git Backup ──
 
-export const gitBackupStatus = () =>
-  commands.gitBackupStatus() as Promise<GitBackupStatus>;
+export const gitBackupStatus = () => commands.gitBackupStatus() as Promise<GitBackupStatus>;
 
 export const gitBackupFetch = () => commands.gitBackupFetch();
 
 export const gitBackupInit = () => commands.gitBackupInit();
 
 /** Returns the sanitized URL actually configured (credentials moved to the OS keychain). */
-export const gitBackupSetRemote = (url: string) =>
-  commands.gitBackupSetRemote(url);
+export const gitBackupSetRemote = (url: string) => commands.gitBackupSetRemote(url);
 
 /** Strip embedded credentials into the OS keychain; returns the URL safe to persist. */
-export const gitBackupSanitizeRemoteUrl = (url: string) =>
-  commands.gitBackupSanitizeRemoteUrl(url);
+export const gitBackupSanitizeRemoteUrl = (url: string) => commands.gitBackupSanitizeRemoteUrl(url);
 
 /** GitHub guided connect (PAT): validates the token, finds or creates the
  * private backup repo, stores the token in the OS keychain, saves the URL. */
@@ -374,8 +321,7 @@ export const githubDeviceFlowPoll = (deviceCode: string, repoName: string) =>
   commands.githubDeviceFlowPoll(deviceCode, repoName) as Promise<GithubDevicePollResult>;
 
 /** Migrate token-in-URL remotes to the OS keychain. Returns the sanitized URL if migrated. */
-export const gitBackupMigrateCredentials = () =>
-  commands.gitBackupMigrateCredentials();
+export const gitBackupMigrateCredentials = () => commands.gitBackupMigrateCredentials();
 
 export const gitBackupSizeReport = () => commands.gitBackupSizeReport();
 
@@ -383,37 +329,30 @@ export const gitBackupSizeReport = () => commands.gitBackupSizeReport();
 export const backupDeviceName = () => commands.backupDeviceName();
 
 /** Rename this device; only affects future backups. Returns the sanitized name. */
-export const backupSetDeviceName = (name: string) =>
-  commands.backupSetDeviceName(name);
+export const backupSetDeviceName = (name: string) => commands.backupSetDeviceName(name);
 
 export const gitBackupRemoveRemote = () => commands.gitBackupRemoveRemote();
 
-export const gitBackupCommit = (message: string) =>
-  commands.gitBackupCommit(message);
+export const gitBackupCommit = (message: string) => commands.gitBackupCommit(message);
 
 export const gitBackupPush = () => commands.gitBackupPush();
 
-export const gitBackupPull = () =>
-  commands.gitBackupPull() as Promise<MergeSummary>;
+export const gitBackupPull = () => commands.gitBackupPull() as Promise<MergeSummary>;
 
 /** Outcome of the one-transaction sync (commit → merge → snapshot → push,
  * with automatic retry when another device pushes concurrently). */
 export const gitBackupSync = (message: string) =>
   commands.gitBackupSync(message) as Promise<SyncOutcome>;
 
-export const gitBackupPendingConflicts = () =>
-  commands.gitBackupPendingConflicts();
+export const gitBackupPendingConflicts = () => commands.gitBackupPendingConflicts();
 
 /** Resolve a pending conflict; returns the safety snapshot tag. */
-export const gitBackupResolveConflict = (
-  skillId: string,
-  action: ResolveConflictAction,
-) => commands.gitBackupResolveConflict(skillId, action);
+export const gitBackupResolveConflict = (skillId: string, action: ResolveConflictAction) =>
+  commands.gitBackupResolveConflict(skillId, action);
 
 export const gitBackupClone = (url: string) => commands.gitBackupClone(url);
 
-export const gitBackupReclone = (url: string) =>
-  commands.gitBackupReclone(url);
+export const gitBackupReclone = (url: string) => commands.gitBackupReclone(url);
 
 export const gitBackupCreateSnapshot = () => commands.gitBackupCreateSnapshot();
 
@@ -421,8 +360,7 @@ export const gitBackupListVersions = (limit?: number) =>
   commands.gitBackupListVersions(typeof limit === "number" ? limit : null);
 
 /** Returns the safety-point tag that captured the pre-restore state. */
-export const gitBackupRestoreVersion = (tag: string) =>
-  commands.gitBackupRestoreVersion(tag);
+export const gitBackupRestoreVersion = (tag: string) => commands.gitBackupRestoreVersion(tag);
 
 // ── Presets ──
 
@@ -433,20 +371,15 @@ export const getActivePreset = () => commands.getActivePreset();
 export const createPreset = (name: string, description?: string, icon?: string) =>
   commands.createPreset(name, description || null, icon || null);
 
-export const updatePreset = (
-  id: string,
-  name: string,
-  description?: string,
-  icon?: string,
-) => commands.updatePreset(id, name, description || null, icon || null);
+export const updatePreset = (id: string, name: string, description?: string, icon?: string) =>
+  commands.updatePreset(id, name, description || null, icon || null);
 
 export const deletePreset = (id: string) => commands.deletePreset(id);
 
 /** @deprecated v1.16+: clicking a scene no longer applies. Use applyPresetToDefault. */
 export const switchPreset = (id: string) => commands.switchPreset(id);
 
-export const applyPresetToDefault = (id: string) =>
-  commands.applyPresetToDefault(id);
+export const applyPresetToDefault = (id: string) => commands.applyPresetToDefault(id);
 
 export const addSkillToPreset = (skillId: string, presetId: string) =>
   commands.addSkillToPreset(skillId, presetId);
@@ -458,8 +391,7 @@ export const reorderPresets = (ids: string[]) => commands.reorderPresets(ids);
 
 export const reorderProjects = (ids: string[]) => commands.reorderProjects(ids);
 
-export const getPresetSkillOrder = (presetId: string) =>
-  commands.getPresetSkillOrder(presetId);
+export const getPresetSkillOrder = (presetId: string) => commands.getPresetSkillOrder(presetId);
 
 export const reorderPresetSkills = (presetId: string, skillIds: string[]) =>
   commands.reorderPresetSkills(presetId, skillIds);
@@ -468,14 +400,9 @@ export const reorderPresetSkills = (presetId: string, skillIds: string[]) =>
 
 export const getProjects = () => commands.getProjects() as Promise<Project[]>;
 
-export const addProject = (path: string) =>
-  commands.addProject(path) as Promise<Project>;
+export const addProject = (path: string) => commands.addProject(path) as Promise<Project>;
 
-export const addLinkedWorkspace = (
-  name: string,
-  path: string,
-  disabledPath?: string,
-) =>
+export const addLinkedWorkspace = (name: string, path: string, disabledPath?: string) =>
   commands.addLinkedWorkspace(name, path, disabledPath ?? null) as Promise<Project>;
 
 export const removeProject = (id: string) => commands.removeProject(id);
@@ -500,11 +427,8 @@ export const importProjectSkillToCenter = (
   agent: string,
 ) => commands.importProjectSkillToCenter(projectId, skillRelativePath, agent);
 
-export const exportSkillToProject = (
-  skillId: string,
-  projectId: string,
-  agents?: string[],
-) => commands.exportSkillToProject(skillId, projectId, agents ?? null);
+export const exportSkillToProject = (skillId: string, projectId: string, agents?: string[]) =>
+  commands.exportSkillToProject(skillId, projectId, agents ?? null);
 
 export const updateProjectSkillToCenter = (
   projectId: string,
@@ -525,36 +449,24 @@ export const toggleProjectSkill = (
   enabled: boolean,
 ) => commands.toggleProjectSkill(projectId, skillRelativePath, agent, enabled);
 
-export const deleteProjectSkill = (
-  projectId: string,
-  skillRelativePath: string,
-  agent: string,
-) => commands.deleteProjectSkill(projectId, skillRelativePath, agent);
+export const deleteProjectSkill = (projectId: string, skillRelativePath: string, agent: string) =>
+  commands.deleteProjectSkill(projectId, skillRelativePath, agent);
 
-export const slugifySkillNames = (names: string[]) =>
-  commands.slugifySkillNames(names);
+export const slugifySkillNames = (names: string[]) => commands.slugifySkillNames(names);
 
 // ── Agent Local Workspace ──
 
 export const getGlobalLocalSkills = (agent: string) =>
   commands.getGlobalLocalSkills(agent) as Promise<ProjectSkill[]>;
 
-export const getGlobalLocalSkillDocument = (
-  agent: string,
-  skillRelativePath: string,
-) => commands.getGlobalLocalSkillDocument(agent, skillRelativePath);
+export const getGlobalLocalSkillDocument = (agent: string, skillRelativePath: string) =>
+  commands.getGlobalLocalSkillDocument(agent, skillRelativePath);
 
-export const importGlobalLocalSkillToCenter = (
-  agent: string,
-  skillRelativePath: string,
-) => commands.importGlobalLocalSkillToCenter(agent, skillRelativePath);
+export const importGlobalLocalSkillToCenter = (agent: string, skillRelativePath: string) =>
+  commands.importGlobalLocalSkillToCenter(agent, skillRelativePath);
 
-export const updateGlobalLocalSkillFromCenter = (
-  agent: string,
-  skillRelativePath: string,
-) => commands.updateGlobalLocalSkillFromCenter(agent, skillRelativePath);
+export const updateGlobalLocalSkillFromCenter = (agent: string, skillRelativePath: string) =>
+  commands.updateGlobalLocalSkillFromCenter(agent, skillRelativePath);
 
-export const deleteGlobalLocalSkill = (
-  agent: string,
-  skillRelativePath: string,
-) => commands.deleteGlobalLocalSkill(agent, skillRelativePath);
+export const deleteGlobalLocalSkill = (agent: string, skillRelativePath: string) =>
+  commands.deleteGlobalLocalSkill(agent, skillRelativePath);

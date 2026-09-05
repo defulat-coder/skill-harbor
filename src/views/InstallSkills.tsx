@@ -65,7 +65,14 @@ const installRouteApi = getRouteApi("/_layout/install");
 
 export function InstallSkills() {
   const { t } = useTranslation();
-  const { refreshPresets, refreshManagedSkills, refreshProjects, managedSkills, projects, openSkillDetailById } = useApp();
+  const {
+    refreshPresets,
+    refreshManagedSkills,
+    refreshProjects,
+    managedSkills,
+    projects,
+    openSkillDetailById,
+  } = useApp();
   const navigate = useNavigate();
   const search = installRouteApi.useSearch();
   const [targetProject, setTargetProject] = useState(search.project ?? "");
@@ -75,14 +82,25 @@ export function InstallSkills() {
     setAddingToProject(skill.id);
     try {
       const library = await api.getManagedSkills();
-      const installed = library.find(s => s.source_type === "skillssh" && s.source_ref === `${skill.source}/${skill.skill_id}`);
+      const installed = library.find(
+        (s) => s.source_type === "skillssh" && s.source_ref === `${skill.source}/${skill.skill_id}`,
+      );
       if (!installed) throw new Error("已安装，但未能匹配来源，请从项目技能选择器添加。");
-      const results = await deployWorkbenchSkills(targetProject, [installed.id], "codex", "symlink");
-      const failed = results.find(r => !r.ok);
+      const results = await deployWorkbenchSkills(
+        targetProject,
+        [installed.id],
+        "codex",
+        "symlink",
+      );
+      const failed = results.find((r) => !r.ok);
       if (failed) throw new Error(failed.error || "部署失败");
       await refreshProjects();
       toast.success("已链接到所选项目");
-    } catch (e) { toast.error(getErrorMessage(e, "添加到项目失败")); } finally { setAddingToProject(null); }
+    } catch (e) {
+      toast.error(getErrorMessage(e, "添加到项目失败"));
+    } finally {
+      setAddingToProject(null);
+    }
   };
   const [activeTab, setActiveTab] = useState<"market" | "local" | "git">("market");
   const [marketTab, setMarketTab] = useState<"hot" | "trending" | "alltime">("alltime");
@@ -95,15 +113,29 @@ export function InstallSkills() {
     const version = ++queryVersion.current;
     setTranslationError(null);
     setTranslatingQuery(true);
-    try { const translated = await invoke<string>("translate_market_query", { query: marketQuery }); if (version === queryVersion.current) { setMarketQuery(translated); setMarketSearchLimit(MARKET_SEARCH_STEP); } }
-    catch (e) { if (version === queryVersion.current) setTranslationError(getErrorMessage(e, "关键词转换失败")); }
-    finally { setTranslatingQuery(false); }
+    try {
+      const translated = await invoke<string>("translate_market_query", { query: marketQuery });
+      if (version === queryVersion.current) {
+        setMarketQuery(translated);
+        setMarketSearchLimit(MARKET_SEARCH_STEP);
+      }
+    } catch (e) {
+      if (version === queryVersion.current)
+        setTranslationError(getErrorMessage(e, "关键词转换失败"));
+    } finally {
+      setTranslatingQuery(false);
+    }
   };
   const [marketSourceFilter, setMarketSourceFilter] = useState("all");
   const [marketPage, setMarketPage] = useState(1);
   const [marketSearchLimit, setMarketSearchLimit] = useState(MARKET_SEARCH_STEP);
   const [installing, setInstalling] = useState<string | null>(null);
-  const [marketInstall, setMarketInstall] = useState<{ name: string; cancelKey: string; target: string; cancellable: boolean } | null>(null);
+  const [marketInstall, setMarketInstall] = useState<{
+    name: string;
+    cancelKey: string;
+    target: string;
+    cancellable: boolean;
+  } | null>(null);
   const marketInstallLock = useRef(false);
   const [gitUrl, setGitUrl] = useState("");
   const [localSourcePath, setLocalSourcePath] = useState("");
@@ -112,7 +144,9 @@ export function InstallSkills() {
   const [gitCancelKey, setGitCancelKey] = useState<string | null>(null);
   const [gitPreview, setGitPreview] = useState<GitPreviewResult | null>(null);
   const [gitPreviewRepoUrl, setGitPreviewRepoUrl] = useState<string | null>(null);
-  const [gitSelections, setGitSelections] = useState<{ rel_path: string; name: string; description: string | null; selected: boolean }[]>([]);
+  const [gitSelections, setGitSelections] = useState<
+    { rel_path: string; name: string; description: string | null; selected: boolean }[]
+  >([]);
   const [gitConfirmLoading, setGitConfirmLoading] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [scanLoading, setScanLoading] = useState(false);
@@ -132,17 +166,18 @@ export function InstallSkills() {
     managedSkillsRef.current = managedSkills;
   }, [managedSkills]);
 
-  const goToSkill = useCallback((skillName: string) => {
-    // Use ref to get the latest managedSkills after refresh
-    const skills = managedSkillsRef.current;
-    const skill = skills.find(
-      (s) => s.name === skillName || s.source_ref === skillName
-    );
-    if (skill) {
-      openSkillDetailById(skill.id);
-    }
-    void navigate({ to: "/my-skills" });
-  }, [navigate, openSkillDetailById]);
+  const goToSkill = useCallback(
+    (skillName: string) => {
+      // Use ref to get the latest managedSkills after refresh
+      const skills = managedSkillsRef.current;
+      const skill = skills.find((s) => s.name === skillName || s.source_ref === skillName);
+      if (skill) {
+        openSkillDetailById(skill.id);
+      }
+      void navigate({ to: "/my-skills" });
+    },
+    [navigate, openSkillDetailById],
+  );
 
   const installedSourceRefs = useMemo(() => {
     const set = new Set<string>();
@@ -154,14 +189,20 @@ export function InstallSkills() {
     return set;
   }, [managedSkills]);
 
-  const findInstalledByGitUrl = useCallback((url: string) => {
-    const trimmed = url.trim().replace(/\.git$/, "").toLowerCase();
-    return managedSkills.find((s) => {
-      if (!s.source_ref) return false;
-      const ref = s.source_ref.replace(/\.git$/, "").toLowerCase();
-      return ref === trimmed || ref.endsWith("/" + trimmed.split("/").slice(-2).join("/"));
-    });
-  }, [managedSkills]);
+  const findInstalledByGitUrl = useCallback(
+    (url: string) => {
+      const trimmed = url
+        .trim()
+        .replace(/\.git$/, "")
+        .toLowerCase();
+      return managedSkills.find((s) => {
+        if (!s.source_ref) return false;
+        const ref = s.source_ref.replace(/\.git$/, "").toLowerCase();
+        return ref === trimmed || ref.endsWith("/" + trimmed.split("/").slice(-2).join("/"));
+      });
+    },
+    [managedSkills],
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -302,10 +343,17 @@ export function InstallSkills() {
   const installLocalSource = async (sourcePath: string) => {
     if (localInstallLock.current) return;
     localInstallLock.current = true;
-    setLocalInstalling(true); setLocalError(null);
-    localRetry.current = () => { void installLocalSource(sourcePath); };
-    try { await performLocalSourceInstall(sourcePath); }
-    finally { localInstallLock.current = false; setLocalInstalling(false); }
+    setLocalInstalling(true);
+    setLocalError(null);
+    localRetry.current = () => {
+      void installLocalSource(sourcePath);
+    };
+    try {
+      await performLocalSourceInstall(sourcePath);
+    } finally {
+      localInstallLock.current = false;
+      setLocalInstalling(false);
+    }
   };
 
   const handleLocalFolderInstall = async () => {
@@ -340,8 +388,12 @@ export function InstallSkills() {
 
   const handleBatchImportFolder = async () => {
     if (localInstallLock.current) return;
-    localInstallLock.current = true; setLocalInstalling(true); setLocalError(null);
-    localRetry.current = () => { void handleBatchImportFolder(); };
+    localInstallLock.current = true;
+    setLocalInstalling(true);
+    setLocalError(null);
+    localRetry.current = () => {
+      void handleBatchImportFolder();
+    };
     let unlisten: (() => void) | null = null;
     try {
       const selected = await open({
@@ -356,16 +408,13 @@ export function InstallSkills() {
         "batch-import-progress",
         (event) => {
           const { current, total, name } = event.payload;
-          toast.loading(
-            t("install.local.batchProgress", { current, total, name }),
-            { id: toastId }
-          );
-        }
+          toast.loading(t("install.local.batchProgress", { current, total, name }), {
+            id: toastId,
+          });
+        },
       );
 
-      const result: BatchImportResult = await api.batchImportFolder(
-        selected
-      );
+      const result: BatchImportResult = await api.batchImportFolder(selected);
 
       if (result.errors.length > 0) {
         const previewErrors = result.errors.slice(0, 3).join("; ");
@@ -373,20 +422,19 @@ export function InstallSkills() {
         const detail = remaining > 0 ? `${previewErrors}; +${remaining} more` : previewErrors;
         toast.error(
           `${t("install.local.batchErrors", { count: result.errors.length })}: ${detail}`,
-          { id: toastId }
+          { id: toastId },
         );
       } else if (result.imported === 0) {
-        toast.info(
-          t("install.local.batchAllSkipped", { skipped: result.skipped }),
-          { id: toastId }
-        );
+        toast.info(t("install.local.batchAllSkipped", { skipped: result.skipped }), {
+          id: toastId,
+        });
       } else {
         toast.success(
           t("install.local.batchSuccess", {
             imported: result.imported,
             skipped: result.skipped,
           }),
-          { id: toastId }
+          { id: toastId },
         );
       }
 
@@ -398,7 +446,8 @@ export function InstallSkills() {
       toast.error(message);
     } finally {
       unlisten?.();
-      localInstallLock.current = false; setLocalInstalling(false);
+      localInstallLock.current = false;
+      setLocalInstalling(false);
     }
   };
 
@@ -408,7 +457,14 @@ export function InstallSkills() {
     const displayName = skill.name || skill.skill_id;
     const cancelKey = `${skill.source}/${skill.skill_id}`;
     setInstalling(skill.id);
-    setMarketInstall({ name: displayName, cancelKey, target: targetProject ? projects.find(p => p.id === targetProject)?.name || "所选项目" : "全局技能库", cancellable: true });
+    setMarketInstall({
+      name: displayName,
+      cancelKey,
+      target: targetProject
+        ? projects.find((p) => p.id === targetProject)?.name || "所选项目"
+        : "全局技能库",
+      cancellable: true,
+    });
 
     const toastId = toast.loading(t("install.toast.cloning"));
     let unlisten: (() => void) | null = null;
@@ -427,10 +483,10 @@ export function InstallSkills() {
           } else if (event.payload.phase === "installing") {
             toast.loading(t("install.toast.installing", { name: displayName }), { id: toastId });
           }
-        }
+        },
       );
       await api.installFromSkillssh(skill.source, skill.skill_id);
-      setMarketInstall(previous => previous ? { ...previous, cancellable: false } : null);
+      setMarketInstall((previous) => (previous ? { ...previous, cancellable: false } : null));
       await Promise.all([refreshPresets(), refreshManagedSkills()]);
       if (targetProject) await addMarketSkillToProject(skill);
       toast.success(t("install.toast.success", { name: displayName }), {
@@ -476,18 +532,20 @@ export function InstallSkills() {
               : t("install.toast.cloning");
             toast.loading(msg, { id: toastId });
           }
-        }
+        },
       );
       const preview = await api.previewGitInstall(url);
       toast.dismiss(toastId);
       setGitPreview(preview);
       setGitPreviewRepoUrl(url);
-      setGitSelections(preview.skills.map((s) => ({
-        rel_path: s.rel_path,
-        name: s.name,
-        description: s.description,
-        selected: true,
-      })));
+      setGitSelections(
+        preview.skills.map((s) => ({
+          rel_path: s.rel_path,
+          name: s.name,
+          description: s.description,
+          selected: true,
+        })),
+      );
     } catch (error: unknown) {
       if (getErrorKind(error) === "cancelled") {
         toast.info(t("install.toast.cancelled"), { id: toastId });
@@ -524,7 +582,7 @@ export function InstallSkills() {
       await api.confirmGitInstall(
         repoUrl,
         gitPreview.temp_dir,
-        selected.map((s) => ({ rel_path: s.rel_path, name: s.name }))
+        selected.map((s) => ({ rel_path: s.rel_path, name: s.name })),
       );
       await Promise.all([refreshPresets(), refreshManagedSkills()]);
       toast.success(t("install.toast.success", { name: selected.map((s) => s.name).join(", ") }));
@@ -598,13 +656,14 @@ export function InstallSkills() {
   const pendingGroups = scanGroups.filter((group) => !group.imported);
   const sourceOptions = useMemo(
     () => Array.from(new Set(marketSkills.map((skill) => skill.source))),
-    [marketSkills]
+    [marketSkills],
   );
 
   const filteredMarketSkills = useMemo(() => {
-    const filtered = marketSourceFilter === "all"
-      ? marketSkills
-      : marketSkills.filter((skill) => skill.source === marketSourceFilter);
+    const filtered =
+      marketSourceFilter === "all"
+        ? marketSkills
+        : marketSkills.filter((skill) => skill.source === marketSourceFilter);
     if (debouncedMarketQuery.trim().length > 0) {
       return [...filtered].toSorted((a, b) => b.installs - a.installs);
     }
@@ -616,11 +675,11 @@ export function InstallSkills() {
   const marketPageStart = (currentMarketPage - 1) * MARKET_PAGE_SIZE;
   const paginatedMarketSkills = filteredMarketSkills.slice(
     marketPageStart,
-    marketPageStart + MARKET_PAGE_SIZE
+    marketPageStart + MARKET_PAGE_SIZE,
   );
   const visibleMarketPages = Array.from(
     { length: totalMarketPages },
-    (_, index) => index + 1
+    (_, index) => index + 1,
   ).filter((page) => {
     if (totalMarketPages <= 7) return true;
     if (page === 1 || page === totalMarketPages) return true;
@@ -632,7 +691,10 @@ export function InstallSkills() {
   return (
     <div className={`app-page ds-market ${styles.page}`}>
       <div className="app-page-header border-b-0 pb-0">
-        <PageHeader title="发现技能" description="从市场、本地目录或 Git 仓库补充全局技能库，先阅读中文用法，再链接到项目。" />
+        <PageHeader
+          title="发现技能"
+          description="从市场、本地目录或 Git 仓库补充全局技能库，先阅读中文用法，再链接到项目。"
+        />
         <nav className={styles.sources} aria-label="技能来源">
           {[
             { id: "market" as const, label: t("install.browseMarket"), icon: Box },
@@ -650,7 +712,7 @@ export function InstallSkills() {
                   styles.sourceButton,
                   isActive
                     ? "border-accent text-accent"
-                    : "border-transparent text-muted hover:text-tertiary"
+                    : "border-transparent text-muted hover:text-tertiary",
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -661,10 +723,22 @@ export function InstallSkills() {
         </nav>
       </div>
 
-      {marketInstall && <div className={styles.activeInstall}>
-        <p role="status"><strong>{marketInstall.name}</strong><span>{marketInstall.cancellable ? "正在安装" : "已安装，正在更新记录或链接项目"} · 目标：{marketInstall.target}</span></p>
-        {marketInstall.cancellable && <Button variant="danger" onClick={() => handleCancelInstall(marketInstall.cancelKey)}>取消安装</Button>}
-      </div>}
+      {marketInstall && (
+        <div className={styles.activeInstall}>
+          <p role="status">
+            <strong>{marketInstall.name}</strong>
+            <span>
+              {marketInstall.cancellable ? "正在安装" : "已安装，正在更新记录或链接项目"} · 目标：
+              {marketInstall.target}
+            </span>
+          </p>
+          {marketInstall.cancellable && (
+            <Button variant="danger" onClick={() => handleCancelInstall(marketInstall.cancelKey)}>
+              取消安装
+            </Button>
+          )}
+        </div>
+      )}
       {activeTab === "market" && (
         <div className={styles.sourceContent}>
           <div className={styles.toolbar}>
@@ -672,7 +746,9 @@ export function InstallSkills() {
               <div className="flex flex-col gap-2">
                 <div className={styles.searchRow}>
                   <div className={styles.searchField}>
-                    <label htmlFor="market-skill-query" className={styles.searchLabel}>搜索市场技能</label>
+                    <label htmlFor="market-skill-query" className={styles.searchLabel}>
+                      搜索市场技能
+                    </label>
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
                     <input
                       type="text"
@@ -693,19 +769,100 @@ export function InstallSkills() {
                     />
                   </div>
 
-                  <Button busy={translatingQuery} disabled={!marketQuery.trim()} onClick={() => void translateQuery()}>中文转检索词</Button>
+                  <Button
+                    busy={translatingQuery}
+                    disabled={!marketQuery.trim()}
+                    onClick={() => void translateQuery()}
+                  >
+                    中文转检索词
+                  </Button>
                 </div>
               </div>
 
-              <p id="market-search-help" className={styles.help}>输入后自动搜索；中文转换会调用本地 Codex 整理英文检索词。</p>
-              {translationError && <div role="alert"><StatusBanner compact tone="danger" title="关键词转换失败" description={translationError} actionLabel="重试转换" onAction={translateQuery} /></div>}
+              <p id="market-search-help" className={styles.help}>
+                输入后自动搜索；中文转换会调用本地 Codex 整理英文检索词。
+              </p>
+              {translationError && (
+                <div role="alert">
+                  <StatusBanner
+                    compact
+                    tone="danger"
+                    title="关键词转换失败"
+                    description={translationError}
+                    actionLabel="重试转换"
+                    onAction={translateQuery}
+                  />
+                </div>
+              )}
               <div className={styles.filters}>
-                <label>榜单<select className="app-input" aria-label="市场榜单" value={marketTab} disabled={hasMarketQuery} onChange={e => { const v = e.target.value; if (v === "alltime" || v === "trending" || v === "hot") setMarketTab(v); }}><option value="alltime">{t("install.all")}</option><option value="trending">{t("install.trending")}</option><option value="hot">{t("install.hot")}</option></select></label>
-                <label>来源<select className="app-input" aria-label="筛选技能来源" value={marketSourceFilter} onChange={e => { setMarketSourceFilter(e.target.value); setMarketPage(1); }}><option value="all">{t("install.filters.allSources")}</option>{sourceOptions.map(source => <option key={source} value={source}>@{source}</option>)}</select></label>
-                {hasMarketQuery && <span className={styles.help}>正在显示搜索结果，清空搜索可返回榜单。</span>}
+                <label>
+                  榜单
+                  <select
+                    className="app-input"
+                    aria-label="市场榜单"
+                    value={marketTab}
+                    disabled={hasMarketQuery}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "alltime" || v === "trending" || v === "hot") setMarketTab(v);
+                    }}
+                  >
+                    <option value="alltime">{t("install.all")}</option>
+                    <option value="trending">{t("install.trending")}</option>
+                    <option value="hot">{t("install.hot")}</option>
+                  </select>
+                </label>
+                <label>
+                  来源
+                  <select
+                    className="app-input"
+                    aria-label="筛选技能来源"
+                    value={marketSourceFilter}
+                    onChange={(e) => {
+                      setMarketSourceFilter(e.target.value);
+                      setMarketPage(1);
+                    }}
+                  >
+                    <option value="all">{t("install.filters.allSources")}</option>
+                    {sourceOptions.map((source) => (
+                      <option key={source} value={source}>
+                        @{source}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {hasMarketQuery && (
+                  <span className={styles.help}>正在显示搜索结果，清空搜索可返回榜单。</span>
+                )}
               </div>
-              <Disclosure title={targetProject ? `安装后同时链接到：${projects.find(p => p.id === targetProject)?.name || "所选项目"}` : "安装到全局技能库 · 更改目标"}>
-                <div className={styles.destination}><label htmlFor="market-destination">安装后</label><select disabled={installing !== null || addingToProject !== null} id="market-destination" aria-label="市场安装目标" className="app-input" value={targetProject} onChange={e => setTargetProject(e.target.value)}><option value="">仅加入全局技能库</option>{projects.filter(p => p.workspace_type === "project").map(p => <option key={p.id} value={p.id}>同时链接到 {p.name} · Codex</option>)}</select><span>原文件在技能库统一维护</span></div>
+              <Disclosure
+                title={
+                  targetProject
+                    ? `安装后同时链接到：${projects.find((p) => p.id === targetProject)?.name || "所选项目"}`
+                    : "安装到全局技能库 · 更改目标"
+                }
+              >
+                <div className={styles.destination}>
+                  <label htmlFor="market-destination">安装后</label>
+                  <select
+                    disabled={installing !== null || addingToProject !== null}
+                    id="market-destination"
+                    aria-label="市场安装目标"
+                    className="app-input"
+                    value={targetProject}
+                    onChange={(e) => setTargetProject(e.target.value)}
+                  >
+                    <option value="">仅加入全局技能库</option>
+                    {projects
+                      .filter((p) => p.workspace_type === "project")
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          同时链接到 {p.name} · Codex
+                        </option>
+                      ))}
+                  </select>
+                  <span>原文件在技能库统一维护</span>
+                </div>
               </Disclosure>
             </div>
           </div>
@@ -741,7 +898,16 @@ export function InstallSkills() {
                     {t("install.noResults.description")}
                   </p>
                   {hasMarketQuery || marketSourceFilter !== "all" ? (
-                    <Button variant="secondary" className="mt-4" onClick={() => { setMarketQuery(""); setMarketSourceFilter("all"); }}>清除搜索</Button>
+                    <Button
+                      variant="secondary"
+                      className="mt-4"
+                      onClick={() => {
+                        setMarketQuery("");
+                        setMarketSourceFilter("all");
+                      }}
+                    >
+                      清除搜索
+                    </Button>
                   ) : null}
                 </div>
               ) : (
@@ -756,58 +922,96 @@ export function InstallSkills() {
                       const isInstalled = installedSourceRefs.has(sourceRef);
 
                       return (
-                      <div
-                        key={skill.id}
-                        className={styles.card}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex min-w-0 flex-1 items-center gap-2">
-                            <img
-                              src={avatarUrl}
-                              alt={owner}
-                              className="h-6 w-6 shrink-0 rounded-full border border-border-subtle"
-                              loading="lazy"
-                            />
-                            <div className="min-w-0">
-                              <h3 className={styles.skillName}>
-                                {displayName}
-                              </h3>
-                              {showSkillId ? (
-                                <p className="truncate text-[13px] leading-4 text-muted">{skill.skill_id}</p>
-                              ) : null}
+                        <div key={skill.id} className={styles.card}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex min-w-0 flex-1 items-center gap-2">
+                              <img
+                                src={avatarUrl}
+                                alt={owner}
+                                className="h-6 w-6 shrink-0 rounded-full border border-border-subtle"
+                                loading="lazy"
+                              />
+                              <div className="min-w-0">
+                                <h3 className={styles.skillName}>{displayName}</h3>
+                                {showSkillId ? (
+                                  <p className="truncate text-[13px] leading-4 text-muted">
+                                    {skill.skill_id}
+                                  </p>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            <div className="flex shrink-0 items-center gap-1">
+                              <CardActionMenu
+                                label={`更多操作：${displayName}`}
+                                actions={[
+                                  {
+                                    key: "website",
+                                    label: t("install.viewOnWeb"),
+                                    icon: <ExternalLink size={14} />,
+                                    onSelect: () => {
+                                      void openUrl(
+                                        `https://skills.sh/${skill.source}/${skill.skill_id}`,
+                                      );
+                                    },
+                                  },
+                                ]}
+                              />
                             </div>
                           </div>
 
-                          <div className="flex shrink-0 items-center gap-1">
-                            <CardActionMenu label={`更多操作：${displayName}`} actions={[{ key: "website", label: t("install.viewOnWeb"), icon: <ExternalLink size={14} />, onSelect: () => { void openUrl(`https://skills.sh/${skill.source}/${skill.skill_id}`); } }]} />
+                          <div className={styles.cardActions}>
+                            <MarketChinesePreview source={skill.source} skillId={skill.skill_id} />
+                            {isInstalled ? (
+                              targetProject ? (
+                                <Button
+                                  busy={addingToProject === skill.id}
+                                  disabled={addingToProject !== null}
+                                  onClick={() => void addMarketSkillToProject(skill)}
+                                >
+                                  链接到项目
+                                </Button>
+                              ) : (
+                                <span className={styles.installed}>
+                                  <Check size={14} />
+                                  {t("install.installed")}
+                                </span>
+                              )
+                            ) : installing === skill.id ? (
+                              <span className={styles.installed}>正在安装…</span>
+                            ) : (
+                              <Button
+                                disabled={installing !== null}
+                                onClick={() => void handleInstallSkillssh(skill)}
+                              >
+                                <Plus size={14} />
+                                加入
+                              </Button>
+                            )}
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-1">
+                            <span className={styles.contributor}>@{skill.source}</span>
+                            {marketTab === "alltime" && skill.installs > 0 && (
+                              <span className="inline-flex items-center gap-1 rounded-sm border border-border-subtle bg-background px-1.5 py-0.5 text-[13px] leading-4 text-muted">
+                                <DownloadCloud className="h-3 w-3" />
+                                {skill.installs >= 1_000_000
+                                  ? `${(skill.installs / 1_000_000).toFixed(1)}M`
+                                  : skill.installs >= 1_000
+                                    ? `${(skill.installs / 1_000).toFixed(1)}K`
+                                    : skill.installs}
+                              </span>
+                            )}
                           </div>
                         </div>
-
-                        <div className={styles.cardActions}><MarketChinesePreview source={skill.source} skillId={skill.skill_id} />
-                          {isInstalled ? (targetProject ? <Button busy={addingToProject === skill.id} disabled={addingToProject !== null} onClick={() => void addMarketSkillToProject(skill)}>链接到项目</Button> : <span className={styles.installed}><Check size={14}/>{t("install.installed")}</span>) : installing === skill.id ? <span className={styles.installed}>正在安装…</span> : <Button disabled={installing !== null} onClick={() => void handleInstallSkillssh(skill)}><Plus size={14}/>加入</Button>}
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-1">
-                          <span className={styles.contributor}>@{skill.source}</span>
-                          {marketTab === "alltime" && skill.installs > 0 && (
-                            <span className="inline-flex items-center gap-1 rounded-sm border border-border-subtle bg-background px-1.5 py-0.5 text-[13px] leading-4 text-muted">
-                              <DownloadCloud className="h-3 w-3" />
-                              {skill.installs >= 1_000_000
-                                ? `${(skill.installs / 1_000_000).toFixed(1)}M`
-                                : skill.installs >= 1_000
-                                  ? `${(skill.installs / 1_000).toFixed(1)}K`
-                                  : skill.installs}
-                            </span>
-                          )}
-                        </div>
-                      </div>
                       );
                     })}
                   </div>
 
                   {totalMarketPages > 1 ? (
                     <div className="mt-5 flex flex-wrap items-center justify-center gap-1.5">
-                      <Button size="sm"
+                      <Button
+                        size="sm"
                         onClick={() => changeMarketPage(Math.max(1, currentMarketPage - 1))}
                         disabled={currentMarketPage === 1}
                       >
@@ -821,8 +1025,11 @@ export function InstallSkills() {
 
                         return (
                           <div key={page} className="flex items-center gap-1.5">
-                            {showGap ? <span className="px-1 text-[13px] text-faint">...</span> : null}
-                            <Button size="sm"
+                            {showGap ? (
+                              <span className="px-1 text-[13px] text-faint">...</span>
+                            ) : null}
+                            <Button
+                              size="sm"
                               variant={page === currentMarketPage ? "primary" : "secondary"}
                               aria-pressed={page === currentMarketPage}
                               aria-label={`第 ${page} 页`}
@@ -834,8 +1041,11 @@ export function InstallSkills() {
                         );
                       })}
 
-                      <Button size="sm"
-                        onClick={() => changeMarketPage(Math.min(totalMarketPages, currentMarketPage + 1))}
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          changeMarketPage(Math.min(totalMarketPages, currentMarketPage + 1))
+                        }
                         disabled={currentMarketPage === totalMarketPages}
                       >
                         {t("install.pagination.next")}
@@ -846,7 +1056,8 @@ export function InstallSkills() {
 
                   {hasMarketQuery ? (
                     <div className="mt-4 flex justify-center">
-                      <Button size="sm"
+                      <Button
+                        size="sm"
                         onClick={() => setMarketSearchLimit((value) => value + MARKET_SEARCH_STEP)}
                         disabled={!canLoadMoreSearch}
                         busy={marketLoading}
@@ -877,7 +1088,6 @@ export function InstallSkills() {
                   <p className="mt-1 text-[13px] leading-5 text-muted">
                     {t("install.local.description")}
                   </p>
-
                 </div>
 
                 <div className="flex flex-wrap gap-2">
@@ -894,12 +1104,11 @@ export function InstallSkills() {
               </div>
             </div>
 
-            <div className={styles.alternatives}><Disclosure title="其他导入方式"><div className={styles.alternativeButtons}>                  <Button
-                    type="button"
-                    disabled={localInstalling}
-                    onClick={handleLocalFileInstall}
-
-                  >
+            <div className={styles.alternatives}>
+              <Disclosure title="其他导入方式">
+                <div className={styles.alternativeButtons}>
+                  {" "}
+                  <Button type="button" disabled={localInstalling} onClick={handleLocalFileInstall}>
                     <UploadCloud className="h-4 w-4" />
                     {t("install.local.selectArchive")}
                   </Button>
@@ -907,12 +1116,35 @@ export function InstallSkills() {
                     type="button"
                     disabled={localInstalling}
                     onClick={handleBatchImportFolder}
-
                   >
                     <FolderInput className="h-4 w-4" />
                     {t("install.local.batchImport")}
                   </Button>
-</div>                  <label htmlFor="local-skill-path" className="mt-4 block text-[13px] text-secondary">本地技能源路径</label><div className="mt-2 flex gap-2"><input disabled={localInstalling} id="local-skill-path" aria-label="本地技能源路径" className="app-input min-w-0 flex-1" value={localSourcePath} onChange={e => setLocalSourcePath(e.target.value)} placeholder="或直接输入包含 SKILL.md 的绝对路径" /><Button  disabled={localInstalling || !localSourcePath.trim()} onClick={() => { void installLocalSource(localSourcePath.trim()); }}>{localInstalling ? "导入中…" : "导入路径"}</Button></div></Disclosure></div>
+                </div>{" "}
+                <label htmlFor="local-skill-path" className="mt-4 block text-[13px] text-secondary">
+                  本地技能源路径
+                </label>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    disabled={localInstalling}
+                    id="local-skill-path"
+                    aria-label="本地技能源路径"
+                    className="app-input min-w-0 flex-1"
+                    value={localSourcePath}
+                    onChange={(e) => setLocalSourcePath(e.target.value)}
+                    placeholder="或直接输入包含 SKILL.md 的绝对路径"
+                  />
+                  <Button
+                    disabled={localInstalling || !localSourcePath.trim()}
+                    onClick={() => {
+                      void installLocalSource(localSourcePath.trim());
+                    }}
+                  >
+                    {localInstalling ? "导入中…" : "导入路径"}
+                  </Button>
+                </div>
+              </Disclosure>
+            </div>
           </section>
 
           {localError ? (
@@ -921,7 +1153,12 @@ export function InstallSkills() {
               title={t("common.requestFailed")}
               description={localError}
               actionLabel={t("common.retry")}
-              onAction={() => { if (!localInstalling && !scanLoading) { if (localRetry.current) localRetry.current(); else void runScan(); } }}
+              onAction={() => {
+                if (!localInstalling && !scanLoading) {
+                  if (localRetry.current) localRetry.current();
+                  else void runScan();
+                }
+              }}
               tone="danger"
             />
           ) : null}
@@ -929,7 +1166,9 @@ export function InstallSkills() {
           <section className="app-panel overflow-hidden">
             <div className="flex items-center justify-between gap-4 border-b border-border-subtle px-4 py-3.5">
               <div>
-                <h2 className="text-[13px] font-semibold text-secondary">{t("install.scan.title")}</h2>
+                <h2 className="text-[13px] font-semibold text-secondary">
+                  {t("install.scan.title")}
+                </h2>
                 <p className="mt-0.5 text-[13px] text-muted">
                   {scanResult
                     ? t("install.scan.summary", {
@@ -941,14 +1180,13 @@ export function InstallSkills() {
               </div>
 
               <div className="flex items-center gap-2">
-                <Button size="sm"
-                  onClick={runScan}
-                  busy={scanLoading}
-                >
+                <Button size="sm" onClick={runScan} busy={scanLoading}>
                   <RefreshCw className="h-3.5 w-3.5" />
                   {t("install.scan.rescan")}
                 </Button>
-                <Button size="sm" variant="primary"
+                <Button
+                  size="sm"
+                  variant="primary"
                   onClick={handleImportAllDiscovered}
                   busy={importingAll}
                   disabled={scanLoading || pendingGroups.length === 0}
@@ -988,7 +1226,10 @@ export function InstallSkills() {
                       });
 
                       return (
-                        <article key={group.name} className="border-b border-border-subtle last:border-b-0">
+                        <article
+                          key={group.name}
+                          className="border-b border-border-subtle last:border-b-0"
+                        >
                           <div className="flex items-start justify-between gap-3 px-3 py-2">
                             <div className="min-w-0 flex-1 space-y-1.5">
                               <div className="flex min-w-0 items-center gap-2">
@@ -997,7 +1238,10 @@ export function InstallSkills() {
                                     autoFocus
                                     value={renameEditing[group.name]}
                                     onChange={(e) =>
-                                      setRenameEditing((prev) => ({ ...prev, [group.name]: e.target.value }))
+                                      setRenameEditing((prev) => ({
+                                        ...prev,
+                                        [group.name]: e.target.value,
+                                      }))
                                     }
                                     onBlur={() => {
                                       if (!renameEditing[group.name]?.trim()) {
@@ -1029,7 +1273,10 @@ export function InstallSkills() {
                                 {!group.imported && !isRenaming ? (
                                   <button
                                     onClick={() =>
-                                      setRenameEditing((prev) => ({ ...prev, [group.name]: group.name }))
+                                      setRenameEditing((prev) => ({
+                                        ...prev,
+                                        [group.name]: group.name,
+                                      }))
                                     }
                                     className="shrink-0 rounded-sm p-0.5 text-muted transition-colors hover:bg-surface-hover hover:text-secondary"
                                     title={t("install.scan.rename")}
@@ -1066,8 +1313,12 @@ export function InstallSkills() {
 
                             <div className="flex shrink-0 items-start justify-end">
                               {group.imported ? null : (
-                                <Button size="sm" variant="primary"
-                                  onClick={() => primaryPath && handleImportDiscovered(primaryPath, importName)}
+                                <Button
+                                  size="sm"
+                                  variant="primary"
+                                  onClick={() =>
+                                    primaryPath && handleImportDiscovered(primaryPath, importName)
+                                  }
                                   busy={isImporting}
                                   disabled={!primaryPath}
                                 >
@@ -1082,7 +1333,10 @@ export function InstallSkills() {
                             <div className="border-t border-border-subtle bg-surface/40 px-3 py-1.5">
                               <div className="space-y-1">
                                 {otherLocations.map((location) => (
-                                  <div key={location.id} className="flex min-w-0 items-center gap-2">
+                                  <div
+                                    key={location.id}
+                                    className="flex min-w-0 items-center gap-2"
+                                  >
                                     <span className="inline-flex shrink-0 rounded-sm border border-border-subtle bg-surface px-1.5 py-px text-[13px] font-medium text-tertiary">
                                       {location.tool}
                                     </span>
@@ -1116,7 +1370,10 @@ export function InstallSkills() {
 
             <div className="space-y-3">
               <div>
-                <label htmlFor="git-repository-url" className="mb-1 block text-[13px] font-medium text-tertiary">
+                <label
+                  htmlFor="git-repository-url"
+                  className="mb-1 block text-[13px] font-medium text-tertiary"
+                >
                   {t("install.repoUrl")}
                 </label>
                 <input
@@ -1124,24 +1381,40 @@ export function InstallSkills() {
                   id="git-repository-url"
                   value={gitUrl}
                   onChange={(e) => setGitUrl(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !gitLoading && gitUrl.trim()) void handleGitPreview(); }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !gitLoading && gitUrl.trim()) void handleGitPreview();
+                  }}
                   placeholder={t("install.repoUrlPlaceholder")}
                   disabled={gitLoading}
                   className="app-input w-full"
                 />
               </div>
-              {gitError && <div role="alert"><StatusBanner compact tone="danger" title="Git 预览失败" description={gitError} actionLabel="重试预览" onAction={handleGitPreview} /></div>}
+              {gitError && (
+                <div role="alert">
+                  <StatusBanner
+                    compact
+                    tone="danger"
+                    title="Git 预览失败"
+                    description={gitError}
+                    actionLabel="重试预览"
+                    onAction={handleGitPreview}
+                  />
+                </div>
+              )}
               {gitUrl.trim() && findInstalledByGitUrl(gitUrl) && (
                 <div role="status" className={styles.notice}>
                   <Check className="h-3.5 w-3.5 shrink-0" />
                   <span>
-                    {t("install.gitAlreadyInstalled", { name: findInstalledByGitUrl(gitUrl)!.name })}
+                    {t("install.gitAlreadyInstalled", {
+                      name: findInstalledByGitUrl(gitUrl)!.name,
+                    })}
                   </span>
                 </div>
               )}
               <div className="flex gap-2 pt-2">
                 {gitLoading ? (
-                  <Button variant="danger"
+                  <Button
+                    variant="danger"
                     onClick={() => gitCancelKey && handleCancelInstall(gitCancelKey)}
 
                     disabled={!gitCancelKey}
@@ -1170,13 +1443,24 @@ export function InstallSkills() {
 
       {/* Git preview / selection dialog */}
       {gitPreview && (
-        <DetailSheet open closeDisabled={gitConfirmLoading} size="compact" title={t("install.gitPreview.title")} description={t("install.gitPreview.description")} onClose={() => { if (!gitConfirmLoading) handleGitPreviewClose(); }}>
+        <DetailSheet
+          open
+          closeDisabled={gitConfirmLoading}
+          size="compact"
+          title={t("install.gitPreview.title")}
+          description={t("install.gitPreview.description")}
+          onClose={() => {
+            if (!gitConfirmLoading) handleGitPreviewClose();
+          }}
+        >
           <div className={styles.gitPreview}>
             {/* Select all / deselect all */}
             <div className="mb-2 flex gap-2">
               <button
                 type="button"
-                onClick={() => setGitSelections((prev) => prev.map((s) => ({ ...s, selected: true })))}
+                onClick={() =>
+                  setGitSelections((prev) => prev.map((s) => ({ ...s, selected: true })))
+                }
                 disabled={gitConfirmLoading}
                 className="text-[13px] text-accent-light hover:underline"
               >
@@ -1185,7 +1469,9 @@ export function InstallSkills() {
               <span className="text-faint">·</span>
               <button
                 type="button"
-                onClick={() => setGitSelections((prev) => prev.map((s) => ({ ...s, selected: false })))}
+                onClick={() =>
+                  setGitSelections((prev) => prev.map((s) => ({ ...s, selected: false })))
+                }
                 disabled={gitConfirmLoading}
                 className="text-[13px] text-muted hover:underline"
               >
@@ -1194,7 +1480,9 @@ export function InstallSkills() {
             </div>
 
             {gitSelections.length === 0 ? (
-              <p className="py-6 text-center text-[13px] text-muted">{t("install.gitPreview.empty")}</p>
+              <p className="py-6 text-center text-[13px] text-muted">
+                {t("install.gitPreview.empty")}
+              </p>
             ) : (
               <div className="max-h-64 space-y-2 overflow-y-auto scrollbar-hide pr-1">
                 {gitSelections.map((item, idx) => (
@@ -1204,7 +1492,7 @@ export function InstallSkills() {
                       "flex items-center gap-3 rounded-lg border px-3 py-2 transition-colors",
                       item.selected
                         ? "border-accent-border bg-accent-bg/40"
-                        : "border-border-subtle bg-background opacity-50"
+                        : "border-border-subtle bg-background opacity-50",
                     )}
                   >
                     <input
@@ -1214,7 +1502,9 @@ export function InstallSkills() {
                       disabled={gitConfirmLoading}
                       onChange={(e) =>
                         setGitSelections((prev) =>
-                          prev.map((s, i) => i === idx ? { ...s, selected: e.target.checked } : s)
+                          prev.map((s, i) =>
+                            i === idx ? { ...s, selected: e.target.checked } : s,
+                          ),
                         )
                       }
                       className="h-4 w-4 shrink-0 accent-accent"
@@ -1226,7 +1516,7 @@ export function InstallSkills() {
                         value={item.name}
                         onChange={(e) =>
                           setGitSelections((prev) =>
-                            prev.map((s, i) => i === idx ? { ...s, name: e.target.value } : s)
+                            prev.map((s, i) => (i === idx ? { ...s, name: e.target.value } : s)),
                           )
                         }
                         disabled={!item.selected || gitConfirmLoading}
@@ -1243,23 +1533,17 @@ export function InstallSkills() {
             )}
 
             <div className="mt-4 flex justify-end gap-2">
-              <Button
-                type="button"
-                onClick={handleGitPreviewClose}
-                disabled={gitConfirmLoading}
-
-              >
+              <Button type="button" onClick={handleGitPreviewClose} disabled={gitConfirmLoading}>
                 {t("common.cancel")}
               </Button>
-              <Button variant="primary" busy={gitConfirmLoading}
+              <Button
+                variant="primary"
+                busy={gitConfirmLoading}
                 type="button"
                 onClick={handleGitConfirm}
                 disabled={gitConfirmLoading || gitSelections.every((s) => !s.selected)}
-
               >
-                {!gitConfirmLoading && (
-                  <DownloadCloud className="h-3.5 w-3.5" />
-                )}
+                {!gitConfirmLoading && <DownloadCloud className="h-3.5 w-3.5" />}
                 {t("install.gitPreview.confirm")}
               </Button>
             </div>

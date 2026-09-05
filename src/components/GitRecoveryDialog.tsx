@@ -23,7 +23,6 @@ export function GitRecoveryDialog({ open, reason, onClose, onReclone }: Props) {
   const [loading, setLoading] = useState<"reclone" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-
   // A conflict is already aborted by the backend; re-cloning is the only safe
   // in-app fix, so we hide the "keep local" path for it.
   const isConflict = reason === "conflict";
@@ -51,64 +50,72 @@ export function GitRecoveryDialog({ open, reason, onClose, onReclone }: Props) {
   };
 
   return (
-    <DetailSheet open={open} size="compact" title={t("settings.gitRecoveryTitle")} description={t(subtitleKey)} closeDisabled={!!loading} onClose={onClose}>
-        {loading && <LoadingState label={t("common.loading")} />}
-        {error && <p role="alert" className="text-danger mb-4">{error}</p>}
-        <div className="space-y-2">
+    <DetailSheet
+      open={open}
+      size="compact"
+      title={t("settings.gitRecoveryTitle")}
+      description={t(subtitleKey)}
+      closeDisabled={!!loading}
+      onClose={onClose}
+    >
+      {loading && <LoadingState label={t("common.loading")} />}
+      {error && (
+        <p role="alert" className="text-danger mb-4">
+          {error}
+        </p>
+      )}
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={handleReclone}
+          disabled={!!loading}
+          className={cn(
+            "w-full text-left rounded-md border border-accent bg-accent-bg px-3 py-3 transition-colors",
+            "disabled:cursor-not-allowed disabled:opacity-60 hover:bg-accent-bg/80",
+          )}
+        >
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-accent/20 p-1 text-accent-light">
+              <RotateCcw className="h-4 w-4" />
+            </span>
+            <span className="text-[13px] font-semibold text-primary">
+              {loading === "reclone"
+                ? t("settings.gitRecoveryRecloning")
+                : t("settings.gitRecoveryCardRecloneTitle")}
+            </span>
+          </div>
+          <p className="mt-1.5 pl-7 text-[12px] text-tertiary leading-relaxed">
+            {t("settings.gitRecoveryCardRecloneDesc")}
+          </p>
+        </button>
+
+        {!isConflict && (
           <button
             type="button"
-            onClick={handleReclone}
+            onClick={() => toast.info(t("settings.gitRecoveryFallbackHint"))}
             disabled={!!loading}
-            className={cn(
-              "w-full text-left rounded-md border border-accent bg-accent-bg px-3 py-3 transition-colors",
-              "disabled:cursor-not-allowed disabled:opacity-60 hover:bg-accent-bg/80"
-            )}
+            className="w-full text-left rounded-md border border-border-subtle bg-bg-secondary px-3 py-3 transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             <div className="flex items-center gap-2">
-              <span className="rounded-full bg-accent/20 p-1 text-accent-light">
-                <RotateCcw className="h-4 w-4" />
+              <span className="rounded-full bg-surface p-1 text-muted">
+                <GitBranch className="h-4 w-4" />
               </span>
               <span className="text-[13px] font-semibold text-primary">
-                {loading === "reclone"
-                  ? t("settings.gitRecoveryRecloning")
-                  : t("settings.gitRecoveryCardRecloneTitle")}
+                {t("settings.gitRecoveryCardKeepLocalTitle")}
               </span>
             </div>
             <p className="mt-1.5 pl-7 text-[12px] text-tertiary leading-relaxed">
-              {t("settings.gitRecoveryCardRecloneDesc")}
+              {t("settings.gitRecoveryCardKeepLocalDesc")}
             </p>
           </button>
+        )}
+      </div>
 
-          {!isConflict && (
-            <button
-              type="button"
-              onClick={() => toast.info(t("settings.gitRecoveryFallbackHint"))}
-              disabled={!!loading}
-              className="w-full text-left rounded-md border border-border-subtle bg-bg-secondary px-3 py-3 transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-surface p-1 text-muted">
-                  <GitBranch className="h-4 w-4" />
-                </span>
-                <span className="text-[13px] font-semibold text-primary">
-                  {t("settings.gitRecoveryCardKeepLocalTitle")}
-                </span>
-              </div>
-              <p className="mt-1.5 pl-7 text-[12px] text-tertiary leading-relaxed">
-                {t("settings.gitRecoveryCardKeepLocalDesc")}
-              </p>
-            </button>
-          )}
-        </div>
-
-        <div className="mt-5 flex justify-end">
-          <Button
-            onClick={() => !loading && onClose()}
-            disabled={!!loading}
-          >
-            {t("common.cancel")}
-          </Button>
-        </div>
+      <div className="mt-5 flex justify-end">
+        <Button onClick={() => !loading && onClose()} disabled={!!loading}>
+          {t("common.cancel")}
+        </Button>
+      </div>
     </DetailSheet>
   );
 }

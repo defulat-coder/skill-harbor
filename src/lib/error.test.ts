@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  ERROR_KINDS,
-  getErrorKind,
-  getErrorMessage,
-  isAppError,
-  type AppError,
-} from "./error";
+import { ERROR_KINDS, getErrorKind, getErrorMessage, isAppError, type AppError } from "./error";
 
 const appError: AppError = { kind: "git", message: "push failed" };
 

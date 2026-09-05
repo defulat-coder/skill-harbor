@@ -96,9 +96,11 @@ export function MultiSelectToolbar({
           </Button>
           {showToggle && (
             <Button variant="secondary" onClick={onToggle}>
-              {anyDisabled
-                ? <CheckCircle2 size={14} aria-hidden />
-                : <Circle size={14} aria-hidden />}
+              {anyDisabled ? (
+                <CheckCircle2 size={14} aria-hidden />
+              ) : (
+                <Circle size={14} aria-hidden />
+              )}
               {anyDisabled ? labels.enable : labels.disable}
             </Button>
           )}

@@ -25,17 +25,12 @@ export function useMultiSelect<T>({
     });
   };
 
-  const isAllSelected =
-    filtered.length > 0 && filtered.every((s) => selectedIds.has(getKey(s)));
+  const isAllSelected = filtered.length > 0 && filtered.every((s) => selectedIds.has(getKey(s)));
 
-  const anyDisabled = items
-    .filter((s) => selectedIds.has(getKey(s)))
-    .some((s) => !isItemActive(s));
+  const anyDisabled = items.filter((s) => selectedIds.has(getKey(s))).some((s) => !isItemActive(s));
 
   const handleSelectAll = () => {
-    setSelectedIds(
-      isAllSelected ? new Set<string>() : new Set(filtered.map(getKey))
-    );
+    setSelectedIds(isAllSelected ? new Set<string>() : new Set(filtered.map(getKey)));
   };
 
   const exitMultiSelect = () => {

@@ -46,8 +46,14 @@ export function SkillPickerRow({
 
   return (
     <label className={cn(styles.row, !selectable && styles.unavailable)} title={tooltip}>
-      <input type="checkbox" checked={selected} disabled={!selectable}
-        onChange={onToggle} aria-label={`选择 ${skill.name}`} className={styles.checkbox} />
+      <input
+        type="checkbox"
+        checked={selected}
+        disabled={!selectable}
+        onChange={onToggle}
+        aria-label={`选择 ${skill.name}`}
+        className={styles.checkbox}
+      />
 
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">

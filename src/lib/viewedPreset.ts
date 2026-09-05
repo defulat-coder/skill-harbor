@@ -8,7 +8,7 @@ import type { Preset } from "./tauri";
 export function resolveViewedPreset(
   viewedPresetId: string | null,
   presets: Preset[],
-  activePreset: Preset | null
+  activePreset: Preset | null,
 ): Preset | null {
   if (viewedPresetId) {
     const found = presets.find((p) => p.id === viewedPresetId);
