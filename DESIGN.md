@@ -17,7 +17,8 @@
 - `apps/web/src/styles/base.css`：Albert Sans + 中文字体回退；主体 14px，阅读文字有明确行距。
 - `apps/web/src/styles/home/entry-layout.css`：44px 顶部外壳、236px 可折叠导航、浮动导航面板、独立内容滚动。
 - `apps/web/src/styles/home/recent-projects.css`：网格/列表、筛选与排序工具条。
-- `apps/web/src/styles/primitives.css`：输入框、按钮、统一模态层。
+- `apps/web/src/styles/primitives.css`：输入框、按钮、统一模态层；Inputs 段（154-211）是通用表单控件契约：面板底 + 1px 细边框 + 聚焦边框加深无光圈 + native select 自绘 chevron。
+- `apps/web/src/styles/home/home-hero.css` + `composer-beam.css` + `components/HomeHero.tsx`：首页 composer 完整标准——灰托盘（无边框、`--bg-subtle`、radius 20）+ 白色内卡（radius 16 同心、聚焦浮最浅灰描边）+ 聚焦光束（绿→青光斑沿边框绕行，环形 mask + JS 测量 offset-path，0.6s 入/0.5s 出）+ 36px 近黑超椭圆发送按钮（绿箭头、禁用不褪色）。已复刻到 SearchHome，参数记录于 docs/design/SEARCH-HOME.md。
 - `apps/web/src/components/SettingsDialog.tsx`：分类导航与设置内容分离。
 
 源码的最新主底色为白色，用户先前截图的灰色视觉不作为全站唯一底色。保留中性灰面板层次，不继续叠加旧版蓝色/偏绿样式。
@@ -42,6 +43,8 @@
 - 形状：控件4/8px、卡片8/12px、大对话框16px；只有标签和明确的圆形工具按钮使用胶囊/圆形。
 - 间距：以4px为基准，常用8/12/16/24/32px；统一对齐，不在每页叠加不同容器留白。
 - 交互：可见焦点，真实button/select/input，禁用/加载/空/失败/部分成功状态；模态焦点约束与Escape；尊重减少动画偏好。
+- 表单控件：面板底（`--ds-panel`）+ 细边框；聚焦 = 边框加深（`--ds-accent`）无光圈，2px 光圈只留按钮/链接/开关类；select 走全局 native 适配（自绘 chevron），页面不自绘；状态色只消费 `--ds-warning/success/info/danger` 语义 token，不用 Tailwind 色相类。
+- 问答输入区：composer 复刻标准（灰托盘+白内卡+聚焦光束+超椭圆发送按钮）见 docs/design/SEARCH-HOME.md。
 - 边界：Tauri + React + Rust + SQLite及现有数据模型保留。本轮参考设计系统，不移植 Open Design 的 Next/Electron/生成器架构。
 
 ## 验收

@@ -13,6 +13,8 @@
 | design-systems/*/DESIGN.md | 用户可选的品牌/风格包，作用于生成作品 | 不批量设为工作台约束；保存其 README 以说明用途 |
 | .claude/skills/od-contribute、docs/design-systems.md | 贡献流程、品牌包格式与校验 | 属于设计内容包创作规则，不是应用界面规范 |
 | apps/web/src/styles、packages/components/src | 实际设计 token 和共享控件，是规约对应的实现证据 | 上一轮已保留源码快照 |
+| apps/web/src/styles/home/home-hero.css、composer-beam.css、components/HomeHero.tsx | 首页 composer 的真实实现：灰托盘+白色内卡布局、聚焦光束（border-beam 移植）、超椭圆发送按钮 | 未入快照，作为活参考直接复刻到 SearchHome；标准记录在 SEARCH-HOME.md 与 DESIGN.md |
+| apps/web/src/styles/primitives.css Inputs 段 | 通用表单控件契约：面板底+细边框、聚焦边框加深无光圈、native select 自绘 chevron | 已落入 design-system.css 共享控件契约，全项目控件按 docs/delivery/design-conformance/CONTROLS.md 统一 |
 
 根目录未发现 DESIGN.md，也未发现名为 Cloud.md/CLOUD.md 或 Agent.md/AGENT.md 的独立规则文件；实际名称是 CLAUDE.md 和 AGENTS.md。组件 Theater 下还有局部 AGENTS.md，适用场景是原产品 Theater，不是全局界面设计入口。
 

@@ -14,7 +14,11 @@
 1. 用户明确要求优先。本项目明确采用全页面鼠标点阵，覆盖源项目的“仅首页 hero”限制。
 2. 本文件和根 DESIGN.md 负责产品映射、执行范围和有理由的差异。
 3. `upstream/` 保留参考源码中的完整原文：craft 全部规则、tokens/布局/材质/动效/控件、共享组件和设置、鼠标动效。manifest.json 记录源提交与每个文件的 SHA-256；保留来源文件，不直接修改快照。
-4. craft 是通用指导；应用实际 token 是品牌事实。冲突时以应用源码为准，例如通用 craft 建议浅灰底，实际 OpenDesign 用白底。
+4. 本机源仓库 `/Users/xbjt/Documents/myself/open-design`（只读）作为快照之外的活参考，已直接采用的标准：
+   - `apps/web/src/styles/primitives.css` Inputs 段（154-211 行）：通用表单控件契约（见下表「表单控件」行）。
+   - `apps/web/src/styles/home/home-hero.css`：首页 composer 的托盘布局（`:507-624`）与发送按钮（`:2833-2892`）。
+   - `apps/web/src/styles/home/composer-beam.css`：输入卡聚焦光束机制；`apps/web/src/components/HomeHero.tsx`：光束状态机与 `--beam-path` 测量（复刻细节见 SEARCH-HOME.md）。
+5. craft 是通用指导；应用实际 token 是品牌事实。冲突时以应用源码为准，例如通用 craft 建议浅灰底，实际 OpenDesign 用白底。
 
 `upstream/AGENTS.md` 与 `upstream/apps/AGENTS.md` 是来源证据，里面的 pnpm、Electron、daemon 和发布指令适用于原仓库。本项目执行 npm/Vite/Tauri 的命令，不能把原仓库工程架构当成视觉迁移的一部分。
 
@@ -27,6 +31,10 @@
 | 配色 | 中性灰占主导；单一语义主色；成功/警告/失败按语义；明暗主题使用同一组 token | tokens、color |
 | 字体 | Albert Sans + 中文系统回退；中文不压字距；标题、正文、说明、元数据有层级；长中文有阅读行距 | base、typography 三份规则 |
 | 控件 | 复用公共控件契约；输入/选择36px；按钮、卡片、对话框圆角有分级；状态不能只靠颜色 | primitives、packages/components |
+| 表单控件 | 面板底（`--ds-panel`）+ 1px 细边框（`--ds-border`）+ 8px 圆角 + 36px 高度；**聚焦 = 边框加深（`--ds-accent`），无光圈**；2px 光圈只保留给 button/a/summary/checkbox/radio；placeholder 用 `--ds-soft`；checkbox/radio 用 `accent-color: var(--ds-accent)` | primitives.css Inputs 段（设计符合性控件整改落定） |
+| 下拉选择器 | native select 全局适配：`appearance:none` + 自绘 chevron（明暗双 SVG）+ 右侧 32px 留白 + 36px 最小高度；页面不得自绘 chevron 或另设外观 | primitives.css、design-system.css 适配段 |
+| 问答输入区 | composer = 无边框中性灰托盘（`--ds-subtle`，radius 20，padding 4/8）+ 白色内卡（radius 16，同心圆，idle 无边框，聚焦浮最浅灰描边）+ 聚焦光束（绿#00ff08→青#00fbff 光斑沿内卡边框绕行，0.6s 淡入/0.5s 淡出，reduced-motion 隐藏）+ 36px 近黑超椭圆发送按钮（绿箭头，禁用不褪色）；参数与机制详见 SEARCH-HOME.md | home-hero.css、composer-beam.css、HomeHero.tsx |
+| 语义色 | warning/success/info/danger 及各自 `-bg` 明暗双值 token（`--ds-warning` 等，值取自上游 tokens.css 的 amber/green/blue/red 对）；状态徽标、状态条、diff、同步状态只消费这组 token，禁止 Tailwind 色相类 | tokens.css 语义色段（设计符合性第2轮落定） |
 | 材质 | 内容卡片实色；浮层才使用功能性模糊；减少透明度和不支持滤镜时退回实色；禁止整页大面积 blur | material |
 | 动效 | ease-out 为 cubic-bezier(0.23,1,0.32,1)；进入约200ms，退出约140ms；禁止 scale(0) 和 ease-in；优先 opacity/transform；减少动态效果时静态呈现 | animation-discipline、源 AGENTS |
 | 鼠标背景 | 所有路由共用一个点阵；间距25、半径203、强度2，弹簧0.08、阻尼0.82；不拦截点击；输入时停止跟随；静止/隐藏时不持续重绘 | AppWashKineticGrid + 用户扩展 |
@@ -44,7 +52,7 @@
 - `PointerKineticGrid`：全局动效运行时，由源实现适配；不在各页面复制监听器。
 - `DetailSheet` / `SkillLinkDialog`：模态阅读和统一项目链接流程。
 - `SearchIndex`：独立索引管理页面（`/search-index`），应用共享构建状态，侧栏及首页均可进入。
-- `SearchHome`：HomeHero 居中问答，当前中央技能目录索引/混合检索，保留出处的中文回答；边界见 SEARCH-HOME.md。
+- `SearchHome`：HomeHero 居中问答，当前中央技能目录索引/混合检索，保留出处的中文回答；composer 已按源仓库复刻 tray 布局、聚焦光束与发送按钮（见 SEARCH-HOME.md）；边界见 SEARCH-HOME.md。
 - `GlobalSkills`：`/library` 全局浏览、筛选、多选与阅读。
 - `Settings`：分类导航、切换不丢输入。
 - 市场、维护、工具目录、备份、项目高级页：接入共享壳层和token，保留现有业务控件。本轮已按 docs/delivery/inventory.md 对可达操作逐项审查，消费本项目公共控件；不能据此宣称逐个复制了既有全部业务逻辑。
@@ -63,3 +71,5 @@
 目标与分工见 [完整交付目标](../delivery/GOAL.md)，逐项功能盘点见 [inventory.md](../delivery/inventory.md)，实际桌面流程、检查结果和外部服务边界见 [verification.md](../delivery/verification.md)。
 
 最新简化规则与五轮复审见 [五轮目标](../delivery/impeccable-five-rounds/GOAL.md) 和 [执行记录](../delivery/impeccable-five-rounds/ROUNDS.md)。保留原有功能，以单一主要动作、按需管理和连续任务流程作为约束。
+
+设计规范符合性整改（token/组件契约五轮）见 [设计符合性执行记录](../delivery/design-conformance/ROUNDS.md)；控件重设计与 composer 复刻见 [控件执行记录](../delivery/design-conformance/CONTROLS.md)。
