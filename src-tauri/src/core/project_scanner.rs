@@ -12,7 +12,7 @@ pub struct AgentSkillConfig {
     pub relative_skills_dir: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct ProjectSkillInfo {
     pub name: String,
     pub dir_name: String,

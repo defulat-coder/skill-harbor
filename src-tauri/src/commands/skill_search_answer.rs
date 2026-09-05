@@ -15,7 +15,7 @@ const MAX_HIT_CHARS: usize = 3_000;
 const MAX_TOTAL_TEXT_CHARS: usize = 12_000;
 const MAX_INPUT_BYTES: usize = 64_000;
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize, specta::Type)]
 pub struct AnswerHit {
     pub skill_id: String,
     pub name: String,
@@ -88,6 +88,7 @@ pub(crate) fn build_answer_prompt(query: &str, hits: &[AnswerHit]) -> Result<Str
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn skill_search_answer(
     query: String,
     hits: Vec<AnswerHit>,

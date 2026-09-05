@@ -10,7 +10,7 @@ use crate::core::skill_store::{ProjectRecord, SkillRecord, SkillStore};
 use crate::core::timing::should_log_first_or_slow;
 use crate::core::{error::AppError, installer, project_scanner, sync_engine, tool_adapters};
 
-#[derive(Serialize, Default)]
+#[derive(Serialize, Default, specta::Type)]
 pub struct SyncHealthDto {
     pub in_sync: usize,
     pub project_newer: usize,
@@ -19,7 +19,7 @@ pub struct SyncHealthDto {
     pub project_only: usize,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, specta::Type)]
 pub struct ProjectDto {
     pub id: String,
     pub name: String,
@@ -34,14 +34,14 @@ pub struct ProjectDto {
     pub updated_at: i64,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, specta::Type)]
 pub struct ProjectSkillDocumentDto {
     pub skill_name: String,
     pub filename: String,
     pub content: String,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, specta::Type)]
 pub struct ProjectAgentTargetDto {
     pub key: String,
     pub display_name: String,
@@ -507,6 +507,7 @@ pub(crate) fn classify_sync_status(
 static GET_PROJECTS_FIRST_CALL: AtomicBool = AtomicBool::new(true);
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_projects(store: State<'_, Arc<SkillStore>>) -> Result<Vec<ProjectDto>, AppError> {
     let store = store.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
@@ -529,6 +530,7 @@ pub async fn get_projects(store: State<'_, Arc<SkillStore>>) -> Result<Vec<Proje
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn add_project(
     store: State<'_, Arc<SkillStore>>,
     path: String,
@@ -575,6 +577,7 @@ pub async fn add_project(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn add_linked_workspace(
     store: State<'_, Arc<SkillStore>>,
     name: String,
@@ -651,6 +654,7 @@ pub async fn add_linked_workspace(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn remove_project(store: State<'_, Arc<SkillStore>>, id: String) -> Result<(), AppError> {
     let store = store.inner().clone();
     tauri::async_runtime::spawn_blocking(move || store.delete_project(&id).map_err(AppError::db))
@@ -658,6 +662,7 @@ pub async fn remove_project(store: State<'_, Arc<SkillStore>>, id: String) -> Re
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn reorder_projects(
     ids: Vec<String>,
     store: State<'_, Arc<SkillStore>>,
@@ -668,6 +673,7 @@ pub async fn reorder_projects(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn scan_projects(
     root: String,
     store: State<'_, Arc<SkillStore>>,
@@ -687,6 +693,7 @@ pub async fn scan_projects(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_project_agent_targets(
     store: State<'_, Arc<SkillStore>>,
     project_id: String,
@@ -703,6 +710,7 @@ pub async fn get_project_agent_targets(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_project_skills(
     store: State<'_, Arc<SkillStore>>,
     project_id: String,
@@ -737,6 +745,7 @@ pub async fn get_project_skills(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_project_skill_document(
     project_id: String,
     skill_relative_path: String,
@@ -822,6 +831,7 @@ pub async fn get_project_skill_document(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn import_project_skill_to_center(
     store: State<'_, Arc<SkillStore>>,
     project_id: String,
@@ -919,6 +929,7 @@ pub async fn import_project_skill_to_center(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn update_project_skill_to_center(
     store: State<'_, Arc<SkillStore>>,
     project_id: String,
@@ -929,6 +940,7 @@ pub async fn update_project_skill_to_center(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn slugify_skill_names(names: Vec<String>) -> Vec<String> {
     names.iter().map(|n| slugify_skill_dir_name(n)).collect()
 }
@@ -979,6 +991,7 @@ fn add_workspace_skill(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn export_skill_to_project(
     store: State<'_, Arc<SkillStore>>,
     skill_id: String,
@@ -1079,6 +1092,7 @@ pub async fn export_skill_to_project(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn update_project_skill_from_center(
     store: State<'_, Arc<SkillStore>>,
     project_id: String,
@@ -1163,6 +1177,7 @@ pub async fn update_project_skill_from_center(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn toggle_project_skill(
     store: State<'_, Arc<SkillStore>>,
     project_id: String,
@@ -1191,6 +1206,7 @@ pub async fn toggle_project_skill(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn delete_project_skill(
     store: State<'_, Arc<SkillStore>>,
     project_id: String,

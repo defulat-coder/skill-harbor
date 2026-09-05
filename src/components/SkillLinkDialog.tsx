@@ -4,7 +4,7 @@ import { Button } from "./ui/Button";
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Link2, Check, AlertCircle } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../hooks/useApp";
 import { DetailSheet } from "./DetailSheet";
 import { deployWorkbenchSkills, type DeployResult } from "../lib/workbench";
 import type { ManagedSkill } from "../lib/tauri";

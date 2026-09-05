@@ -11,7 +11,7 @@ use crate::core::{
 };
 use serde::Serialize;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct SkillToolToggleDto {
     pub tool: String,
     pub display_name: String,
@@ -46,6 +46,7 @@ fn sync_skill_to_tool_internal(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn sync_skill_to_tool(
     app: AppHandle,
     skill_id: String,
@@ -89,6 +90,7 @@ pub async fn sync_skill_to_tool(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn unsync_skill_from_tool(
     app: AppHandle,
     skill_id: String,
@@ -201,6 +203,7 @@ fn log_sync_outcome(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_skill_tool_toggles(
     skill_id: String,
     preset_id: String,
@@ -258,6 +261,7 @@ pub async fn get_skill_tool_toggles(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn set_skill_tool_toggle(
     app: AppHandle,
     skill_id: String,

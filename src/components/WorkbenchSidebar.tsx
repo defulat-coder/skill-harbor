@@ -3,7 +3,7 @@ import { PresetManager } from "./PresetManager";
 import { Disclosure } from "./ui/Disclosure";
 import { NavLink, useLocation } from "react-router-dom";
 import { Database, Home, Library, FolderOpen, Compass, Settings, Archive, Terminal, SlidersHorizontal, Layers } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../hooks/useApp";
 
 const row = ({ isActive }: { isActive: boolean }) => `ds-nav-row ${isActive ? "is-active" : ""}`;
 

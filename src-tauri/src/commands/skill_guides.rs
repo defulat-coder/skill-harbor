@@ -8,7 +8,7 @@ use crate::core::{central_repo, error::AppError, skill_store::SkillStore};
 
 static CACHE_LOCK: Mutex<()> = Mutex::new(());
 
-#[derive(Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Default, Serialize, Deserialize, specta::Type)]
 struct CachedGuide {
     content: String,
     source_hash: String,
@@ -20,7 +20,7 @@ struct CachedGuide {
     generated_source_hash: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, specta::Type)]
 pub struct SkillGuideDto {
     skill_id: String,
     content: Option<String>,
@@ -145,6 +145,7 @@ fn dto(id: String, source_hash: String, guide: Option<CachedGuide>) -> SkillGuid
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_skill_guide(skill_id: String, project_id: Option<String>, skill_relative_path: Option<String>, agent: Option<String>, store: State<'_, Arc<SkillStore>>) -> Result<SkillGuideDto, AppError> {
     let scope = GuideScope { project_id, skill_relative_path, agent };
     scope.validate()?;
@@ -155,6 +156,7 @@ pub async fn get_skill_guide(skill_id: String, project_id: Option<String>, skill
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn save_skill_guide(skill_id: String, content: String, reviewed_source_hash: Option<String>, project_id: Option<String>, skill_relative_path: Option<String>, agent: Option<String>, store: State<'_, Arc<SkillStore>>) -> Result<SkillGuideDto, AppError> {
     if content.trim().is_empty() || content.len() > 200_000 { return Err(AppError::invalid_input("中文说明不能为空，且不得超过 200 KB")); }
     let scope = GuideScope { project_id, skill_relative_path, agent };
@@ -253,6 +255,7 @@ pub(crate) async fn generate_text(executable: PathBuf, prompt: String) -> Result
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn generate_skill_guide(skill_id: String, project_id: Option<String>, skill_relative_path: Option<String>, agent: Option<String>, store: State<'_, Arc<SkillStore>>) -> Result<SkillGuideDto, AppError> {
     let scope = GuideScope { project_id, skill_relative_path, agent };
     scope.validate()?;
@@ -278,6 +281,7 @@ pub async fn generate_skill_guide(skill_id: String, project_id: Option<String>, 
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn translate_market_query(query: String, store: State<'_, Arc<SkillStore>>) -> Result<String, AppError> {
     let query = query.trim();
     if query.is_empty() || query.len() > 2000 { return Err(AppError::invalid_input("请输入不超过 2000 字节的技能需求")); }
@@ -335,6 +339,7 @@ async fn market_document(source: &str, skill_id: &str, proxy: Option<String>) ->
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn preview_market_guide(source: String, skill_id: String, store: State<'_, Arc<SkillStore>>) -> Result<String, AppError> {
     let executable = codex_path(store.inner())?;
     let content = tokio::time::timeout(std::time::Duration::from_secs(85), market_document(&source, &skill_id, store.proxy_url())).await

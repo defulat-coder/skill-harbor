@@ -18,7 +18,7 @@ const API_BASE: &str = "https://api.github.com";
 /// the standard device-flow setup; there is deliberately no client secret.
 pub const OAUTH_CLIENT_ID: &str = "Ov23li4a3SMdhIiKo7IE";
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, specta::Type)]
 pub struct GithubConnectInfo {
     pub login: String,
     pub repo_full_name: String,
@@ -31,12 +31,12 @@ pub struct GithubConnectInfo {
     pub repo_private: bool,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, specta::Type)]
 struct UserResp {
     login: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, specta::Type)]
 struct RepoResp {
     full_name: String,
     /// Missing field is treated as private so a parsing gap can only ever
@@ -152,7 +152,7 @@ pub fn connect_backup_repo(
 
 // ── Device Flow (§3.2) ──
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, specta::Type)]
 pub struct DeviceFlowStart {
     pub device_code: String,
     /// The 8-character code the user types at `verification_uri`.

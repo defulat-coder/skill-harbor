@@ -22,7 +22,7 @@ use crate::core::{
     timing::should_log_first_or_slow,
 };
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct UpdateSkillResult {
     pub skill: ManagedSkillDto,
     /// Whether the skill's file content actually changed.
@@ -46,7 +46,7 @@ pub struct UpdateSkillResult {
 const REIMPORT_APPROVAL_DOMAIN: &str = "reimport";
 
 /// Result of re-importing a local skill from its source path.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct ReimportSkillResult {
     pub skill: ManagedSkillDto,
     /// Non-empty means **nothing was changed** — see [`UpdateSkillResult`].
@@ -56,7 +56,7 @@ pub struct ReimportSkillResult {
 }
 
 /// Where a path about to be removed lives.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct PendingRemoval {
     /// [`LIBRARY_LOCATION`], or the key of the agent whose deployed copy holds
     /// it. The user needs to know which directory to go and rescue.
@@ -175,7 +175,7 @@ impl Drop for StagedPathGuard<'_> {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct BatchUpdateSkillsResult {
     pub refreshed: usize,
     pub unchanged: usize,
@@ -186,13 +186,13 @@ pub struct BatchUpdateSkillsResult {
     pub held_back: Vec<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct BatchDeleteSkillsResult {
     pub deleted: usize,
     pub failed: Vec<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct ManagedSkillDto {
     pub id: String,
     pub name: String,
@@ -217,7 +217,7 @@ pub struct ManagedSkillDto {
     pub tags: Vec<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct TargetDto {
     pub id: String,
     pub skill_id: String,
@@ -228,7 +228,7 @@ pub struct TargetDto {
     pub synced_at: Option<i64>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct SkillDocumentDto {
     pub skill_id: String,
     pub filename: String,
@@ -236,7 +236,7 @@ pub struct SkillDocumentDto {
     pub central_path: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct SourceSkillDocumentDto {
     pub skill_id: String,
     pub filename: String,
@@ -248,7 +248,7 @@ pub struct SourceSkillDocumentDto {
 /// Whole-directory diff between the central copy (`original`) and the source
 /// (`updated`), covering the same file scope that drives the update badge so
 /// the diff can never come back empty while the badge says "update available".
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct SkillSourceDiffDto {
     pub skill_id: String,
     pub source_label: String,
@@ -256,7 +256,7 @@ pub struct SkillSourceDiffDto {
     pub entries: Vec<SkillSourceDiffEntryDto>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct SkillSourceDiffEntryDto {
     pub relative_path: String,
     /// "added" | "removed" | "modified"
@@ -290,7 +290,7 @@ pub struct GitSkillSource {
     pub locator_skill_id: Option<String>,
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, specta::Type)]
 pub struct GitSkillPreview {
     /// Path relative to the resolved scan root, using `/` separators. Stable key.
     pub rel_path: String,
@@ -298,13 +298,13 @@ pub struct GitSkillPreview {
     pub description: Option<String>,
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, specta::Type)]
 pub struct GitPreviewResult {
     pub temp_dir: String,
     pub skills: Vec<GitSkillPreview>,
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, specta::Type)]
 pub struct SkillInstallItem {
     pub rel_path: String,
     pub name: String,
@@ -330,6 +330,7 @@ impl Drop for CancelRegistrationGuard {
 static GET_MANAGED_SKILLS_FIRST_CALL: AtomicBool = AtomicBool::new(true);
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_managed_skills(
     store: State<'_, Arc<SkillStore>>,
 ) -> Result<Vec<ManagedSkillDto>, AppError> {
@@ -354,6 +355,7 @@ pub async fn get_managed_skills(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_skills_for_preset(
     preset_id: String,
     store: State<'_, Arc<SkillStore>>,
@@ -375,6 +377,7 @@ pub async fn get_skills_for_preset(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_skill_document(
     skill_id: String,
     store: State<'_, Arc<SkillStore>>,
@@ -399,6 +402,7 @@ pub async fn get_skill_document(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_source_skill_document(
     skill_id: String,
     store: State<'_, Arc<SkillStore>>,
@@ -594,6 +598,7 @@ fn build_source_diff_entries(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_skill_source_diff(
     skill_id: String,
     store: State<'_, Arc<SkillStore>>,
@@ -711,6 +716,7 @@ fn source_label_for_skill(skill: &SkillRecord) -> String {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn delete_managed_skill(
     skill_id: String,
     store: State<'_, Arc<SkillStore>>,
@@ -727,6 +733,7 @@ pub async fn delete_managed_skill(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn delete_managed_skills(
     skill_ids: Vec<String>,
     store: State<'_, Arc<SkillStore>>,
@@ -876,6 +883,7 @@ fn log_reimport_outcome(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn install_local(
     source_path: String,
     name: Option<String>,
@@ -912,6 +920,7 @@ pub async fn install_local(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn install_git(
     repo_url: String,
     name: Option<String>,
@@ -1004,6 +1013,7 @@ pub async fn install_git(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn install_from_skillssh(
     source: String,
     skill_id: String,
@@ -1105,6 +1115,7 @@ pub async fn install_from_skillssh(
 /// Clone a git repo and return a preview list of skills found, without installing.
 /// The caller must follow up with `confirm_git_install` using the returned `temp_dir`.
 #[tauri::command]
+#[specta::specta]
 pub async fn preview_git_install(
     repo_url: String,
     store: State<'_, Arc<SkillStore>>,
@@ -1194,6 +1205,7 @@ pub async fn preview_git_install(
 
 /// Install selected skills from a previously cloned temp directory.
 #[tauri::command]
+#[specta::specta]
 pub async fn confirm_git_install(
     repo_url: String,
     temp_dir: String,
@@ -1256,6 +1268,7 @@ pub async fn confirm_git_install(
 
 /// Clean up temp directory from a cancelled preview session.
 #[tauri::command]
+#[specta::specta]
 pub async fn cancel_git_preview(temp_dir: String) -> Result<(), AppError> {
     tauri::async_runtime::spawn_blocking(move || {
         if let Ok(temp_path) = validate_clone_temp_path(&temp_dir) {
@@ -1267,6 +1280,7 @@ pub async fn cancel_git_preview(temp_dir: String) -> Result<(), AppError> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn check_skill_update(
     skill_id: String,
     force: Option<bool>,
@@ -1287,6 +1301,7 @@ pub async fn check_skill_update(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn check_all_skill_updates(
     force: Option<bool>,
     store: State<'_, Arc<SkillStore>>,
@@ -1520,6 +1535,7 @@ where
 /// `pending_removals`, the user is shown exactly what would disappear and only
 /// then is it called again with that token.
 #[tauri::command]
+#[specta::specta]
 pub async fn update_skill(
     skill_id: String,
     approved_removals: Option<String>,
@@ -1549,6 +1565,7 @@ pub async fn update_skill(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn reimport_local_skill(
     skill_id: String,
     approved_removals: Option<String>,
@@ -1565,6 +1582,7 @@ pub async fn reimport_local_skill(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn batch_update_skills(
     skill_ids: Vec<String>,
     store: State<'_, Arc<SkillStore>>,
@@ -1634,6 +1652,7 @@ pub async fn batch_update_skills(
 }
 
 #[tauri::command]
+#[specta::specta]
 /// Re-point a local skill at a different source directory.
 ///
 /// `approved_removals` behaves as on the update paths: choosing a new source is
@@ -1742,6 +1761,7 @@ pub async fn relink_local_skill_source(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn detach_local_skill_source(
     skill_id: String,
     store: State<'_, Arc<SkillStore>>,
@@ -2047,7 +2067,7 @@ pub fn update_git_skill_internal(
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct SetSourceResult {
     pub skill_id: String,
     pub name: String,
@@ -2952,12 +2972,14 @@ pub fn resync_copy_targets(store: &SkillStore, skill_id: &str) -> Result<(), App
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_all_tags(store: State<'_, Arc<SkillStore>>) -> Result<Vec<String>, AppError> {
     let store = store.inner().clone();
     tauri::async_runtime::spawn_blocking(move || store.get_all_tags().map_err(AppError::db)).await?
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn set_skill_tags(
     skill_id: String,
     tags: Vec<String>,
@@ -2994,6 +3016,7 @@ pub fn set_skill_tags_internal(
 /// Globally rename a tag across all skills (used by the tag filter bar). If the
 /// new name already exists, the tags are merged.
 #[tauri::command]
+#[specta::specta]
 pub async fn rename_tag(
     old_name: String,
     new_name: String,
@@ -3031,6 +3054,7 @@ pub fn rename_tag_internal(
 
 /// Globally delete a tag from all skills (used by the tag filter bar).
 #[tauri::command]
+#[specta::specta]
 pub async fn delete_tag(name: String, store: State<'_, Arc<SkillStore>>) -> Result<(), AppError> {
     let store = store.inner().clone();
     tauri::async_runtime::spawn_blocking(move || delete_tag_internal(&store, &name).map(|_| ()))
@@ -3053,6 +3077,7 @@ pub fn delete_tag_internal(store: &SkillStore, name: &str) -> Result<Vec<String>
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn cancel_install(
     key: String,
     cancel_registry: State<'_, Arc<InstallCancelRegistry>>,
@@ -3060,7 +3085,7 @@ pub async fn cancel_install(
     Ok(cancel_registry.cancel(&key))
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct BatchImportResult {
     pub imported: usize,
     pub skipped: usize,
@@ -3068,6 +3093,7 @@ pub struct BatchImportResult {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn batch_import_folder(
     folder_path: String,
     store: State<'_, Arc<SkillStore>>,

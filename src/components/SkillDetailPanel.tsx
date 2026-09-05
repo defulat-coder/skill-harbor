@@ -2,7 +2,8 @@ import { LoadingState } from "./ui/LoadingState";
 import { Disclosure } from "./ui/Disclosure";
 import { Button } from "./ui/Button";
 import { ChineseGuide } from "./ChineseGuide";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Folder,
   HardDrive,
@@ -17,12 +18,10 @@ import {
   getSkillSourceDiff,
   type ManagedSkill,
   type Project,
-  type SkillDocument,
-  type SourceSkillDocument,
-  type SkillSourceDiff,
   type SkillToolToggle,
   type ToolInfo,
 } from "../lib/tauri";
+import { queryKeys } from "../lib/queryKeys";
 import { SkillSourceDiffViewer } from "./SkillSourceDiffViewer";
 import { DetailSheet } from "./DetailSheet";
 import { SkillMarkdown } from "./SkillMarkdown";
@@ -114,95 +113,38 @@ function SkillDetailPanelContent({
   onProjectsChanged?: () => void;
 }) {
   const { t } = useTranslation();
-  const [doc, setDoc] = useState<SkillDocument | null>(null);
-  const [sourceDoc, setSourceDoc] = useState<SourceSkillDocument | null>(null);
-  const [sourceDiff, setSourceDiff] = useState<SkillSourceDiff | null>(null);
-  const [sourceDiffFailed, setSourceDiffFailed] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [localRetry, setLocalRetry] = useState(0);
-  const [sourceRetry, setSourceRetry] = useState(0);
-  const [diffRetry, setDiffRetry] = useState(0);
   const [isMetadataExpanded, setIsMetadataExpanded] = useState(false);
   const [contentTab, setContentTab] = useState<"zh" | "local" | "diff" | "source">("zh");
-  const localRequestIdRef = useRef(0);
-  const sourceRequestIdRef = useRef(0);
-  const diffRequestedRef = useRef(false);
   const skillId = skill.id;
   const supportsSourceDiff =
     skill.source_type === "git"
     || skill.source_type === "skillssh"
     || ((skill.source_type === "local" || skill.source_type === "import") && !!skill.source_ref);
-  const [sourceLoading, setSourceLoading] = useState(supportsSourceDiff);
-  const localDocVersion = `${skill.id}:${skill.updated_at}`;
-  const sourceDocVersion = [
-    skill.id,
-    skill.source_type,
-    skill.source_ref ?? "",
-    skill.source_ref_resolved ?? "",
-    skill.source_revision ?? "",
-    skill.remote_revision ?? "",
-  ].join(":");
 
-  useEffect(() => {
-    localRequestIdRef.current += 1;
-    const requestId = localRequestIdRef.current;
-
-    getSkillDocument(skillId)
-      .then((nextDoc) => {
-        if (requestId === localRequestIdRef.current) {
-          setDoc(nextDoc);
-        }
-      })
-      .catch(() => {
-        if (requestId === localRequestIdRef.current) {
-          setDoc(null);
-        }
-      })
-      .finally(() => {
-        if (requestId === localRequestIdRef.current) {
-          setLoading(false);
-        }
-      });
-  }, [skillId, localDocVersion, localRetry]);
-
-  useEffect(() => {
-    if (!supportsSourceDiff) {
-      return;
-    }
-
-    sourceRequestIdRef.current += 1;
-    const requestId = sourceRequestIdRef.current;
-
-    getSourceSkillDocument(skillId)
-      .then((nextDoc) => {
-        if (requestId === sourceRequestIdRef.current) {
-          setSourceDoc(nextDoc);
-        }
-      })
-      .catch(() => {
-        if (requestId === sourceRequestIdRef.current) {
-          setSourceDoc(null);
-        }
-      })
-      .finally(() => {
-        if (requestId === sourceRequestIdRef.current) {
-          setSourceLoading(false);
-        }
-      });
-  }, [skillId, supportsSourceDiff, sourceDocVersion, sourceRetry]);
-
+  const docQuery = useQuery({
+    queryKey: queryKeys.skills.document(skillId),
+    queryFn: () => getSkillDocument(skillId),
+  });
+  const sourceDocQuery = useQuery({
+    queryKey: queryKeys.skills.sourceDocument(skillId),
+    queryFn: () => getSourceSkillDocument(skillId),
+    enabled: supportsSourceDiff,
+  });
   // Lazily load the whole-directory diff only when the user opens the Diff
   // tab. For git/skills.sh skills this clones the repo, so we avoid paying
   // that cost (and a second clone alongside the source doc) up front.
-  useEffect(() => {
-    if (contentTab !== "diff" || !supportsSourceDiff) return;
-    if (diffRequestedRef.current) return;
-    diffRequestedRef.current = true;
+  const sourceDiffQuery = useQuery({
+    queryKey: queryKeys.skills.sourceDiff(skillId),
+    queryFn: () => getSkillSourceDiff(skillId),
+    enabled: contentTab === "diff" && supportsSourceDiff,
+  });
 
-    getSkillSourceDiff(skillId)
-      .then((diff) => setSourceDiff(diff))
-      .catch(() => setSourceDiffFailed(true));
-  }, [contentTab, supportsSourceDiff, skillId, diffRetry]);
+  const doc = docQuery.data ?? null;
+  const loading = docQuery.isLoading;
+  const sourceDoc = sourceDocQuery.data ?? null;
+  const sourceLoading = supportsSourceDiff && sourceDocQuery.isLoading;
+  const sourceDiff = sourceDiffQuery.data ?? null;
+  const sourceDiffFailed = !!sourceDiffQuery.error;
 
   const metadataItems = [
     { label: t("mySkills.sourceType"), value: sourceTypeLabel(skill.source_type) },
@@ -345,7 +287,7 @@ function SkillDetailPanelContent({
         ) : activeSourceDiff ? (
           <SkillSourceDiffViewer entries={activeSourceDiff.entries} />
         ) : sourceDiffFailed ? (
-          <div className="mt-8 space-y-3 text-center text-[13px] text-muted" role="alert"><p>{t("mySkills.sourceDiffUnavailable")}</p><Button onClick={() => { if (contentTab === "diff") { diffRequestedRef.current = false; setSourceDiffFailed(false); setDiffRetry(value => value + 1); } else { setSourceLoading(true); setSourceRetry(value => value + 1); } }}>重新加载</Button></div>
+          <div className="mt-8 space-y-3 text-center text-[13px] text-muted" role="alert"><p>{t("mySkills.sourceDiffUnavailable")}</p><Button onClick={() => { if (contentTab === "diff") { void sourceDiffQuery.refetch(); } else { void sourceDocQuery.refetch(); } }}>重新加载</Button></div>
         ) : (
           <LoadingState label={t("common.loading")} />
         )
@@ -355,12 +297,12 @@ function SkillDetailPanelContent({
         ) : activeSourceDoc ? (
           <SkillMarkdown content={activeSourceDoc.content} />
         ) : (
-          <div className="mt-8 space-y-3 text-center text-[13px] text-muted" role="alert"><p>{t("mySkills.sourceDiffUnavailable")}</p><Button onClick={() => { setSourceLoading(true); setSourceRetry(value => value + 1); }}>重新加载</Button></div>
+          <div className="mt-8 space-y-3 text-center text-[13px] text-muted" role="alert"><p>{t("mySkills.sourceDiffUnavailable")}</p><Button onClick={() => void sourceDocQuery.refetch()}>重新加载</Button></div>
         )
       ) : activeDoc ? (
         <SkillMarkdown content={activeDoc.content} />
       ) : (
-        <div className="mt-8 space-y-3 text-center text-[13px] text-muted" role="alert"><p>{t("common.documentMissing")}</p><Button onClick={() => { setLoading(true); setLocalRetry(value => value + 1); }}>重新加载</Button></div>
+        <div className="mt-8 space-y-3 text-center text-[13px] text-muted" role="alert"><p>{t("common.documentMissing")}</p><Button onClick={() => void docQuery.refetch()}>重新加载</Button></div>
       )}
     </DetailSheet>
   );

@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../hooks/useApp";
 import * as api from "../lib/tauri";
 import type { Preset } from "../lib/tauri";
 import { getErrorMessage } from "../lib/error";

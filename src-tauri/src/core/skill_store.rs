@@ -15,7 +15,7 @@ pub struct SkillStore {
     secret_key: [u8; 32],
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct SkillRecord {
     pub id: String,
     pub name: String,
@@ -38,7 +38,7 @@ pub struct SkillRecord {
     pub last_check_error: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct SkillTargetRecord {
     pub id: String,
     pub skill_id: String,
@@ -56,7 +56,7 @@ pub struct SkillTargetRecord {
 }
 
 /// One row of the pending-conflict projection (merge-engine design §4).
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct PendingConflictRow {
     pub skill_id: String,
     pub theirs_commit: String,
@@ -64,7 +64,7 @@ pub struct PendingConflictRow {
     pub detected_at: i64,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct DiscoveredSkillRecord {
     pub id: String,
     pub tool: String,
@@ -75,7 +75,7 @@ pub struct DiscoveredSkillRecord {
     pub imported_skill_id: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct ScenarioRecord {
     pub id: String,
     pub name: String,
@@ -86,7 +86,7 @@ pub struct ScenarioRecord {
     pub updated_at: i64,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct ProjectRecord {
     pub id: String,
     pub name: String,
@@ -100,7 +100,7 @@ pub struct ProjectRecord {
     pub updated_at: i64,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct ScenarioSkillToolToggleRecord {
     pub scenario_id: String,
     pub skill_id: String,

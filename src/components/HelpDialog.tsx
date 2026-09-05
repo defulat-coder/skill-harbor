@@ -1,7 +1,7 @@
 import { DetailSheet } from "./DetailSheet";
 import { BookOpen, FolderTree, Globe, Layers3, Map, RefreshCw, Settings2, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../hooks/useApp";
 
 const GUIDE_ICONS = [Map, Layers3, BookOpen, Sparkles, Globe, FolderTree, RefreshCw, Settings2];
 

@@ -19,7 +19,7 @@ fn git_command() -> Command {
     cmd
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, specta::Type)]
 pub struct GitBackupStatus {
     /// Whether the skills directory is a git repository
     pub is_repo: bool,
@@ -50,7 +50,7 @@ pub struct GitBackupStatus {
     pub upstream_health: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, specta::Type)]
 pub struct GitBackupVersion {
     /// Snapshot tag name (e.g. sm-v-20260318-153012-abc1234)
     pub tag: String,
@@ -1154,7 +1154,7 @@ fn count_changed_top_dirs(porcelain: &str) -> u32 {
 pub const SKILL_SIZE_LIMIT_BYTES: u64 = 100 * 1024 * 1024;
 pub const REPO_SIZE_WARN_BYTES: u64 = 1024 * 1024 * 1024;
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, specta::Type)]
 pub struct OversizedSkill {
     pub name: String,
     pub bytes: u64,
@@ -1163,7 +1163,7 @@ pub struct OversizedSkill {
     pub excluded: bool,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, specta::Type)]
 pub struct BackupSizeReport {
     /// Total size of backed-up content (working tree, `.git` excluded).
     pub total_bytes: u64,

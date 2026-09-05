@@ -12,7 +12,7 @@ import {
   Home,
   ArrowRight,
 } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../hooks/useApp";
 import { getPresetIconOption } from "../lib/presetIcons";
 import { cn } from "../utils";
 

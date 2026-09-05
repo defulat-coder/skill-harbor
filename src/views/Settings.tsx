@@ -6,6 +6,7 @@ import styles from "./Settings.module.css";
 import { PageHeader } from "../components/ui/PageHeader";
 import { RunnerSettings } from "../components/RunnerSettings";
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Folder,
   FolderOpen,
@@ -65,14 +66,67 @@ import {
 } from "@tauri-apps/plugin-dialog";
 import { useNavigate } from "react-router-dom";
 import { cn } from "../utils";
-import { useApp } from "../context/AppContext";
-import { useThemeContext } from "../context/ThemeContext";
+import { useApp } from "../hooks/useApp";
+import { useTheme, type Theme } from "../hooks/useTheme";
 import { AgentIcon } from "../components/AgentIcon";
 import { ToggleSwitch } from "../components/ToggleSwitch";
 import * as api from "../lib/tauri";
+import { queryKeys } from "../lib/queryKeys";
 import { applyTextSize } from "../lib/textScale";
 import { getErrorMessage } from "../lib/error";
-import type { Theme } from "../hooks/useTheme";
+
+const SETTINGS_BUNDLE_KEYS = [
+  "sync_mode",
+  "proxy_url",
+  "close_action",
+  "show_tray_icon",
+  "text_size",
+  "auto_update_check_interval",
+  "auto_update_apply",
+  "auto_update_last_run_at",
+  "git_backup_remote_url",
+  "git_backup_engine",
+  "merge_engine",
+] as const;
+
+interface SettingsBundle {
+  values: Record<string, string | null>;
+  centralRepoPath: string | null;
+  centralRepoPathOverride: string | null;
+  loadError: string;
+}
+
+// One round trip for every preference the page edits. Individual keys keep
+// their per-read error mapping from the old hand-rolled loader; the last
+// failure wins, matching the previous overwrite order (override > central >
+// key).
+async function loadSettingsBundle(): Promise<SettingsBundle> {
+  let loadError = "";
+  const values: Record<string, string | null> = {};
+  await Promise.all(
+    SETTINGS_BUNDLE_KEYS.map(async (key) => {
+      try {
+        values[key] = await api.getSettings(key);
+      } catch (e) {
+        values[key] = null;
+        loadError = getErrorMessage(e, "部分设置读取失败，请重试后再修改。");
+      }
+    }),
+  );
+  let centralRepoPath: string | null = null;
+  try {
+    centralRepoPath = await api.getCentralRepoPath();
+  } catch (e) {
+    loadError = getErrorMessage(e, "技能库目录读取失败，请重试。");
+  }
+  let centralRepoPathOverride: string | null = null;
+  try {
+    centralRepoPathOverride = await api.getCentralRepoPathOverride();
+  } catch (e) {
+    loadError = getErrorMessage(e, "自定义目录读取失败，请重试。");
+  }
+  return { values, centralRepoPath, centralRepoPathOverride, loadError };
+}
 
 const IS_WINDOWS = navigator.userAgent.includes("Windows");
 const IS_MACOS = navigator.userAgent.includes("Mac");
@@ -235,7 +289,22 @@ export function Settings() {
   const { tools, refreshTools, openHelp, appUpdate, refreshAppUpdate } =
     useApp();
   const [togglingTools, setTogglingTools] = useState<Set<string>>(new Set());
-  const { theme, setTheme } = useThemeContext();
+  const { theme, setTheme } = useTheme();
+  const queryClient = useQueryClient();
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.settings.bundle(),
+    queryFn: loadSettingsBundle,
+  });
+  const lastPanicQuery = useQuery({
+    queryKey: queryKeys.settings.lastPanic(),
+    queryFn: api.checkLastPanic,
+  });
+  const repoWarningsQuery = useQuery({
+    queryKey: queryKeys.settings.centralRepoWarnings(),
+    queryFn: api.getCentralRepoWarnings,
+  });
+  const lastPanic = lastPanicQuery.data ?? null;
+  const repoWarnings = repoWarningsQuery.data ?? [];
   const [syncMode, setSyncMode] = useState("symlink");
   const [closeAction, setCloseAction] = useState("");
   const [showTrayIcon, setShowTrayIcon] = useState(true);
@@ -243,8 +312,6 @@ export function Settings() {
   const [openingRepo, setOpeningRepo] = useState(false);
   const [reportingIssue, setReportingIssue] = useState(false);
   const [exportingLogs, setExportingLogs] = useState(false);
-  const [lastPanic, setLastPanic] = useState<api.PanicInfo | null>(null);
-  const [repoWarnings, setRepoWarnings] = useState<string[]>([]);
   const [centralRepoPath, setCentralRepoPath] = useState("");
   const [centralRepoPathOverride, setCentralRepoPathOverride] = useState<
     string | null
@@ -279,9 +346,6 @@ export function Settings() {
   // Custom agent dialog
   const [bulkBusy, setBulkBusy] = useState(false);
   const [preferenceBusy, setPreferenceBusy] = useState(false);
-  const [settingsLoading, setSettingsLoading] = useState(true);
-  const [settingsLoadError, setSettingsLoadError] = useState("");
-  const [loadAttempt, setLoadAttempt] = useState(0);
   const [pathSaving, setPathSaving] = useState(false);
   const [customError, setCustomError] = useState("");
   const [showAddCustom, setShowAddCustom] = useState(false);
@@ -422,112 +486,54 @@ export function Settings() {
     }
   };
 
-  useEffect(() => {
-    api
-      .checkLastPanic()
-      .then(setLastPanic)
-      .catch(() => {});
-    api
-      .getCentralRepoWarnings()
-      .then(setRepoWarnings)
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    const reads: Promise<unknown>[] = [];
-    const readSetting = (key: string) => {
-      const request = api.getSettings(key).catch((e) => {
-        setSettingsLoadError(
-          getErrorMessage(e, "部分设置读取失败，请重试后再修改。"),
-        );
-        return null;
-      });
-      reads.push(request);
-      return request;
-    };
-    void readSetting("sync_mode").then((v) => {
-      if (v) setSyncMode(v);
-    });
-    void readSetting("proxy_url").then((v) => {
-      setProxyInput(v ?? "");
-    });
-    void readSetting("close_action").then((v) => {
-      setCloseAction(v ?? "");
-    });
-    void readSetting("show_tray_icon").then((v) => {
-      const normalized = (v ?? "true").trim().toLowerCase();
-      setShowTrayIcon(
-        !(
-          normalized === "false" ||
-          normalized === "0" ||
-          normalized === "no" ||
-          normalized === "off"
-        ),
-      );
-    });
-    void readSetting("text_size").then((v) => {
-      if (v) {
-        setTextSize(v);
-        applyTextSize(v);
-      }
-    });
-    void readSetting("auto_update_check_interval").then((v) => {
-      if (v) setAutoUpdateInterval(v);
-    });
-    void readSetting("auto_update_apply").then((v) => {
-      if (v) setAutoUpdateApply(v);
-    });
-    // The `skills-auto-updated` listener may populate this concurrently, so
-    // keep whichever timestamp is newer rather than blindly overwriting.
-    void readSetting("auto_update_last_run_at").then((v) => {
-      if (!v) return;
-      setAutoUpdateLastRun((prev) =>
-        prev && Date.parse(prev) >= Date.parse(v) ? prev : v,
-      );
-    });
-    reads.push(
-      api
-        .getCentralRepoPath()
-        .then((path) => {
-          setCentralRepoPath(path);
-          setCentralRepoPathInput(path);
-        })
-        .catch((e) =>
-          setSettingsLoadError(
-            getErrorMessage(e, "技能库目录读取失败，请重试。"),
-          ),
-        ),
+  // Initialize the editable form state once from the settings bundle query.
+  // Later refetches (invalidation) must not clobber in-progress edits, so
+  // this stays a one-shot.
+  const [settingsInitialized, setSettingsInitialized] = useState(false);
+  const bundle = settingsQuery.data;
+  if (bundle && !settingsInitialized) {
+    setSettingsInitialized(true);
+    const v = bundle.values;
+    if (v.sync_mode) setSyncMode(v.sync_mode);
+    setProxyInput(v.proxy_url ?? "");
+    setCloseAction(v.close_action ?? "");
+    const trayNormalized = (v.show_tray_icon ?? "true").trim().toLowerCase();
+    setShowTrayIcon(
+      !(
+        trayNormalized === "false" ||
+        trayNormalized === "0" ||
+        trayNormalized === "no" ||
+        trayNormalized === "off"
+      ),
     );
-    reads.push(
-      api
-        .getCentralRepoPathOverride()
-        .then(setCentralRepoPathOverride)
-        .catch((e) =>
-          setSettingsLoadError(
-            getErrorMessage(e, "自定义目录读取失败，请重试。"),
-          ),
-        ),
-    );
-
+    if (v.text_size) {
+      setTextSize(v.text_size);
+      applyTextSize(v.text_size);
+    }
+    if (v.auto_update_check_interval) setAutoUpdateInterval(v.auto_update_check_interval);
+    if (v.auto_update_apply) setAutoUpdateApply(v.auto_update_apply);
+    if (v.auto_update_last_run_at) setAutoUpdateLastRun(v.auto_update_last_run_at);
+    if (bundle.centralRepoPath) {
+      setCentralRepoPath(bundle.centralRepoPath);
+      setCentralRepoPathInput(bundle.centralRepoPath);
+    }
+    setCentralRepoPathOverride(bundle.centralRepoPathOverride);
     // The saved setting is the single source of truth. Do not backfill from
     // `.git/config` — that made a cleared URL reappear on reopen (#260).
-    void readSetting("git_backup_remote_url")
-      .then((v) => {
-        setGitRemoteInput(v?.trim() || "");
-      })
-      .catch(() => {});
-    void readSetting("git_backup_engine")
-      .then((v) => {
-        setGitEngineGit2(v?.trim() === "git2");
-      })
-      .catch(() => {});
-    void readSetting("merge_engine")
-      .then((v) => {
-        setGitMergeEngineObject((v ?? "").trim() !== "system");
-      })
-      .catch(() => {});
-    void Promise.allSettled(reads).then(() => setSettingsLoading(false));
-  }, [loadAttempt]);
+    setGitRemoteInput(v.git_backup_remote_url?.trim() || "");
+    setGitEngineGit2(v.git_backup_engine?.trim() === "git2");
+    setGitMergeEngineObject((v.merge_engine ?? "").trim() !== "system");
+  }
+  const settingsLoading = !settingsInitialized && !settingsQuery.error;
+  const settingsLoadError =
+    bundle?.loadError ||
+    (settingsQuery.error
+      ? getErrorMessage(settingsQuery.error, "部分设置读取失败，请重试后再修改。")
+      : "");
+  const retrySettingsLoad = () => {
+    setSettingsInitialized(false);
+    void settingsQuery.refetch();
+  };
 
   const handleRefresh = async () => {
     if (refreshing) return;
@@ -727,7 +733,7 @@ export function Settings() {
     } catch (err) {
       console.warn("Failed to clear last_panic.log", err);
     }
-    setLastPanic(null);
+    queryClient.setQueryData(queryKeys.settings.lastPanic(), null);
   };
 
   const handleReportIssue = async () => {
@@ -809,7 +815,7 @@ export function Settings() {
           } catch (err) {
             console.warn("Failed to clear last_panic.log", err);
           }
-          setLastPanic(null);
+          queryClient.setQueryData(queryKeys.settings.lastPanic(), null);
         }
       } else {
         toast.message(t("settings.diagnosticsCopyManual"), { description: md });
@@ -1311,7 +1317,7 @@ export function Settings() {
           {activeSection !== "runner" && settingsLoadError && (
             <div role="alert" className={styles.error}>
               {settingsLoadError}
-              <Button onClick={() => { setSettingsLoading(true); setSettingsLoadError(""); setLoadAttempt((n) => n + 1); }}>
+              <Button onClick={retrySettingsLoad}>
                 重新读取
               </Button>
             </div>

@@ -5,6 +5,7 @@ import { PageHeader } from "../components/ui/PageHeader";
 import { GithubIcon } from "../components/GithubIcon";
 import styles from "./Backup.module.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -32,14 +33,13 @@ import { ToggleSwitch } from "../components/ToggleSwitch";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { GitRecoveryDialog } from "../components/GitRecoveryDialog";
 import { GitSetupDialog } from "../components/GitSetupDialog";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../hooks/useApp";
 import { getErrorKind, getErrorMessage } from "../lib/error";
 import { mapGitErrorMessage } from "../lib/gitErrors";
 import * as api from "../lib/tauri";
+import { queryKeys } from "../lib/queryKeys";
 import type {
-  GitBackupSizeReport,
   GitBackupStatus,
-  GitBackupVersion,
   GitUpstreamHealth,
 } from "../lib/tauri";
 
@@ -99,11 +99,60 @@ function sleep(ms: number) {
 export function Backup() {
   const { t } = useTranslation();
   const { managedSkills, refreshManagedSkills, refreshPresets } = useApp();
-  const [gitStatus, setGitStatus] = useState<GitBackupStatus | null>(null);
+  const queryClient = useQueryClient();
+  const gitStatusQuery = useQuery({
+    queryKey: queryKeys.backup.status(),
+    queryFn: api.gitBackupStatus,
+  });
+  const gitStatus = gitStatusQuery.data ?? null;
+  const isRepo = gitStatus?.is_repo ?? false;
+  const versionsQuery = useQuery({
+    queryKey: queryKeys.backup.versions(50),
+    queryFn: () => api.gitBackupListVersions(50),
+    enabled: isRepo,
+  });
+  const versions = versionsQuery.data ?? [];
+  const pendingConflictsQuery = useQuery({
+    queryKey: queryKeys.backup.pendingConflicts(),
+    queryFn: api.gitBackupPendingConflicts,
+  });
+  const pendingConflicts = pendingConflictsQuery.data ?? [];
+  const sizeReportQuery = useQuery({
+    queryKey: queryKeys.backup.sizeReport(),
+    queryFn: api.gitBackupSizeReport,
+    enabled: isRepo,
+  });
+  const sizeReport = sizeReportQuery.data ?? null;
+  const deviceNameQuery = useQuery({
+    queryKey: queryKeys.backup.deviceName(),
+    queryFn: api.backupDeviceName,
+  });
+  const deviceName = deviceNameQuery.data ?? "";
+  const remoteSettingQuery = useQuery({
+    queryKey: queryKeys.settings.value("git_backup_remote_url"),
+    queryFn: () => api.getSettings("git_backup_remote_url").catch(() => null),
+  });
+  // The saved setting is the single source of truth. Do not backfill from
+  // `.git/config` — that made a cleared URL reappear on reopen (#260).
+  const remoteConfig = remoteSettingQuery.data?.trim() || "";
+  const autoBackupSettingQuery = useQuery({
+    queryKey: queryKeys.settings.value("backup_auto_enabled"),
+    queryFn: () => api.getSettings("backup_auto_enabled").catch(() => null),
+  });
+  const autoBackupEnabled = !["off", "false", "0", "no"].includes(
+    (autoBackupSettingQuery.data ?? "").trim().toLowerCase(),
+  );
+  const authMethodQuery = useQuery({
+    queryKey: queryKeys.settings.value("github_auth_method"),
+    queryFn: () => api.getSettings("github_auth_method").catch(() => null),
+  });
+  const authMethod = (authMethodQuery.data ?? "").trim();
   const [remoteInput, setRemoteInput] = useState("");
-  const [remoteConfig, setRemoteConfig] = useState("");
-  const [versions, setVersions] = useState<GitBackupVersion[]>([]);
-  const [versionsLoading, setVersionsLoading] = useState(false);
+  const [remoteInputInitialized, setRemoteInputInitialized] = useState(false);
+  if (!remoteInputInitialized && remoteSettingQuery.data !== undefined) {
+    setRemoteInputInitialized(true);
+    setRemoteInput(remoteConfig);
+  }
   const [loading, setLoading] = useState<LoadingAction>(null);
   const [setupOpen, setSetupOpen] = useState(false);
   const [recoveryOpen, setRecoveryOpen] = useState(false);
@@ -112,45 +161,58 @@ export function Backup() {
   const [restoringVersionTag, setRestoringVersionTag] = useState<string | null>(null);
   const [disconnectConfirmOpen, setDisconnectConfirmOpen] = useState(false);
   const [backupError, setBackupError] = useState<string | null>(null);
-  const [sizeReport, setSizeReport] = useState<GitBackupSizeReport | null>(null);
   const [githubToken, setGithubToken] = useState("");
   const [githubRepoName, setGithubRepoName] = useState(DEFAULT_GITHUB_REPO);
   const [githubError, setGithubError] = useState<string | null>(null);
   const [patMode, setPatMode] = useState(false);
   const [deviceInfo, setDeviceInfo] = useState<api.GithubDeviceFlowStart | null>(null);
   const deviceGenerationRef = useRef(0);
-  const [deviceName, setDeviceName] = useState("");
   const [deviceNameDraft, setDeviceNameDraft] = useState("");
   const [deviceNameEditing, setDeviceNameEditing] = useState(false);
-  const [autoBackupEnabled, setAutoBackupEnabled] = useState(true);
   const [autoBackupSaving, setAutoBackupSaving] = useState(false);
-  const [pendingConflicts, setPendingConflicts] = useState<api.PendingConflict[]>([]);
   const [resolvingConflict, setResolvingConflict] = useState<string | null>(null);
   // §3.1 disconnect matrix rows 2–3 + reconnect guidance after revocation.
-  const [authMethod, setAuthMethod] = useState("");
   const [revokeConfirmOpen, setRevokeConfirmOpen] = useState(false);
   const [deleteRemoteConfirmOpen, setDeleteRemoteConfirmOpen] = useState(false);
   const [reconnectMode, setReconnectMode] = useState(false);
   const [backupErrorRaw, setBackupErrorRaw] = useState("");
-  const [statusError, setStatusError] = useState<string | null>(null);
-  const [statusLoading, setStatusLoading] = useState(false);
-  const [versionsError, setVersionsError] = useState<string | null>(null);
-  const [conflictsError, setConflictsError] = useState<string | null>(null);
+  // A failed automatic backup persists until a backup succeeds (§3.4) —
+  // resurface it when the page opens.
+  const backupErrorSettingQuery = useQuery({
+    queryKey: queryKeys.settings.value("backup_last_auto_error"),
+    queryFn: () => api.getSettings("backup_last_auto_error").catch(() => null),
+  });
+  const [backupErrorInitialized, setBackupErrorInitialized] = useState(false);
+  if (!backupErrorInitialized && backupErrorSettingQuery.data !== undefined) {
+    setBackupErrorInitialized(true);
+    const raw = (backupErrorSettingQuery.data ?? "").trim();
+    if (raw) {
+      setBackupError(mapGitErrorMessage(raw, t));
+      setBackupErrorRaw(raw);
+    }
+  }
   const [remoteError, setRemoteError] = useState<string | null>(null);
   const [deviceNameSaving, setDeviceNameSaving] = useState(false);
   const [deviceNameError, setDeviceNameError] = useState<string | null>(null);
   const operationBusy = !!loading || !!restoringVersionTag || !!resolvingConflict;
 
+  const mapGitError = useCallback(
+    (error: unknown) => mapGitErrorMessage(error, t),
+    [t],
+  );
+
+  const statusLoading = gitStatusQuery.isFetching;
+  const statusError = gitStatusQuery.error ? mapGitError(gitStatusQuery.error) : null;
+  const versionsLoading = versionsQuery.isFetching;
+  const versionsError = versionsQuery.error ? mapGitError(versionsQuery.error) : null;
+  const conflictsError = pendingConflictsQuery.error
+    ? mapGitError(pendingConflictsQuery.error)
+    : null;
 
   // Abandon an in-flight device-flow poll loop when leaving the page.
   useEffect(() => () => {
     deviceGenerationRef.current += 1;
   }, []);
-
-  const mapGitError = useCallback(
-    (error: unknown) => mapGitErrorMessage(error, t),
-    [t],
-  );
 
   const isRecoverableSetupError = (error: unknown) => {
     const message = getErrorMessage(error, "");
@@ -167,45 +229,21 @@ export function Backup() {
   };
 
   const refreshGitStatus = useCallback(async (fetchRemote = false) => {
-    setStatusLoading(true);
-    setStatusError(null);
-    try {
-      if (fetchRemote) {
-        await api.gitBackupFetch().catch(() => {});
-      }
-      const status = await api.gitBackupStatus();
-      setGitStatus(status);
-      return status;
-    } catch (error) {
-      setStatusError(mapGitError(error));
-      return null;
-    } finally {
-      setStatusLoading(false);
+    if (fetchRemote) {
+      await api.gitBackupFetch().catch(() => {});
     }
-  }, [mapGitError]);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.backup.status() });
+    return queryClient.getQueryData<GitBackupStatus>(queryKeys.backup.status()) ?? null;
+  }, [queryClient]);
 
   const refreshVersions = useCallback(async () => {
-    setVersionsLoading(true);
-    setVersionsError(null);
-    try {
-      const items = await api.gitBackupListVersions(50);
-      setVersions(items);
-    } catch (error) {
-      setVersionsError(mapGitError(error));
-    } finally {
-      setVersionsLoading(false);
-    }
-  }, [mapGitError]);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.backup.versions(50) });
+  }, [queryClient]);
 
   // "Needs attention" sync conflicts (merge-engine design §4).
   const refreshPendingConflicts = useCallback(async () => {
-    try {
-      setPendingConflicts(await api.gitBackupPendingConflicts());
-      setConflictsError(null);
-    } catch (error) {
-      setConflictsError(mapGitError(error));
-    }
-  }, [mapGitError]);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.backup.pendingConflicts() });
+  }, [queryClient]);
 
   useEffect(() => {
     void (async () => {
@@ -216,38 +254,12 @@ export function Backup() {
       if (migrated) {
         toast.info(t("backup.credentialsMigrated"));
       }
-      api.backupDeviceName().then(setDeviceName).catch(() => {});
-      api.getSettings("backup_auto_enabled")
-        .then((v) => {
-          const normalized = (v ?? "").trim().toLowerCase();
-          setAutoBackupEnabled(!["off", "false", "0", "no"].includes(normalized));
-        })
-        .catch(() => {});
-      // A failed automatic backup persists until a backup succeeds (§3.4) —
-      // resurface it when the page opens.
-      api.getSettings("backup_last_auto_error")
-        .then((v) => {
-          const raw = (v ?? "").trim();
-          if (raw) {
-            setBackupError(mapGitError(raw));
-            setBackupErrorRaw(raw);
-          }
-        })
-        .catch(() => {});
-      api.getSettings("github_auth_method")
-        .then((v) => setAuthMethod((v ?? "").trim()))
-        .catch(() => {});
-      const savedRemote = (await api.getSettings("git_backup_remote_url").catch(() => null))?.trim() || "";
-      setRemoteInput(savedRemote);
-      setRemoteConfig(savedRemote);
-      const status = await refreshGitStatus(true);
-      if (status?.is_repo) {
-        await refreshVersions();
-        void refreshPendingConflicts();
-        api.gitBackupSizeReport().then(setSizeReport).catch(() => setSizeReport(null));
-      }
+      // The status query fetches on mount; prime it with a remote fetch first,
+      // as the old loader did.
+      await api.gitBackupFetch().catch(() => {});
+      void queryClient.invalidateQueries({ queryKey: queryKeys.backup.status() });
     })();
-  }, [mapGitError, refreshGitStatus, refreshPendingConflicts, refreshVersions, t]);
+  }, [queryClient, t]);
 
   // Live updates from the background auto-backup rounds.
   useEffect(() => {
@@ -256,9 +268,7 @@ export function Backup() {
       (event) => {
         setBackupError(event.payload.error ? mapGitError(event.payload.error) : null);
         setBackupErrorRaw(event.payload.error ?? "");
-        void refreshGitStatus();
-        void refreshVersions();
-        void refreshPendingConflicts();
+        void queryClient.invalidateQueries({ queryKey: queryKeys.backup.all });
         // A completed background round may have merged remote changes into the
         // library (multi-device auto-sync reindexes skills + presets into the
         // DB). The merge is an app-internal write, so the file watcher's
@@ -273,7 +283,7 @@ export function Backup() {
     return () => {
       void unlistenPromise.then((unlisten) => unlisten()).catch(() => {});
     };
-  }, [mapGitError, refreshGitStatus, refreshPendingConflicts, refreshVersions, refreshManagedSkills, refreshPresets]);
+  }, [mapGitError, queryClient, refreshManagedSkills, refreshPresets]);
 
   const handleToggleAutoBackup = async () => {
     if (autoBackupSaving) return;
@@ -281,28 +291,13 @@ export function Backup() {
     setAutoBackupSaving(true);
     try {
       await api.setSettings("backup_auto_enabled", next ? "on" : "off");
-      setAutoBackupEnabled(next);
+      queryClient.setQueryData(queryKeys.settings.value("backup_auto_enabled"), next ? "on" : "off");
     } catch {
       toast.error(t("common.error"));
     } finally {
       setAutoBackupSaving(false);
     }
   };
-
-  const isRepo = gitStatus?.is_repo ?? false;
-  const [prevIsRepo, setPrevIsRepo] = useState(isRepo);
-  if (prevIsRepo !== isRepo) {
-    setPrevIsRepo(isRepo);
-    if (!isRepo) setVersions([]);
-  }
-
-  useEffect(() => {
-    if (gitStatus?.is_repo) {
-      // Defer so the loading-flag resets inside refreshVersions() don't run
-      // synchronously in the effect body.
-      void Promise.resolve().then(refreshVersions);
-    }
-  }, [gitStatus?.is_repo, refreshVersions]);
 
   const mode: BackupMode = useMemo(() => {
     if (!gitStatus) return "loading";
@@ -407,7 +402,7 @@ export function Backup() {
         await api.gitBackupSetRemote(effective);
       }
       setRemoteInput(effective);
-      setRemoteConfig(effective);
+      queryClient.setQueryData(queryKeys.settings.value("git_backup_remote_url"), effective);
       toast.success(t("settings.gitConfigSaved"));
       await refreshGitStatus();
     } catch (error) {
@@ -598,10 +593,10 @@ export function Backup() {
     setBackupError(null);
     setBackupErrorRaw("");
     api.getSettings("github_auth_method")
-      .then((v) => setAuthMethod((v ?? "").trim()))
+      .then((v) => queryClient.setQueryData(queryKeys.settings.value("github_auth_method"), v))
       .catch(() => {});
     setRemoteInput(res.url);
-    setRemoteConfig(res.url);
+    queryClient.setQueryData(queryKeys.settings.value("git_backup_remote_url"), res.url);
     if (res.repo_created) {
       const repo = res.url.replace(/^https:\/\/github\.com\//, "").replace(/\.git$/, "");
       toast.success(t("backup.github.repoCreated", { repo }));
@@ -724,7 +719,7 @@ export function Backup() {
     setDeviceNameSaving(true);
     setDeviceNameError(null);
     try {
-      setDeviceName(await api.backupSetDeviceName(draft));
+      queryClient.setQueryData(queryKeys.backup.deviceName(), await api.backupSetDeviceName(draft));
       setDeviceNameEditing(false);
       toast.success(t("backup.device.renamed"));
     } catch (error) {
@@ -739,7 +734,7 @@ export function Backup() {
     try {
       await api.gitBackupRemoveRemote();
       setRemoteInput("");
-      setRemoteConfig("");
+      queryClient.setQueryData(queryKeys.settings.value("git_backup_remote_url"), "");
       toast.success(t("settings.gitDisconnected"));
       await refreshGitStatus();
     } catch (error) {

@@ -1,12 +1,14 @@
 import { LoadingState } from "./ui/LoadingState";
 import { DetailSheet } from "./DetailSheet";
 import { Button } from "./ui/Button";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { CloudDownload } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../hooks/useApp";
 import { mapGitErrorMessage } from "../lib/gitErrors";
+import { queryKeys } from "../lib/queryKeys";
 import * as api from "../lib/tauri";
 
 const PROMPT_SETTING_KEY = "backup_first_run_prompt";
@@ -20,31 +22,32 @@ const PROMPT_SETTING_KEY = "backup_first_run_prompt";
 export function FirstRunRestoreDialog() {
   const { t } = useTranslation();
   const { managedSkills, loading: skillsLoading, refreshManagedSkills, refreshPresets } = useApp();
-  const [open, setOpen] = useState(false);
-  const checkedRef = useRef(false);
+  const [dismissed, setDismissed] = useState(false);
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (skillsLoading || checkedRef.current) return;
-    checkedRef.current = true;
-    if (managedSkills.length > 0) return;
-    void (async () => {
-      const dismissed = await api.getSettings(PROMPT_SETTING_KEY).catch(() => null);
-      if (dismissed) return;
+  // One-shot probe (staleTime Infinity): only relevant while the library is
+  // empty, so the query stays disabled otherwise.
+  const probeQuery = useQuery({
+    queryKey: queryKeys.app.firstRunRestoreProbe(),
+    queryFn: async () => {
+      const dismissedSetting = await api.getSettings(PROMPT_SETTING_KEY).catch(() => null);
+      if (dismissedSetting) return false;
       const savedRemote = (await api.getSettings("git_backup_remote_url").catch(() => null))?.trim();
-      if (savedRemote) return;
+      if (savedRemote) return false;
       const status = await api.gitBackupStatus().catch(() => null);
-      if (!status || status.is_repo) return;
-      setOpen(true);
-    })();
-  }, [skillsLoading, managedSkills.length]);
-
+      if (!status || status.is_repo) return false;
+      return true;
+    },
+    enabled: !skillsLoading && managedSkills.length === 0,
+    staleTime: Infinity,
+  });
+  const open = !!probeQuery.data && !dismissed;
 
   const dismiss = async () => {
     if (busy) return;
-    setOpen(false);
+    setDismissed(true);
     await api.setSettings(PROMPT_SETTING_KEY, "fresh").catch(() => {});
   };
 
@@ -64,7 +67,7 @@ export function FirstRunRestoreDialog() {
       // so the sidebar preset list isn't empty until a restart (#302).
       await Promise.all([refreshManagedSkills(), refreshPresets()]);
       toast.success(t("firstRun.restoreSuccess"));
-      setOpen(false);
+      setDismissed(true);
     } catch (err) {
       setError(mapGitErrorMessage(err, t));
     } finally {

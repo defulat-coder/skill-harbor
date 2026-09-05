@@ -5,6 +5,7 @@ import { PageHeader } from "../components/ui/PageHeader";
 import { GithubIcon } from "../components/GithubIcon";
 import styles from "./MySkills.module.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Search,
   LayoutGrid,
@@ -33,7 +34,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { cn } from "../utils";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../hooks/useApp";
 import { useMultiSelect } from "../hooks/useMultiSelect";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { TagRenameDialog } from "../components/TagRenameDialog";
@@ -44,14 +45,15 @@ import { SyncDots } from "../components/SyncDots";
 import { ToggleSwitch } from "../components/ToggleSwitch";
 import { CardActionMenu } from "../components/CardActionMenu";
 import * as api from "../lib/tauri";
+import { queryKeys } from "../lib/queryKeys";
 import { getTagActiveColor, getTagColor, pruneStaleTagFilters, UNTAGGED_FILTER } from "../lib/skillTags";
 import type {
   ManagedSkill,
   ToolInfo,
-  GitBackupStatus,
-  SkillToolToggle,
 } from "../lib/tauri";
 import { getErrorMessage } from "../lib/error";
+
+const EMPTY_ORDER: string[] = [];
 import {
   DndContext,
   closestCenter,
@@ -188,7 +190,12 @@ export function MySkills() {
   const [filterMode, setFilterMode] = useState<"all" | "enabled" | "available">("all");
   const [sourceFilters, setSourceFilters] = useState<Set<string>>(new Set());
   const [tagFilters, setTagFilters] = useState<Set<string>>(new Set());
-  const [allTags, setAllTags] = useState<string[]>([]);
+  const queryClient = useQueryClient();
+  const allTagsQuery = useQuery({
+    queryKey: queryKeys.skills.tags(),
+    queryFn: api.getAllTags,
+  });
+  const allTags = allTagsQuery.data ?? [];
   // Tag management from the filter bar (#233): right-click a tag pill to
   // rename (dialog) or delete (confirm). Left-click stays "filter only".
   const [tagMenu, setTagMenu] = useState<{ tag: string; x: number; y: number } | null>(null);
@@ -204,11 +211,8 @@ export function MySkills() {
   const [updatingSkillId, setUpdatingSkillId] = useState<string | null>(null);
   const [batchUpdating, setBatchUpdating] = useState(false);
   const [allowTargetChanges, setAllowTargetChanges] = useState(false);
-  const [toolToggles, setToolToggles] = useState<SkillToolToggle[] | null>(null);
   const [togglingToolKey, setTogglingToolKey] = useState<string | null>(null);
   const [togglingTarget, setTogglingTarget] = useState<{ skillId: string; tool: string } | null>(null);
-  const [gitStatus, setGitStatus] = useState<GitBackupStatus | null>(null);
-  const [gitRemoteConfig, setGitRemoteConfig] = useState("");
   const [tagEditSkillId, setTagEditSkillId] = useState<string | null>(null);
   const [menuSkillId, setMenuSkillId] = useState<string | null>(null);
   const [skillToDelete, setSkillToDelete] = useState<ManagedSkill | null>(null);
@@ -217,45 +221,40 @@ export function MySkills() {
   const [presetSaving, setPresetSaving] = useState(false);
   const tagInputRef = useRef<HTMLInputElement>(null);
 
-  const [presetSkillOrder, setPresetSkillOrder] = useState<string[]>([]);
-
   const viewedPresetName = viewedPreset?.name || t("mySkills.currentPresetFallback");
 
-  // Fetch sort order whenever active preset changes
-  const [prevViewedPreset, setPrevViewedPreset] = useState(viewedPreset);
-  if (prevViewedPreset !== viewedPreset) {
-    setPrevViewedPreset(viewedPreset);
-    if (!viewedPreset) setPresetSkillOrder([]);
-  }
-
-  useEffect(() => {
-    if (!viewedPreset) return;
-    api.getPresetSkillOrder(viewedPreset.id).then(setPresetSkillOrder).catch(() => {});
-  }, [viewedPreset, skills]);
+  // Sort order for the viewed preset; invalidated together with the skills
+  // domain whenever managed skills change.
+  const presetSkillOrderQuery = useQuery({
+    queryKey: queryKeys.skills.presetSkillOrder(viewedPreset?.id ?? ""),
+    queryFn: () => api.getPresetSkillOrder(viewedPreset!.id),
+    enabled: !!viewedPreset,
+  });
+  const presetSkillOrder = presetSkillOrderQuery.data ?? EMPTY_ORDER;
 
   // Skills with an unresolved sync conflict get a "needs attention" badge
   // that jumps to the Backup page (merge-engine design §4 UI).
-  const [conflictIds, setConflictIds] = useState<Set<string>>(new Set());
-  useEffect(() => {
-    api.gitBackupPendingConflicts()
-      .then((rows) => setConflictIds(new Set(rows.map((row) => row.skill_id))))
-      .catch(() => setConflictIds(new Set()));
-  }, [skills]);
+  const pendingConflictsQuery = useQuery({
+    queryKey: queryKeys.backup.pendingConflicts(),
+    queryFn: api.gitBackupPendingConflicts,
+  });
+  const conflictIds = new Set((pendingConflictsQuery.data ?? []).map((row) => row.skill_id));
 
-  const refreshAllTags = async () => {
-    try {
-      const tags = await api.getAllTags();
-      setAllTags(tags);
-    } catch {
-      // not critical
-    }
-  };
-
-  useEffect(() => {
-    // Defer so the state write inside refreshAllTags() runs after the fetch,
-    // not synchronously in the effect body.
-    void Promise.resolve().then(refreshAllTags);
-  }, [skills]);
+  const gitStatusQuery = useQuery({
+    queryKey: queryKeys.backup.status(),
+    queryFn: api.gitBackupStatus,
+    // This view has its own focus/visibility handler that runs `git fetch`
+    // before refreshing, so the query-level focus refetch is disabled here.
+    refetchOnWindowFocus: false,
+  });
+  const gitStatus = gitStatusQuery.data ?? null;
+  const gitRemoteQuery = useQuery({
+    queryKey: queryKeys.settings.value("git_backup_remote_url"),
+    queryFn: () => api.getSettings("git_backup_remote_url").catch(() => null),
+  });
+  // The saved setting is the single source of truth. Do not backfill from
+  // `.git/config` — that made a cleared URL reappear after disconnect (#260).
+  const gitRemoteConfig = gitRemoteQuery.data?.trim() || "";
 
   // Prune tag filters whose pill disappeared (e.g. its last skill was deleted),
   // otherwise a stale filter silently hides everything. An empty skill list
@@ -391,16 +390,21 @@ export function MySkills() {
       reordered.splice(newIndex, 0, moved);
 
       // Optimistic update
-      setPresetSkillOrder(reordered.map((s) => s.id));
+      queryClient.setQueryData(
+        queryKeys.skills.presetSkillOrder(viewedPreset.id),
+        reordered.map((s) => s.id)
+      );
 
       try {
         await api.reorderPresetSkills(viewedPreset.id, reordered.map((s) => s.id));
       } catch {
         // Revert on failure
-        await api.getPresetSkillOrder(viewedPreset.id).then(setPresetSkillOrder).catch(() => {});
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.skills.presetSkillOrder(viewedPreset.id),
+        });
       }
     },
-    [filtered, viewedPreset]
+    [filtered, viewedPreset, queryClient]
   );
 
   const canDrag = !!viewedPreset;
@@ -408,35 +412,11 @@ export function MySkills() {
   const refreshGitStatus = useCallback(async () => {
     try {
       await api.gitBackupFetch().catch(() => {});
-      const status = await api.gitBackupStatus();
-      setGitStatus(status);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.backup.status() });
     } catch {
       // not critical
     }
-  }, []);
-
-  // Local-only status refresh: no `git fetch`, so it can fire from
-  // dependency-driven effects without driving the file-watcher → refresh
-  // → fetch feedback loop.
-  const refreshGitStatusLocal = useCallback(async () => {
-    try {
-      const status = await api.gitBackupStatus();
-      setGitStatus(status);
-    } catch {
-      // not critical
-    }
-  }, []);
-
-  useEffect(() => {
-    void (async () => {
-      const savedRemote = (await api.getSettings("git_backup_remote_url").catch(() => null))?.trim() || "";
-      const status = await api.gitBackupStatus().catch(() => null);
-      setGitStatus(status);
-      // The saved setting is the single source of truth. Do not backfill from
-      // `.git/config` — that made a cleared URL reappear after disconnect (#260).
-      setGitRemoteConfig(savedRemote);
-    })();
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     const handleWindowFocus = () => {
@@ -456,36 +436,14 @@ export function MySkills() {
     };
   }, [refreshGitStatus]);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void refreshGitStatusLocal();
-    }, 400);
-    return () => window.clearTimeout(timer);
-  }, [skills, refreshGitStatusLocal]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const loadToggles = async () => {
-      if (!selectedSkill || !viewedPreset) {
-        setToolToggles(null);
-        return;
-      }
-      if (!selectedSkill.preset_ids.includes(viewedPreset.id)) {
-        setToolToggles(null);
-        return;
-      }
-      try {
-        const toggles = await api.getSkillToolToggles(selectedSkill.id, viewedPreset.id);
-        if (!cancelled) setToolToggles(toggles);
-      } catch {
-        if (!cancelled) setToolToggles(null);
-      }
-    };
-    void loadToggles();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedSkill, viewedPreset]);
+  const toolTogglesActive =
+    !!selectedSkill && !!viewedPreset && selectedSkill.preset_ids.includes(viewedPreset.id);
+  const toolTogglesQuery = useQuery({
+    queryKey: queryKeys.skills.toolToggles(selectedSkill?.id ?? "", viewedPreset?.id ?? ""),
+    queryFn: () => api.getSkillToolToggles(selectedSkill!.id, viewedPreset!.id),
+    enabled: toolTogglesActive,
+  });
+  const toolToggles = toolTogglesActive ? (toolTogglesQuery.data ?? null) : null;
 
   const handleToggleSkillTool = async (toolKey: string, enabled: boolean) => {
     if (!selectedSkill || !viewedPreset) return;
@@ -498,11 +456,12 @@ export function MySkills() {
           ? t("mySkills.agentToggleEnabled", { agent: displayName })
           : t("mySkills.agentToggleDisabled", { agent: displayName })
       );
-      const [, toggles] = await Promise.all([
+      await Promise.all([
         refreshManagedSkills(),
-        api.getSkillToolToggles(selectedSkill.id, viewedPreset.id),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.skills.toolToggles(selectedSkill.id, viewedPreset.id),
+        }),
       ]);
-      setToolToggles(toggles);
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, t("common.error")));
       await refreshManagedSkills();
@@ -633,7 +592,6 @@ export function MySkills() {
       toast.error(t("mySkills.batchTagsFailed", { count: failed }));
     }
     await refreshManagedSkills();
-    await refreshAllTags();
   };
 
   const handleBatchTogglePreset = async () => {

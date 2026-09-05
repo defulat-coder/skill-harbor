@@ -61,16 +61,16 @@ pub fn shutdown() {
 }
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, specta::Type)]
 pub struct SearchStatus {
     root: String, available: bool, ready: bool, model: String, files: usize,
     #[serde(skip_serializing_if = "Option::is_none")] error: Option<String>,
 }
-#[derive(Deserialize)]
+#[derive(Deserialize, specta::Type)]
 struct RawHit { path: String, line_start: u32, line_end: u32, text: String, score: f64 }
-#[derive(Serialize)]
+#[derive(Serialize, specta::Type)]
 pub struct SearchHit { skill_id: String, name: String, path: String, line_start: u32, line_end: u32, text: String, score: f64 }
-#[derive(Serialize)]
+#[derive(Serialize, specta::Type)]
 pub struct SearchResult { query: String, hits: Vec<SearchHit>, warning: Option<String> }
 
 fn runtime_path(app: &tauri::AppHandle) -> Result<PathBuf, AppError> {
@@ -124,6 +124,7 @@ async fn execute(app: &tauri::AppHandle, root: &Path, op: &str, query: Option<&s
     result
 }
 #[tauri::command]
+#[specta::specta]
 pub async fn skill_search_status(app: tauri::AppHandle) -> Result<SearchStatus, AppError> {
     let _lock = SEARCH_LOCK.lock().await;
     let root = search_root()?;
@@ -133,6 +134,7 @@ pub async fn skill_search_status(app: tauri::AppHandle) -> Result<SearchStatus, 
     }
 }
 #[tauri::command]
+#[specta::specta]
 pub async fn skill_search_index(app: tauri::AppHandle) -> Result<SearchStatus, AppError> {
     let _lock = SEARCH_LOCK.try_lock().map_err(|_| AppError::invalid_input("技能索引正在处理，请稍后再试"))?;
     let root = search_root()?;
@@ -145,6 +147,7 @@ fn safe_document(root: &Path, path: &str) -> Option<PathBuf> {
     match resolved.extension()?.to_str()?.to_ascii_lowercase().as_str() { "md" | "mdx" => Some(resolved), _ => None }
 }
 #[tauri::command]
+#[specta::specta]
 pub async fn skill_search_query(app: tauri::AppHandle, query: String, store: State<'_, Arc<SkillStore>>) -> Result<SearchResult, AppError> {
     let query = query.trim();
     if query.is_empty() || query.chars().count() > 2000 { return Err(AppError::invalid_input("请输入1到2000字的问题")); }

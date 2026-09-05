@@ -14,7 +14,7 @@ pub struct ScanPlan {
     pub discovered: Vec<DiscoveredSkillRecord>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct DiscoveredGroup {
     pub name: String,
     pub fingerprint: Option<String>,
@@ -23,7 +23,7 @@ pub struct DiscoveredGroup {
     pub found_at: i64,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct DiscoveredLocation {
     pub id: String,
     pub tool: String,

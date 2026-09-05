@@ -4,7 +4,8 @@ import { LoadingState } from "../components/ui/LoadingState";
 import { Button } from "../components/ui/Button";
 import { PageHeader } from "../components/ui/PageHeader";
 import styles from "./WorkspaceView.module.css";
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import {
   ChevronRight,
@@ -23,7 +24,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { cn } from "../utils";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../hooks/useApp";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { PresetBar } from "../components/PresetBar";
 import { AgentIcon } from "../components/AgentIcon";
@@ -31,12 +32,15 @@ import { DetailSheet } from "../components/DetailSheet";
 import { SkillMarkdown } from "../components/SkillMarkdown";
 import { DocumentDiffViewer } from "../components/DocumentDiffViewer";
 import * as api from "../lib/tauri";
+import { queryKeys } from "../lib/queryKeys";
 import type { ManagedSkill, ProjectSkill } from "../lib/tauri";
 import { getErrorMessage } from "../lib/error";
 import { getTagActiveColor, getTagColor, pruneStaleTagFilters, UNTAGGED_FILTER } from "../lib/skillTags";
 import { getSyncStatusMeta } from "../lib/syncStatusMeta";
 import { AddSkillsSheet } from "../components/AddSkillsSheet";
 import type { WorkspaceConfig } from "./workspaceConfigs";
+
+const EMPTY_LOCAL_SKILLS: ProjectSkill[] = [];
 
 function compactHomePath(path: string) {
   return path.replace(/^\/Users\/[^/]+/, "~");
@@ -237,20 +241,13 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
   const [tagFilters, setTagFilters] = useState<Set<string>>(new Set());
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [removingLocalSkillId, setRemovingLocalSkillId] = useState<string | null>(null);
-  const [localSkills, setLocalSkills] = useState<ProjectSkill[]>([]);
-  const [localSkillsLoading, setLocalSkillsLoading] = useState(false);
-  const [localSkillsError, setLocalSkillsError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [localActionKey, setLocalActionKey] = useState<string | null>(null);
   const [localDetailSkill, setLocalDetailSkill] = useState<ProjectSkill | null>(null);
-  const [localDocContent, setLocalDocContent] = useState<string | null>(null);
-  const [localCenterDocContent, setLocalCenterDocContent] = useState<string | null>(null);
-  const [localDocLoading, setLocalDocLoading] = useState(false);
-  const [localCenterDocLoading, setLocalCenterDocLoading] = useState(false);
   const [localContentTab, setLocalContentTab] = useState<"local" | "diff" | "center">("local");
   const [uploadConfirmSkill, setUploadConfirmSkill] = useState<ProjectSkill | null>(null);
   const [pullConfirmSkill, setPullConfirmSkill] = useState<ProjectSkill | null>(null);
   const [deleteLocalConfirmSkill, setDeleteLocalConfirmSkill] = useState<ProjectSkill | null>(null);
-  const localDetailRequestRef = useRef(0);
 
   // Cross-category redirect: a deep link like /global-workspace/openclaw should
   // land on /lobster-workspace/openclaw. Compute it before any filtering so a
@@ -287,11 +284,9 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
   // Overview cards should reflect each agent's ACTUAL on-disk skill count —
   // including skills installed outside SkillHarbor — to match the per-agent
   // detail badge. The managed-only count above reads 0 for an agent whose
-  // skills all live on disk but were never imported (#287). We fill this from a
-  // per-agent scan and fall back to the managed count until it resolves.
-  const [localCountByAgent, setLocalCountByAgent] = useState<Record<string, number>>({});
-  const overviewCountsRef = useRef(0);
-
+  // skills all live on disk but were never imported (#287). Filled from a
+  // per-agent scan query that falls back to the managed count until it
+  // resolves; scoped to the overview (currentToolKey === null).
   const currentTool = useMemo(
     () => (agentKey ? installedTools.find((t) => t.key === agentKey) ?? null : null),
     [agentKey, installedTools]
@@ -308,63 +303,34 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
   );
   const currentToolKey = currentTool?.key ?? null;
 
-  const localSkillsRequestRef = useRef(0);
+  const localSkillsQuery = useQuery({
+    queryKey: queryKeys.workspace.localSkills(currentToolKey ?? ""),
+    queryFn: () => api.getGlobalLocalSkills(currentToolKey!),
+    enabled: !!currentToolKey,
+  });
+  const localSkills = localSkillsQuery.data ?? EMPTY_LOCAL_SKILLS;
+  const localSkillsLoading = !!currentToolKey && localSkillsQuery.isLoading;
+  const localSkillsError = localSkillsQuery.error
+    ? getErrorMessage(localSkillsQuery.error, t("common.error"))
+    : null;
+  useEffect(() => {
+    if (localSkillsQuery.error) {
+      toast.error(getErrorMessage(localSkillsQuery.error, t("common.error")));
+    }
+  }, [localSkillsQuery.error, t]);
+
   const loadLocalSkills = useCallback(async () => {
-    const requestId = ++localSkillsRequestRef.current;
-    if (!currentToolKey) {
-      setLocalSkills([]);
-      return;
-    }
-    setLocalSkillsLoading(true);
-    setLocalSkillsError(null);
-    try {
-      const skills = await api.getGlobalLocalSkills(currentToolKey);
-      if (localSkillsRequestRef.current === requestId) setLocalSkills(skills);
-    } catch (error: unknown) {
-      if (localSkillsRequestRef.current === requestId) {
-        setLocalSkillsError(getErrorMessage(error, t("common.error")));
-        toast.error(getErrorMessage(error, t("common.error")));
-        setLocalSkills([]);
-      }
-    } finally {
-      if (localSkillsRequestRef.current === requestId) setLocalSkillsLoading(false);
-    }
-  }, [currentToolKey, t]);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.workspace.all });
+  }, [queryClient]);
 
-  const loadedAgentKeyRef = useRef<string | null>(null);
-  const [prevToolKey, setPrevToolKey] = useState(currentToolKey);
-  if (prevToolKey !== currentToolKey) {
-    setPrevToolKey(currentToolKey);
-    if (!currentToolKey) setLocalSkills([]);
-  }
-  useEffect(() => {
-    if (!currentToolKey) {
-      loadedAgentKeyRef.current = null;
-      return undefined;
-    }
-    if (loadedAgentKeyRef.current === currentToolKey) return undefined;
-    loadedAgentKeyRef.current = currentToolKey;
-    void loadLocalSkills();
-    return () => {
-      localSkillsRequestRef.current += 1;
-      loadedAgentKeyRef.current = null;
-    };
-  }, [currentToolKey, loadLocalSkills]);
-
-  // Load real on-disk skill counts for every installed agent while the overview
-  // is shown (#287). Scoped to the overview (currentToolKey === null); the
-  // detail view derives its own count from `localSkills`.
-  const overviewEmpty = !currentToolKey && installedTools.length === 0;
-  const [prevOverviewEmpty, setPrevOverviewEmpty] = useState(overviewEmpty);
-  if (prevOverviewEmpty !== overviewEmpty) {
-    setPrevOverviewEmpty(overviewEmpty);
-    if (overviewEmpty) setLocalCountByAgent({});
-  }
-  useEffect(() => {
-    if (currentToolKey) return;
-    if (installedTools.length === 0) return;
-    const requestId = ++overviewCountsRef.current;
-    void (async () => {
+  // Depend on the managedSkills-driven invalidation chain (not just a length):
+  // a target-only enable/disable or an externally added unmanaged skill changes
+  // on-disk presence, and refreshManagedSkills / the file watcher invalidate
+  // the workspace domain so the overview counts re-scan and stay accurate
+  // (#287).
+  const overviewCountsQuery = useQuery({
+    queryKey: queryKeys.workspace.overviewCounts(installedTools.map((tool) => tool.key).join(",")),
+    queryFn: async () => {
       const entries = await Promise.all(
         installedTools.map(async (tool) => {
           try {
@@ -376,23 +342,17 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
           }
         })
       );
-      if (overviewCountsRef.current !== requestId) return;
-      // Rebuild the map from this scan's results (don't merge into the previous
-      // map): agents whose scan failed are omitted so they fall back to the
-      // managed count rather than showing a stale value, and counts for agents
-      // no longer installed are dropped.
+      // Agents whose scan failed are omitted so they fall back to the managed
+      // count rather than showing a stale value.
       const next: Record<string, number> = {};
       for (const [key, count] of entries) {
         if (count !== null) next[key] = count;
       }
-      setLocalCountByAgent(next);
-    })();
-    // Depend on the managedSkills array reference (not just its length): a
-    // target-only enable/disable or an externally added unmanaged skill changes
-    // on-disk presence without changing the managed count, but still produces a
-    // fresh array via refreshManagedSkills (the file watcher triggers it), so
-    // the overview counts re-scan and stay accurate (#287).
-  }, [currentToolKey, installedTools, managedSkills]);
+      return next;
+    },
+    enabled: !currentToolKey && installedTools.length > 0,
+  });
+  const localCountByAgent = overviewCountsQuery.data ?? {};
 
   const [prevDetailKey, setPrevDetailKey] = useState(currentTool?.key);
   if (prevDetailKey !== currentTool?.key) {
@@ -403,9 +363,6 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     setDeleteLocalConfirmSkill(null);
     setTagFilters(new Set());
   }
-  useEffect(() => {
-    localDetailRequestRef.current += 1;
-  }, [currentTool?.key]);
 
   const agentSkills = useMemo(
     () =>
@@ -567,43 +524,30 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     [currentTool, loadLocalSkills, t]
   );
 
+  const localDocQuery = useQuery({
+    queryKey: queryKeys.workspace.localSkillDocument(
+      currentTool?.key ?? "",
+      localDetailSkill?.relative_path ?? ""
+    ),
+    queryFn: () => api.getGlobalLocalSkillDocument(currentTool!.key, localDetailSkill!.relative_path),
+    enabled: !!currentTool && !!localDetailSkill,
+  });
+  const localCenterDocQuery = useQuery({
+    queryKey: queryKeys.skills.document(localDetailSkill?.center_skill_id ?? ""),
+    queryFn: () => api.getSkillDocument(localDetailSkill!.center_skill_id!),
+    enabled: !!localDetailSkill?.center_skill_id,
+  });
+  const localDocContent = localDocQuery.data?.content ?? null;
+  const localDocLoading = localDocQuery.isLoading;
+  const localCenterDocContent = localCenterDocQuery.data?.content ?? null;
+  const localCenterDocLoading =
+    !!localDetailSkill?.center_skill_id && localCenterDocQuery.isLoading;
+
   const openLocalDetail = useCallback(
-    async (skill: ProjectSkill) => {
+    (skill: ProjectSkill) => {
       if (!currentTool) return;
-      const requestId = localDetailRequestRef.current + 1;
-      localDetailRequestRef.current = requestId;
       setLocalDetailSkill(skill);
       setLocalContentTab("local");
-      setLocalDocContent(null);
-      setLocalCenterDocContent(null);
-      setLocalDocLoading(true);
-      setLocalCenterDocLoading(!!skill.center_skill_id);
-
-      api
-        .getGlobalLocalSkillDocument(currentTool.key, skill.relative_path)
-        .then((doc) => {
-          if (localDetailRequestRef.current === requestId) setLocalDocContent(doc.content);
-        })
-        .catch(() => {
-          if (localDetailRequestRef.current === requestId) setLocalDocContent(null);
-        })
-        .finally(() => {
-          if (localDetailRequestRef.current === requestId) setLocalDocLoading(false);
-        });
-
-      if (skill.center_skill_id) {
-        api
-          .getSkillDocument(skill.center_skill_id)
-          .then((doc) => {
-            if (localDetailRequestRef.current === requestId) setLocalCenterDocContent(doc.content);
-          })
-          .catch(() => {
-            if (localDetailRequestRef.current === requestId) setLocalCenterDocContent(null);
-          })
-          .finally(() => {
-            if (localDetailRequestRef.current === requestId) setLocalCenterDocLoading(false);
-          });
-      }
     },
     [currentTool]
   );
@@ -788,12 +732,12 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
               <Button
                 iconOnly
                 variant="ghost"
-                busy={localSkillsLoading}
+                busy={localSkillsQuery.isFetching}
                 onClick={() => void loadLocalSkills()}
                 title={t("settings.refresh")}
                 aria-label={t("settings.refresh")}
               >
-                {!localSkillsLoading && <RefreshCw className="h-4 w-4" aria-hidden />}
+                {!localSkillsQuery.isFetching && <RefreshCw className="h-4 w-4" aria-hidden />}
               </Button>
             <div className="ds-view-toggle shrink-0" aria-label="视图切换">
 
@@ -947,7 +891,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
                 active={isManaged}
                 actions={renderLocalSkillActions(skill)}
                 actionsHover={viewMode === "list"}
-                onClick={() => void openLocalDetail(skill)}
+                onClick={() => openLocalDetail(skill)}
               />
             );
           })}

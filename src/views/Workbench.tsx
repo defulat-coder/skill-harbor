@@ -5,7 +5,8 @@ import styles from "./Workbench.module.css";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Button } from "../components/ui/Button";
 import { TaskOutput } from "../components/TaskOutput";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Link,
   useNavigate,
@@ -31,8 +32,9 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../hooks/useApp";
 import * as api from "../lib/tauri";
+import { queryKeys } from "../lib/queryKeys";
 import type { ProjectSkill } from "../lib/tauri";
 import * as wb from "../lib/workbench";
 import { ChineseGuide } from "../components/ChineseGuide";
@@ -58,38 +60,50 @@ export function Workbench() {
   const [reordering, setReordering] = useState(false);
   const [wizard, setWizard] = useState(false);
   const [tab, setTab] = useState<"skills" | "runs">("skills");
-  const [skills, setSkills] = useState<ProjectSkill[]>([]);
-  const [bindings, setBindings] = useState<wb.Binding[]>([]);
+  const queryClient = useQueryClient();
+  const skillsQuery = useQuery({
+    queryKey: queryKeys.projects.skills(id ?? ""),
+    queryFn: () => api.getProjectSkills(id!),
+    enabled: !!id,
+  });
+  const bindingsQuery = useQuery({
+    queryKey: queryKeys.projects.bindings(id ?? ""),
+    queryFn: () => wb.projectBindings(id!),
+    enabled: !!id,
+  });
+  const skills = skillsQuery.data ?? [];
+  const bindings = bindingsQuery.data ?? [];
   const [selected, setSelected] = useState<ProjectSkill | null>(null);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [mutationError, setMutationError] = useState("");
+  const queryError = skillsQuery.error ?? bindingsQuery.error;
+  const error = mutationError || (queryError ? errText(queryError) : "");
+  const setError = setMutationError;
+  const [mutating, setMutating] = useState(false);
+  const busy = mutating || skillsQuery.isFetching || bindingsQuery.isFetching;
   const [removing, setRemoving] = useState(false);
-  const [document, setDocument] = useState("");
-  const [documentError, setDocumentError] = useState("");
   const [detailTab, setDetailTab] = useState<"guide" | "source">("guide");
-  const projectRequest = useRef(0);
+  // Keep the selection pointing at a live skill: the same one if it still
+  // exists after a refetch, otherwise the first of the list.
+  if (id) {
+    const nextSelected = skills.find((v) => v.path === selected?.path) ?? skills[0] ?? null;
+    if (nextSelected !== selected) setSelected(nextSelected);
+  }
+  const documentQuery = useQuery({
+    queryKey: queryKeys.projects.skillDocument(
+      id ?? "",
+      selected ? `${selected.agent}:${selected.relative_path}` : ""
+    ),
+    queryFn: () => api.getProjectSkillDocument(id!, selected!.relative_path, selected!.agent),
+    enabled: !!id && !!selected,
+  });
+  const document = selected ? (documentQuery.data?.content ?? "") : "";
+  const documentError = documentQuery.error ? errText(documentQuery.error) : "";
   const refreshProject = useCallback(async () => {
-    const request = ++projectRequest.current;
-    if (!id) return;
-    setBusy(true);
-    try {
-      const [s, b] = await Promise.all([
-        api.getProjectSkills(id),
-        wb.projectBindings(id),
-      ]);
-      if (request !== projectRequest.current) return;
-      setSkills(s);
-      setBindings(b);
-      setSelected(
-        (prev) => s.find((v) => v.path === prev?.path) || s[0] || null,
-      );
-      setError("");
-    } catch (e) {
-      if (request === projectRequest.current) setError(errText(e));
-    } finally {
-      if (request === projectRequest.current) setBusy(false);
-    }
-  }, [id]);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+    // A completed refresh clears prior mutation errors; a failed refetch
+    // surfaces through the query error instead.
+    setMutationError("");
+  }, [queryClient]);
   const wantsWizard = searchParams.get("new");
   const [prevWantsWizard, setPrevWantsWizard] = useState(wantsWizard);
   if (prevWantsWizard !== wantsWizard) {
@@ -106,15 +120,10 @@ export function Workbench() {
     setPrevId(id);
     setTab("skills");
     setSelected(null);
-    setSkills([]);
-    setBindings([]);
     setQuery("");
     setError("");
   }
   useEffect(() => {
-    // Defer so the busy-flag set inside refreshProject() doesn't run
-    // synchronously in the effect body.
-    void Promise.resolve().then(refreshProject);
     if (id)
       try {
         localStorage.setItem("workbench.recentProject", id);
@@ -127,34 +136,10 @@ export function Workbench() {
       } catch {
         /* optional preference */
       }
-  }, [id, refreshProject]);
-  const [prevDocSelection, setPrevDocSelection] = useState<{
-    id: string | undefined;
-    selected: ProjectSkill | null;
-  } | null>(null);
-  if (!prevDocSelection || prevDocSelection.id !== id || prevDocSelection.selected !== selected) {
-    setPrevDocSelection({ id, selected });
-    setDocument("");
-    setDocumentError("");
-  }
-  useEffect(() => {
-    let current = true;
-    if (selected && id)
-      api
-        .getProjectSkillDocument(id, selected.relative_path, selected.agent)
-        .then((d) => {
-          if (current) setDocument(d.content);
-        })
-        .catch((e) => {
-          if (current) setDocumentError(errText(e));
-        });
-    return () => {
-      current = false;
-    };
-  }, [id, selected]);
+  }, [id]);
   async function removeSelected() {
     if (!selected || !id) return;
-    setBusy(true);
+    setMutating(true);
     try {
       await api.deleteProjectSkill(id, selected.relative_path, selected.agent);
       setRemoving(false);
@@ -163,7 +148,7 @@ export function Workbench() {
     } catch (e) {
       setError(errText(e));
     } finally {
-      setBusy(false);
+      setMutating(false);
     }
   }
   async function moveProject(projectId: string, direction: -1 | 1) {
@@ -750,78 +735,45 @@ function RunPanel({
   skills: ProjectSkill[];
   initialSkillId: string | null;
 }) {
-  const [historyLoading, setHistoryLoading] = useState(true);
-  const [logLoading, setLogLoading] = useState(false);
-  const [runs, setRuns] = useState<wb.TaskRun[]>([]);
+  const queryClient = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
-  const [log, setLog] = useState("");
   const [prompt, setPrompt] = useState("");
   const [skillIds, setSkillIds] = useState<string[]>(
     initialSkillId ? [initialSkillId] : [],
   );
-  const [error, setError] = useState("");
+  const [mutationError, setMutationError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [runner, setRunner] = useState<Awaited<
-    ReturnType<typeof wb.runnerStatus>
-  > | null>(null);
-  const refresh = useCallback(async () => {
-    setHistoryLoading(true);
-    try {
-      const items = await wb.listTasks(projectId);
-      setRuns(items);
-      return items;
-    } finally { setHistoryLoading(false); }
-  }, [projectId]);
-  useEffect(() => {
-    // Defer so the loading-flag set inside refresh() doesn't run
-    // synchronously in the effect body.
-    void Promise.resolve().then(() =>
-      refresh()
-        .then((items) => setSelected(items[0]?.id || null))
-        .catch((e) => setError(errText(e))),
-    );
-    void wb
-      .runnerStatus()
-      .then(setRunner)
-      .catch((e) => setError(errText(e)));
-  }, [refresh]);
+  const tasksQuery = useQuery({
+    queryKey: queryKeys.projects.tasks(projectId),
+    queryFn: () => wb.listTasks(projectId),
+    // Poll only while a run is active — same 1.5s cadence as the old interval.
+    refetchInterval: (query) =>
+      query.state.data?.some((r) => r.status === "running") ? 1500 : false,
+  });
+  const runs = tasksQuery.data ?? [];
+  const runnerQuery = useQuery({
+    queryKey: queryKeys.workbench.runnerStatus(),
+    queryFn: wb.runnerStatus,
+  });
+  const runner = runnerQuery.data ?? null;
+  // Default to the newest run once the history arrives.
+  if (!selected && runs.length > 0) setSelected(runs[0].id);
   const active = runs.some((r) => r.status === "running");
-  const currentStatus = runs.find((r) => r.id === selected)?.status;
-  useEffect(() => {
-    if (!active) return undefined;
-    const timer = setInterval(() => {
-      void refresh().catch((e) => setError(errText(e)));
-    }, 1500);
-    return () => clearInterval(timer);
-  }, [active, refresh]);
-  const logKey = selected ? `${selected}${active}${currentStatus ?? ""}` : null;
-  const [prevLogKey, setPrevLogKey] = useState(logKey);
-  if (prevLogKey !== logKey) {
-    setPrevLogKey(logKey);
-    if (logKey !== null) {
-      setLog("");
-      setLogLoading(true);
-    }
-  }
-  useEffect(() => {
-    if (!selected) return undefined;
-    let current = true;
-    const read = () =>
-      wb
-        .getTaskLog(selected)
-        .then((v) => {
-          if (current) setLog(v);
-        })
-        .catch((e) => {
-          if (current) setError(errText(e));
-        });
-    void read().finally(() => { if (current) setLogLoading(false); });
-    const timer = active ? setInterval(() => void read(), 1500) : undefined;
-    return () => {
-      current = false;
-      if (timer) clearInterval(timer);
-    };
-  }, [selected, active, currentStatus]);
+  const logQuery = useQuery({
+    queryKey: queryKeys.workbench.taskLog(selected ?? ""),
+    queryFn: () => wb.getTaskLog(selected!),
+    enabled: !!selected,
+    refetchInterval: active ? 1500 : false,
+  });
+  const log = logQuery.data ?? "";
+  const logLoading = !!selected && logQuery.isLoading;
+  const historyLoading = tasksQuery.isLoading;
+  const queryError = tasksQuery.error ?? runnerQuery.error ?? logQuery.error;
+  const error = mutationError || (queryError ? errText(queryError) : "");
+  const setError = setMutationError;
+  const refresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.projects.tasks(projectId) });
+  }, [queryClient, projectId]);
   async function start() {
     if (busy || active || !prompt.trim() || !runner?.available) return;
     setBusy(true);

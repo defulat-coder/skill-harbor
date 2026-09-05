@@ -54,6 +54,7 @@
     "src-tauri/**",
     "scripts/**",
     "search-runtime/**",
-    "skills/**"
+    "skills/**",
+    "src/lib/bindings.ts"
   ]
 }

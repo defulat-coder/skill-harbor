@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowUp, BookOpen, Folder, Link2, Loader2 } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../hooks/useApp";
 import { Button } from "../components/ui/Button";
 import { LoadingState } from "../components/ui/LoadingState";
 import { Disclosure } from "../components/ui/Disclosure";
@@ -9,7 +9,7 @@ import { SkillMarkdown } from "../components/SkillMarkdown";
 import { SkillLinkDialog } from "../components/SkillLinkDialog";
 import { getErrorMessage } from "../lib/error";
 import { answerSkillSearch, querySkillSearch, type SkillSearchResult } from "../lib/skillSearch";
-import { refreshSkillIndex, useSkillIndex } from "../hooks/useSkillIndex";
+import { useSkillIndex } from "../hooks/useSkillIndex";
 import styles from "./SearchHome.module.css";
 
 // Preserve the current question when reading a skill and returning in this app session.
@@ -138,7 +138,7 @@ function SearchHomeContent({ index }: { index: ReturnType<typeof useSkillIndex> 
         <Link to="/search-index" className={styles.indexLink}>索引管理 <ArrowRight size={14} aria-hidden /></Link>
       </div>
       {!status?.ready && !statusLoading && !building && <p className={styles.hint}>请先到索引管理建立索引，再用中文提问。</p>}
-      {(statusError || status?.error) && <div role="alert" className={styles.error}>{statusError || status?.error}<Button disabled={busy || statusLoading || building} onClick={() => void refreshSkillIndex()}>重新检查</Button></div>}
+      {(statusError || status?.error) && <div role="alert" className={styles.error}>{statusError || status?.error}<Button disabled={busy || statusLoading || building} onClick={() => index.refresh()}>重新检查</Button></div>}
     </section>
     {phase === "search" && <LoadingState label="正在检索你的全局技能库…" />}
     {error && <div role="alert" className={styles.error}>{error}</div>}

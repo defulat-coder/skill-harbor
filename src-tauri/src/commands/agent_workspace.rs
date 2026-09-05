@@ -139,6 +139,7 @@ fn find_verified_center_match<'a>(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_global_local_skills(
     store: State<'_, Arc<SkillStore>>,
     agent: String,
@@ -161,6 +162,7 @@ pub async fn get_global_local_skills(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_global_local_skill_document(
     store: State<'_, Arc<SkillStore>>,
     agent: String,
@@ -216,6 +218,7 @@ pub async fn get_global_local_skill_document(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn import_global_local_skill_to_center(
     store: State<'_, Arc<SkillStore>>,
     agent: String,
@@ -590,6 +593,7 @@ pub fn backfill_stranded_agent_targets(store: &SkillStore) -> usize {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn update_global_local_skill_from_center(
     store: State<'_, Arc<SkillStore>>,
     agent: String,
@@ -641,6 +645,7 @@ fn update_agent_local_skill_from_center(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn delete_global_local_skill(
     store: State<'_, Arc<SkillStore>>,
     agent: String,

@@ -8,7 +8,7 @@ import { PointerKineticGrid } from "./PointerKineticGrid";
 import { WorkbenchSidebar } from "./WorkbenchSidebar";
 import { StatusBanner } from "./StatusBanner";
 import { CommandPalette } from "./CommandPalette";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../hooks/useApp";
 import { useTranslation } from "react-i18next";
 import { useDragWindow } from "../hooks/useDragWindow";
 

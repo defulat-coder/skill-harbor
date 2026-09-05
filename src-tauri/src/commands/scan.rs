@@ -40,7 +40,7 @@ fn match_imported_skill_id(
     None
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct ScanResultDto {
     pub tools_scanned: usize,
     pub skills_found: usize,
@@ -48,6 +48,7 @@ pub struct ScanResultDto {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn scan_local_skills(
     store: State<'_, Arc<SkillStore>>,
 ) -> Result<ScanResultDto, AppError> {
@@ -85,6 +86,7 @@ pub async fn scan_local_skills(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn import_existing_skill(
     source_path: String,
     name: Option<String>,
@@ -142,6 +144,7 @@ pub async fn import_existing_skill(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn import_all_discovered(store: State<'_, Arc<SkillStore>>) -> Result<(), AppError> {
     let store = store.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {

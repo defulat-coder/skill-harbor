@@ -10,6 +10,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { MarketChinesePreview } from "../components/MarketChinesePreview";
 import { GithubIcon } from "../components/GithubIcon";
 import { useState, useEffect, useCallback, useRef, useMemo, useDeferredValue } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   DownloadCloud,
   UploadCloud,
@@ -31,8 +32,9 @@ import {
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { cn } from "../utils";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../hooks/useApp";
 import * as api from "../lib/tauri";
+import { queryKeys } from "../lib/queryKeys";
 import type { ScanResult, SkillsShSkill, BatchImportResult, GitPreviewResult } from "../lib/tauri";
 import { open } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -45,8 +47,8 @@ const MARKET_PAGE_SIZE = 24;
 const MARKET_SEARCH_STEP = 60;
 const MARKET_SEARCH_DEBOUNCE_MS = 450;
 const MARKET_SEARCH_CACHE_TTL_MS = 120_000;
-const MARKET_SEARCH_CACHE_MAX_ENTRIES = 150;
 
+const EMPTY_MARKET_SKILLS: SkillsShSkill[] = [];
 function warnRejected(results: PromiseSettledResult<unknown>[], label: string) {
   for (const r of results) {
     if (r.status === "rejected") console.warn(`${label} failed:`, r.reason);
@@ -96,13 +98,8 @@ export function InstallSkills() {
     finally { setTranslatingQuery(false); }
   };
   const [marketSourceFilter, setMarketSourceFilter] = useState("all");
-  const [marketSkills, setMarketSkills] = useState<SkillsShSkill[]>([]);
   const [marketPage, setMarketPage] = useState(1);
   const [marketSearchLimit, setMarketSearchLimit] = useState(MARKET_SEARCH_STEP);
-  const [marketLoading, setMarketLoading] = useState(false);
-  const [marketLoadingMore, setMarketLoadingMore] = useState(false);
-  const [marketError, setMarketError] = useState<string | null>(null);
-  const [marketReloadKey, setMarketReloadKey] = useState(0);
   const [installing, setInstalling] = useState<string | null>(null);
   const [marketInstall, setMarketInstall] = useState<{ name: string; cancelKey: string; target: string; cancellable: boolean } | null>(null);
   const marketInstallLock = useRef(false);
@@ -126,8 +123,6 @@ export function InstallSkills() {
   const [importingAll, setImportingAll] = useState(false);
   const [renameEditing, setRenameEditing] = useState<Record<string, string>>({});
   const marketListRef = useRef<HTMLDivElement | null>(null);
-  const marketSearchCacheRef = useRef<Map<string, { timestamp: number; data: SkillsShSkill[] }>>(new Map());
-  const marketSkillsLengthRef = useRef(0);
   const [debouncedMarketQuery, setDebouncedMarketQuery] = useState("");
   const deferredMarketQuery = useDeferredValue(marketQuery);
   const managedSkillsRef = useRef(managedSkills);
@@ -146,29 +141,6 @@ export function InstallSkills() {
     }
     void navigate("/my-skills");
   }, [navigate, openSkillDetailById]);
-
-  const pruneMarketSearchCache = useCallback(() => {
-    const now = Date.now();
-    const entries = Array.from(marketSearchCacheRef.current.entries());
-
-    for (const [key, value] of entries) {
-      if (now - value.timestamp >= MARKET_SEARCH_CACHE_TTL_MS) {
-        marketSearchCacheRef.current.delete(key);
-      }
-    }
-
-    if (marketSearchCacheRef.current.size <= MARKET_SEARCH_CACHE_MAX_ENTRIES) {
-      return;
-    }
-
-    const sorted = Array.from(marketSearchCacheRef.current.entries()).toSorted(
-      (a, b) => a[1].timestamp - b[1].timestamp
-    );
-    const removeCount = marketSearchCacheRef.current.size - MARKET_SEARCH_CACHE_MAX_ENTRIES;
-    for (const [key] of sorted.slice(0, removeCount)) {
-      marketSearchCacheRef.current.delete(key);
-    }
-  }, []);
 
   const installedSourceRefs = useMemo(() => {
     const set = new Set<string>();
@@ -195,10 +167,6 @@ export function InstallSkills() {
     }, MARKET_SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [deferredMarketQuery]);
-
-  useEffect(() => {
-    marketSkillsLengthRef.current = marketSkills.length;
-  }, [marketSkills.length]);
 
   const [prevSearchParams, setPrevSearchParams] = useState<URLSearchParams | null>(null);
   if (prevSearchParams !== searchParams) {
@@ -245,68 +213,55 @@ export function InstallSkills() {
     }
   }, []);
 
+  // Market list comes from the query cache: the key is (query, limit, board),
+  // so repeat searches within the TTL are served from cache (replacing the old
+  // hand-rolled TTL map), and "load more" keeps the previous page of results
+  // on screen via placeholderData while the larger window loads.
+  const marketQueryText = debouncedMarketQuery.trim();
+  const marketListQuery = useQuery({
+    queryKey: marketQueryText
+      ? queryKeys.market.search(marketQueryText, marketSearchLimit)
+      : queryKeys.market.leaderboard(marketTab),
+    queryFn: () =>
+      marketQueryText
+        ? api.searchSkillssh(marketQueryText, marketSearchLimit)
+        : api.fetchLeaderboard(marketTab),
+    enabled: activeTab === "market",
+    staleTime: MARKET_SEARCH_CACHE_TTL_MS,
+    placeholderData: (previous) => previous,
+  });
+  const marketSkills = marketListQuery.data ?? EMPTY_MARKET_SKILLS;
+  // Same intent the old effect computed: growing the limit on an existing
+  // non-empty result is a "load more", anything else is a fresh search.
+  const marketLoadingMoreIntent =
+    marketQueryText.length > 0 &&
+    marketSkills.length > 0 &&
+    marketSearchLimit > marketSkills.length;
+  const marketLoading = marketListQuery.isFetching;
+  const marketLoadingMore = marketListQuery.isFetching && marketLoadingMoreIntent;
+  const marketError = marketListQuery.error
+    ? marketListQuery.error?.toString?.() || t("common.error")
+    : null;
   useEffect(() => {
-    if (activeTab !== "market") return undefined;
-
-    const query = debouncedMarketQuery.trim();
-    const loadingMore =
-      query.length > 0 &&
-      marketSkillsLengthRef.current > 0 &&
-      marketSearchLimit > marketSkillsLengthRef.current;
-
-    if (query.length > 0 && !loadingMore) {
-      const cacheKey = `${query.toLowerCase()}|${marketSearchLimit}`;
-      const cached = marketSearchCacheRef.current.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < MARKET_SEARCH_CACHE_TTL_MS) {
-        setMarketSkills(cached.data);
-        setMarketLoading(false);
-        setMarketLoadingMore(false);
-        setMarketPage(1);
-        setMarketError(null);
-        return undefined;
-      }
+    if (marketListQuery.error) {
+      console.error(marketListQuery.error);
+      toast.error(marketListQuery.error?.toString?.() || t("common.error"));
     }
+  }, [marketListQuery.error, t]);
 
-    setMarketLoadingMore(loadingMore);
-    setMarketLoading(true);
-    if (!loadingMore) {
+  // Reset pagination and the source filter on a fresh search / board switch,
+  // but not while paging more results into the current list.
+  const marketResultKey = marketQueryText
+    ? `search:${marketQueryText}:${marketSearchLimit}`
+    : `board:${marketTab}`;
+  const [prevMarketResultKey, setPrevMarketResultKey] = useState(marketResultKey);
+  if (prevMarketResultKey !== marketResultKey) {
+    setPrevMarketResultKey(marketResultKey);
+    if (!marketLoadingMoreIntent) {
       setMarketPage(1);
+      setMarketSourceFilter("all");
     }
-    setMarketError(null);
-
-    let stale = false;
-    const request = query
-      ? api.searchSkillssh(query, marketSearchLimit)
-      : api.fetchLeaderboard(marketTab);
-
-    request
-      .then((result) => {
-        if (stale) return;
-        setMarketSkills(result);
-        if (query.length > 0 && !loadingMore) {
-          const cacheKey = `${query.toLowerCase()}|${marketSearchLimit}`;
-          marketSearchCacheRef.current.set(cacheKey, { timestamp: Date.now(), data: result });
-          pruneMarketSearchCache();
-        }
-        if (!loadingMore) {
-          setMarketSourceFilter("all");
-        }
-      })
-      .catch((e) => {
-        if (stale) return;
-        console.error(e);
-        const message = e?.toString?.() || t("common.error");
-        setMarketError(message);
-        toast.error(message);
-      })
-      .finally(() => {
-        if (stale) return;
-        setMarketLoading(false);
-        setMarketLoadingMore(false);
-      });
-
-    return () => { stale = true; };
-  }, [activeTab, debouncedMarketQuery, marketReloadKey, marketSearchLimit, marketTab, pruneMarketSearchCache, t]);
+  }
 
   useEffect(() => {
     if (activeTab === "local" && !initialScanAttempted.current && !scanResult && !scanLoading) {
@@ -761,7 +716,7 @@ export function InstallSkills() {
                 title={t("common.requestFailed")}
                 description={marketError}
                 actionLabel={t("common.retry")}
-                onAction={() => setMarketReloadKey((value) => value + 1)}
+                onAction={() => void marketListQuery.refetch()}
                 tone="danger"
               />
             </div>

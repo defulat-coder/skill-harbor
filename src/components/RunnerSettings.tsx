@@ -1,8 +1,10 @@
 import { LoadingState } from "./ui/LoadingState";
 import { Button } from "./ui/Button";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { getSettings, setSettings } from "../lib/tauri";
+import { queryKeys } from "../lib/queryKeys";
 import { getErrorMessage } from "../lib/error";
 import styles from "./RunnerSettings.module.css";
 
@@ -10,37 +12,38 @@ export function RunnerSettings() {
   const [path, setPath] = useState("");
   const [model, setModel] = useState("");
   const [status, setStatus] = useState("");
-  const [error, setError] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [loaded, setLoaded] = useState(false);
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.settings.value("workbench_runner"),
+    queryFn: async () => {
       const [p, m] = await Promise.all([
         getSettings("workbench_codex_path"),
         getSettings("workbench_codex_model"),
       ]);
-      setPath(p ?? "");
-      setModel(m ?? "");
-      setLoaded(true);
-    } catch (e) {
-      setError(getErrorMessage(e, "设置读取失败，请重试。"));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    // Defer so the loading/error resets inside load() don't run synchronously
-    // in the effect body (both are no-ops on mount anyway).
-    void Promise.resolve().then(load);
-  }, [load]);
+      return { path: p ?? "", model: m ?? "" };
+    },
+  });
+  const [loaded, setLoaded] = useState(false);
+  if (settingsQuery.data && !loaded) {
+    setLoaded(true);
+    setPath(settingsQuery.data.path);
+    setModel(settingsQuery.data.model);
+  }
+  const loading = settingsQuery.isLoading;
+  const loadError = settingsQuery.error
+    ? getErrorMessage(settingsQuery.error, "设置读取失败，请重试。")
+    : "";
+  const error = saveError || loadError;
+  const reload = () => {
+    setLoaded(false);
+    void settingsQuery.refetch();
+  };
   async function save() {
     if (busy || !loaded) return;
     setBusy(true);
     setStatus("正在保存并检查 Codex CLI…");
-    setError("");
+    setSaveError("");
     try {
       await setSettings("workbench_codex_path", path.trim());
       await setSettings("workbench_codex_model", model.trim());
@@ -55,13 +58,13 @@ export function RunnerSettings() {
         );
       else {
         setStatus("");
-        setError(
+        setSaveError(
           `设置已保存，但无法连接：${result.error ?? "未找到 Codex CLI，请检查路径。"}`,
         );
       }
     } catch (e) {
       setStatus("");
-      setError(getErrorMessage(e, "保存或连接失败，请检查设置后重试。"));
+      setSaveError(getErrorMessage(e, "保存或连接失败，请检查设置后重试。"));
     } finally {
       setBusy(false);
     }
@@ -144,7 +147,7 @@ export function RunnerSettings() {
         </div>
       )}
       {!loading && !loaded && (
-        <Button onClick={() => void load()}>重新读取设置</Button>
+        <Button onClick={reload}>重新读取设置</Button>
       )}
       <p className={styles.help}>
         运行记录和中文说明保存在本机。CLI

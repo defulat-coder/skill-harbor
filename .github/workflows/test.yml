@@ -5,16 +5,49 @@ on:
     branches: [main]
     paths:
       - 'src-tauri/**'
+      - 'src/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'vitest.config.ts'
       - '.github/workflows/test.yml'
   pull_request:
     paths:
       - 'src-tauri/**'
+      - 'src/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'vitest.config.ts'
       - '.github/workflows/test.yml'
 
 permissions:
   contents: read
 
 jobs:
+  # Path filters are workflow-level only, so the frontend paths above also
+  # schedule the Rust jobs below; GitHub Actions has no per-job path filter.
+  frontend-tests:
+    runs-on: ubuntu-latest
+    name: Frontend tests
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Enable pnpm via Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: pnpm run test
+
   rust-tests:
     strategy:
       fail-fast: false

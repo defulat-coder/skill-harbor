@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
-import { AppProvider } from "./context/AppContext";
-import { ThemeProvider, useThemeContext } from "./context/ThemeContext";
+import { useAppBootstrap } from "./hooks/useAppBootstrap";
+import { useActivePresetSync } from "./hooks/useActivePresetSync";
+import { useTheme, useThemeEffects } from "./hooks/useTheme";
 import { HelpDialog } from "./components/HelpDialog";
 import { CloseActionGuard } from "./components/CloseActionGuard";
 import { FirstRunRestoreDialog } from "./components/FirstRunRestoreDialog";
@@ -19,7 +20,7 @@ import { ProjectDetail } from "./views/ProjectDetail";
 import { Backup } from "./views/Backup";
 
 function ThemedToaster() {
-  const { resolvedTheme } = useThemeContext();
+  const { resolvedTheme } = useTheme();
   return (
     <Toaster
       theme={resolvedTheme}
@@ -41,35 +42,37 @@ function HomeEntry() {
 }
 
 function App() {
+  useAppBootstrap();
+  useActivePresetSync();
+  useThemeEffects();
+
   return (
-    <ThemeProvider>
-      <AppProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route element={<Layout />}>
-              <Route path="/" element={<HomeEntry />} />
-              <Route path="/search-index" element={<SearchIndex />} />
-              <Route path="/library" element={<GlobalSkills />} />
-              <Route path="/projects" element={<Workbench />} />
-              <Route path="/my-skills" element={<MySkills />} />
-              <Route path="/global-workspace" element={<WorkspaceView config={CODING_WORKSPACE_CONFIG} />} />
-              <Route path="/global-workspace/:agentKey" element={<WorkspaceView config={CODING_WORKSPACE_CONFIG} />} />
-              <Route path="/lobster-workspace" element={<WorkspaceView config={LOBSTER_WORKSPACE_CONFIG} />} />
-              <Route path="/lobster-workspace/:agentKey" element={<WorkspaceView config={LOBSTER_WORKSPACE_CONFIG} />} />
-              <Route path="/install" element={<InstallSkills />} />
-              <Route path="/backup" element={<Backup />} />
-              <Route path="/project/:id" element={<Workbench />} />
-              <Route path="/project/:id/advanced" element={<ProjectDetail />} />
-              <Route path="/settings" element={<Settings />} />
-            </Route>
-          </Routes>
-          <HelpDialog />
-          <CloseActionGuard />
-          <FirstRunRestoreDialog />
-        </BrowserRouter>
-        <ThemedToaster />
-      </AppProvider>
-    </ThemeProvider>
+    <>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<HomeEntry />} />
+            <Route path="/search-index" element={<SearchIndex />} />
+            <Route path="/library" element={<GlobalSkills />} />
+            <Route path="/projects" element={<Workbench />} />
+            <Route path="/my-skills" element={<MySkills />} />
+            <Route path="/global-workspace" element={<WorkspaceView config={CODING_WORKSPACE_CONFIG} />} />
+            <Route path="/global-workspace/:agentKey" element={<WorkspaceView config={CODING_WORKSPACE_CONFIG} />} />
+            <Route path="/lobster-workspace" element={<WorkspaceView config={LOBSTER_WORKSPACE_CONFIG} />} />
+            <Route path="/lobster-workspace/:agentKey" element={<WorkspaceView config={LOBSTER_WORKSPACE_CONFIG} />} />
+            <Route path="/install" element={<InstallSkills />} />
+            <Route path="/backup" element={<Backup />} />
+            <Route path="/project/:id" element={<Workbench />} />
+            <Route path="/project/:id/advanced" element={<ProjectDetail />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
+        </Routes>
+        <HelpDialog />
+        <CloseActionGuard />
+        <FirstRunRestoreDialog />
+      </BrowserRouter>
+      <ThemedToaster />
+    </>
   );
 }
 

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 /// Top-level grouping for sidebar/overview display. Does not affect skill
 /// deployment, sync, or any other backend behavior — purely a UI taxonomy.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum ToolCategory {
     /// Coding agents (Claude Code, Cursor, Codex, etc.). The default.
@@ -14,7 +14,7 @@ pub enum ToolCategory {
     Lobster,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct ToolAdapter {
     pub key: String,
     pub display_name: String,
@@ -47,7 +47,7 @@ pub struct ToolAdapter {
 }
 
 /// Serializable custom tool definition stored in settings.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct CustomToolDef {
     pub key: String,
     pub display_name: String,

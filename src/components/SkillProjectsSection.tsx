@@ -1,7 +1,8 @@
 import { Button } from "./ui/Button";
 import { ConfirmDialog } from "./ConfirmDialog";
 import styles from "./SkillProjectsSection.module.css";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, FolderOpen, Loader2, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -42,47 +43,20 @@ function getAgentState(row: RowData | undefined, target: ProjectAgentTarget) {
 
 export function SkillProjectsSection({ skill, projects, onChanged }: Props) {
   const { t } = useTranslation();
-  const [rows, setRows] = useState<Record<string, RowData>>({});
+  const queryClient = useQueryClient();
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const [retry, setRetry] = useState(0);
   const [removeTarget, setRemoveTarget] = useState<{project: Project; target: ProjectAgentTarget} | null>(null);
 
-  const [prevSync, setPrevSync] = useState<{
-    projects: Project[];
-    skillId: string;
-    skillName: string;
-    retry: number;
-  } | null>(null);
-  if (
-    !prevSync ||
-    prevSync.projects !== projects ||
-    prevSync.skillId !== skill.id ||
-    prevSync.skillName !== skill.name ||
-    prevSync.retry !== retry
-  ) {
-    setPrevSync({ projects, skillId: skill.id, skillName: skill.name, retry });
-    setRows((prev) => {
-      const next: Record<string, RowData> = {};
-      for (const p of projects) {
-        next[p.id] = prev[p.id]?.state !== "error" && prev[p.id] ? prev[p.id] : {
-          state: "loading",
-          installedAgents: [],
-          installedPathByAgent: {},
-          dirNamesByAgent: {},
-          targets: [],
-        };
-      }
-      return next;
-    });
-  }
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadAll = async () => {
+  // One scan per project, cached under the projects domain so any projects
+  // invalidation re-syncs the rows. Per-project failures land in that row's
+  // own error state instead of failing the whole query.
+  const rowsKey = ["projects", "skill-rows", skill.id, skill.name, projects.map((p) => p.id).join(",")] as const;
+  const rowsQuery = useQuery({
+    queryKey: rowsKey,
+    queryFn: async () => {
       const results = await Promise.all(
-        projects.map(async (p) => {
+        projects.map(async (p): Promise<readonly [string, RowData]> => {
           try {
             const [projectSkills, targets, dirNames] = await Promise.all([
               api.getProjectSkills(p.id),
@@ -110,27 +84,35 @@ export function SkillProjectsSection({ skill, projects, onChanged }: Props) {
               dirNamesByAgent,
               targets,
               dirName: dirNames[0]?.toLowerCase(),
-            }] as const;
+            }];
           } catch (e) {
             return [p.id, {
-              state: "error" as const,
+              state: "error",
               installedAgents: [],
               installedPathByAgent: {},
               dirNamesByAgent: {},
               targets: [],
               error: getErrorMessage(e, ""),
-            }] as const;
+            }];
           }
         }),
       );
-      if (cancelled) return;
-      setRows(Object.fromEntries(results));
-    };
-    void loadAll();
-    return () => {
-      cancelled = true;
-    };
-  }, [projects, skill.id, skill.name, retry]);
+      return Object.fromEntries(results);
+    },
+  });
+  const rows: Record<string, RowData> = rowsQuery.data ?? Object.fromEntries(
+    projects.map((p) => [p.id, {
+      state: "loading",
+      installedAgents: [],
+      installedPathByAgent: {},
+      dirNamesByAgent: {},
+      targets: [],
+    } satisfies RowData]),
+  );
+  const patchRow = (projectId: string, next: RowData) =>
+    queryClient.setQueryData<Record<string, RowData>>(rowsKey, (prev) =>
+      prev ? { ...prev, [projectId]: next } : prev,
+    );
 
   const installedCount = useMemo(
     () => Object.values(rows).filter((r) => r.state === "installed").length,
@@ -154,18 +136,15 @@ export function SkillProjectsSection({ skill, projects, onChanged }: Props) {
           project: project.name,
         }),
       );
-      setRows((prev) => ({
-        ...prev,
-        [project.id]: {
-          ...row,
-          state: "installed",
-          installedAgents: Array.from(new Set([...row.installedAgents, target.key])),
-          installedPathByAgent: {
-            ...row.installedPathByAgent,
-            [target.key]: row.dirName ?? skill.name,
-          },
+      patchRow(project.id, {
+        ...row,
+        state: "installed",
+        installedAgents: Array.from(new Set([...row.installedAgents, target.key])),
+        installedPathByAgent: {
+          ...row.installedPathByAgent,
+          [target.key]: row.dirName ?? skill.name,
         },
-      }));
+      });
       onChanged?.();
     } catch (e) {
       toast.error(getErrorMessage(e, t("common.error")));
@@ -195,16 +174,13 @@ export function SkillProjectsSection({ skill, projects, onChanged }: Props) {
       const nextDirNamesByAgent = { ...row.dirNamesByAgent };
       nextDirNamesByAgent[target.key] = (nextDirNamesByAgent[target.key] ?? [])
         .filter((dirName) => dirName !== removedDirName);
-      setRows((prev) => ({
-        ...prev,
-        [project.id]: {
-          ...row,
-          state: nextInstalledAgents.length > 0 ? "installed" : "available",
-          installedAgents: nextInstalledAgents,
-          installedPathByAgent: nextPathByAgent,
-          dirNamesByAgent: nextDirNamesByAgent,
-        },
-      }));
+      patchRow(project.id, {
+        ...row,
+        state: nextInstalledAgents.length > 0 ? "installed" : "available",
+        installedAgents: nextInstalledAgents,
+        installedPathByAgent: nextPathByAgent,
+        dirNamesByAgent: nextDirNamesByAgent,
+      });
       onChanged?.();
     } catch (e) {
       toast.error(getErrorMessage(e, t("common.error")));
@@ -272,7 +248,7 @@ export function SkillProjectsSection({ skill, projects, onChanged }: Props) {
                     </span>
                   ) : null}
                 </div>
-                {row?.state === "error" && <div role="alert" className={styles.error}><p>{row.error || t("common.error")}</p><Button onClick={() => setRetry(value => value + 1)}>重新加载</Button></div>}
+                {row?.state === "error" && <div role="alert" className={styles.error}><p>{row.error || t("common.error")}</p><Button onClick={() => void rowsQuery.refetch()}>重新加载</Button></div>}
                 {row && row.state !== "loading" && row.state !== "error" && (
                   <div className="flex min-w-0 flex-wrap gap-1.5">
                     {activeTargets.length === 0 ? (

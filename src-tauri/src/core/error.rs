@@ -9,7 +9,7 @@ use std::fmt;
 /// `details` carries machine-readable specifics for the few kinds where the
 /// caller has to do more than print the message. It is omitted from the wire
 /// format when absent, so every existing consumer is unaffected.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct AppError {
     pub kind: ErrorKind,
     pub message: String,
@@ -22,18 +22,18 @@ pub struct AppError {
 /// `ErrorKind::TargetConflict`, which is what says how to read them — the ways
 /// out are documented once, in the `manage-skills` skill, not repeated here on
 /// every error.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct ErrorDetails {
     pub conflicts: Vec<TargetConflictDetail>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct TargetConflictDetail {
     pub path: String,
     pub reason: String,
 }
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum ErrorKind {
     Database,

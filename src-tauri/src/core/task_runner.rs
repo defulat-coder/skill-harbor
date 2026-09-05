@@ -14,7 +14,7 @@ use std::{
     time::Duration,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct TaskRun {
     pub id: String,
     pub project_id: String,
@@ -28,7 +28,7 @@ pub struct TaskRun {
     pub exit_code: Option<i32>,
     pub error: Option<String>,
 }
-#[derive(Serialize)]
+#[derive(Serialize, specta::Type)]
 pub struct RunnerStatus {
     pub available: bool,
     pub executable: String,

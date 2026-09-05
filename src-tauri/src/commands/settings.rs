@@ -4,7 +4,7 @@ use tauri::{Manager, State};
 
 use crate::core::{central_repo, error::AppError, log_sanitize, skill_store::SkillStore};
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, specta::Type)]
 pub struct AppUpdateInfo {
     pub has_update: bool,
     pub current_version: String,
@@ -13,6 +13,7 @@ pub struct AppUpdateInfo {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_settings(
     key: String,
     store: State<'_, Arc<SkillStore>>,
@@ -31,6 +32,7 @@ pub async fn get_settings(
 /// buggy or malicious caller cannot inject newlines that would corrupt the
 /// log file layout.
 #[tauri::command]
+#[specta::specta]
 pub fn log_startup_event(label: String, elapsed_ms: u64) {
     let sanitized: String = label
         .chars()
@@ -46,6 +48,7 @@ pub fn log_startup_event(label: String, elapsed_ms: u64) {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn set_settings(
     app: tauri::AppHandle,
     key: String,
@@ -85,11 +88,13 @@ pub async fn set_settings(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_central_repo_path() -> String {
     central_repo::base_dir().to_string_lossy().to_string()
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_central_repo_path_override() -> Option<String> {
     central_repo::configured_base_dir().map(|path| path.to_string_lossy().to_string())
 }
@@ -98,11 +103,13 @@ pub fn get_central_repo_path_override() -> Option<String> {
 /// (e.g. unreadable config, invalid configured path). Non-empty means the app
 /// fell back to the default location and the user should be told (#228).
 #[tauri::command]
+#[specta::specta]
 pub fn get_central_repo_warnings() -> Vec<String> {
     central_repo::startup_warnings()
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn set_central_repo_path(path: Option<String>) -> Result<String, AppError> {
     tauri::async_runtime::spawn_blocking(move || {
         central_repo::set_base_dir_override(path)
@@ -113,6 +120,7 @@ pub async fn set_central_repo_path(path: Option<String>) -> Result<String, AppEr
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn open_central_repo_folder() -> Result<(), AppError> {
     tauri::async_runtime::spawn_blocking(|| {
         let repo_path = central_repo::base_dir();
@@ -149,6 +157,7 @@ pub async fn open_central_repo_folder() -> Result<(), AppError> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn check_app_update(app: tauri::AppHandle) -> Result<AppUpdateInfo, AppError> {
     let current_version = app.config().version.clone().unwrap_or_default();
     // This build publishes no update feed, so there is never an update to
@@ -161,7 +170,7 @@ pub async fn check_app_update(app: tauri::AppHandle) -> Result<AppUpdateInfo, Ap
     })
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, specta::Type)]
 pub struct DiagnosticInfo {
     pub app_version: String,
     pub os: String,
@@ -172,6 +181,7 @@ pub struct DiagnosticInfo {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_diagnostic_info(app: tauri::AppHandle) -> Result<DiagnosticInfo, AppError> {
     let app_version = app.config().version.clone().unwrap_or_default();
     tauri::async_runtime::spawn_blocking(move || {
@@ -248,13 +258,14 @@ fn detect_os_version() -> String {
     }
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, specta::Type)]
 pub struct PanicInfo {
     pub timestamp: String,
     pub message: String,
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn check_last_panic(app: tauri::AppHandle) -> Result<Option<PanicInfo>, AppError> {
     let log_dir = app
         .path()
@@ -286,6 +297,7 @@ pub async fn check_last_panic(app: tauri::AppHandle) -> Result<Option<PanicInfo>
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn clear_last_panic(app: tauri::AppHandle) -> Result<(), AppError> {
     let log_dir = app
         .path()
@@ -298,7 +310,7 @@ pub async fn clear_last_panic(app: tauri::AppHandle) -> Result<(), AppError> {
     Ok(())
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, specta::Type)]
 pub struct LogExcerpt {
     pub log_path: String,
     pub excerpt: String,
@@ -307,6 +319,7 @@ pub struct LogExcerpt {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_recent_log_excerpt(app: tauri::AppHandle) -> Result<LogExcerpt, AppError> {
     let log_dir = app
         .path()
@@ -440,13 +453,14 @@ fn collapse_consecutive_repeats(text: &str) -> String {
     out.join("\n")
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, specta::Type)]
 pub struct LogExportResult {
     pub zip_path: String,
     pub file_count: usize,
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn export_logs_zip(
     app: tauri::AppHandle,
     store: State<'_, Arc<SkillStore>>,
@@ -645,6 +659,7 @@ mod tests {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn app_exit(app: tauri::AppHandle) {
     let app_for_main = app.clone();
     if let Err(err) = app.run_on_main_thread(move || crate::quit_app(&app_for_main)) {
@@ -660,6 +675,7 @@ pub async fn app_exit(app: tauri::AppHandle) {
 /// Scheduled onto the main thread for the same reason `app_exit` is: the
 /// teardown destroys the main window before the process goes away.
 #[tauri::command]
+#[specta::specta]
 pub async fn restart_app(app: tauri::AppHandle) {
     let app_for_main = app.clone();
     if let Err(err) = app.run_on_main_thread(move || crate::restart_app(&app_for_main)) {
@@ -677,6 +693,7 @@ pub async fn restart_app(app: tauri::AppHandle) {
 /// prompt succeeds. Only the two states below are beyond its reach, because it
 /// replaces the `.app` in place.
 #[tauri::command]
+#[specta::specta]
 pub async fn update_install_blocker() -> Result<Option<String>, AppError> {
     // macOS-specific: elsewhere the updater runs an installer from a temp
     // directory instead of swapping the running bundle.
@@ -712,6 +729,7 @@ pub async fn update_install_blocker() -> Result<Option<String>, AppError> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn hide_to_tray(
     app: tauri::AppHandle,
     window: tauri::WebviewWindow,

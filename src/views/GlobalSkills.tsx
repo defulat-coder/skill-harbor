@@ -3,34 +3,32 @@ import { Disclosure } from "../components/ui/Disclosure";
 import { PageHeader } from "../components/ui/PageHeader";
 import styles from "./GlobalSkills.module.css";
 import { Button } from "../components/ui/Button";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import { Library, Plus, Search, Link2, FileText, LayoutGrid, List, ArrowUpRight, X } from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../hooks/useApp";
 import { DetailSheet } from "../components/DetailSheet";
 import { ChineseGuide } from "../components/ChineseGuide";
 import { SkillMarkdown } from "../components/SkillMarkdown";
 import { SkillLinkDialog } from "../components/SkillLinkDialog";
 import { getSkillDocument, type ManagedSkill } from "../lib/tauri";
+import { queryKeys } from "../lib/queryKeys";
 
 const sourceLabel = (source: string) => ({ local: "本地导入", import: "本地导入", skillssh: "技能市场", git: "Git 仓库", marketplace: "技能市场", skills_sh: "技能市场", manual: "手动创建" }[source] ?? source);
 
 function GlobalSkillDetail({ skill, onClose, onLink }: { skill: ManagedSkill; onClose: () => void; onLink: () => void }) {
   const [tab, setTab] = useState<"guide" | "source">("guide");
-  const [source, setSource] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [retry, setRetry] = useState(0);
-  useEffect(() => {
-    let active = true;
-    getSkillDocument(skill.id).then(doc => { if (active) setSource(doc.content); })
-      .catch(e => { if (active) setError(String(e)); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [skill.id, retry]);
+  const documentQuery = useQuery({
+    queryKey: queryKeys.skills.document(skill.id),
+    queryFn: () => getSkillDocument(skill.id),
+  });
+  const loading = documentQuery.isLoading;
+  const error = documentQuery.error ? String(documentQuery.error) : "";
+  const source = documentQuery.data?.content ?? "";
   return <DetailSheet open title={skill.name} description={skill.description} onClose={onClose} meta={<div className="ds-detail-actions"><span className="ds-badge">{sourceLabel(skill.source_type)}</span><Button variant="primary" onClick={onLink}><Link2 size={15} />加入项目</Button></div>}>
     <div className="ds-detail-tabs" aria-label="技能文档视图"><button aria-pressed={tab === "guide"} className={tab === "guide" ? "is-active" : ""} onClick={() => setTab("guide")}>中文用法</button><button aria-pressed={tab === "source"} className={tab === "source" ? "is-active" : ""} onClick={() => setTab("source")}>原始文档</button></div>
-    <div className="ds-reading-pane">{tab === "guide" ? <ChineseGuide skillId={skill.id} /> : loading ? <LoadingState label="正在读取原文…" /> : error ? <div role="alert"><p>{error}</p><Button variant="secondary" onClick={() => { setLoading(true); setError(""); setRetry(n => n + 1); }}>重新读取</Button></div> : <SkillMarkdown content={source} />}</div>
+    <div className="ds-reading-pane">{tab === "guide" ? <ChineseGuide skillId={skill.id} /> : loading ? <LoadingState label="正在读取原文…" /> : error ? <div role="alert"><p>{error}</p><Button variant="secondary" onClick={() => void documentQuery.refetch()}>重新读取</Button></div> : <SkillMarkdown content={source} />}</div>
     <Disclosure title="技能来源与路径"><dl><dt>本地路径</dt><dd>{skill.central_path}</dd><dt>来源</dt><dd>{skill.source_ref || "本地技能"}</dd></dl><p>全局维护此源文件，项目通过软链接复用。</p></Disclosure>
   </DetailSheet>;
 }

@@ -10,6 +10,7 @@ use crate::core::{
 const LEADERBOARD_CACHE_TTL: i64 = 300; // 5 minutes
 
 #[tauri::command]
+#[specta::specta]
 pub async fn fetch_leaderboard(
     board: String,
     store: State<'_, Arc<SkillStore>>,
@@ -39,6 +40,7 @@ pub async fn fetch_leaderboard(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn search_skillssh(
     query: String,
     limit: Option<usize>,

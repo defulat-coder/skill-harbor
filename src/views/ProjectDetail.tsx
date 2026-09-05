@@ -2,7 +2,8 @@ import { Disclosure } from "../components/ui/Disclosure";
 import { Button } from "../components/ui/Button";
 import { LoadingState } from "../components/ui/LoadingState";
 import { PageHeader } from "../components/ui/PageHeader";
-import { useState, useEffect, useCallback, useMemo, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useState, useEffect, useCallback, useMemo, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   FolderOpen,
@@ -23,7 +24,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { useApp } from "../context/AppContext";
+import { useApp } from "../hooks/useApp";
 import { useMultiSelect } from "../hooks/useMultiSelect";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { MultiSelectToolbar } from "../components/MultiSelectToolbar";
@@ -40,11 +41,15 @@ import { getSyncStatusMeta } from "../lib/syncStatusMeta";
 import { enabledInstalledAgentKeys, getDefaultExportAgents } from "../lib/exportAgents";
 import { cn } from "../utils";
 import * as api from "../lib/tauri";
+import { queryKeys } from "../lib/queryKeys";
 import type { ProjectSkill, ManagedSkill, ProjectAgentTarget } from "../lib/tauri";
 import { getErrorMessage } from "../lib/error";
 import { AddSkillsSheet } from "../components/AddSkillsSheet";
 const projectLastUsedAgentsKey = (projectId: string) =>
   `project_last_used_export_agents:${projectId}`;
+
+const EMPTY_PROJECT_SKILLS: ProjectSkill[] = [];
+const EMPTY_AGENT_TARGETS: ProjectAgentTarget[] = [];
 
 interface ProjectSkillGroup {
   id: string;
@@ -119,22 +124,37 @@ export function ProjectDetail() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { projects, presets, managedSkills, refreshManagedSkills, refreshPresets, refreshProjects } = useApp();
-  const [skills, setSkills] = useState<ProjectSkill[]>([]);
-  const [projectAgentTargets, setProjectAgentTargets] = useState<ProjectAgentTarget[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  // Project skills come from the query cache: any mutation invalidates the
+  // "projects" prefix (via refreshProjects / refreshManagedSkills) and this
+  // query refetches, replacing the old manual loadSkills() refetch chain.
+  const skillsQuery = useQuery({
+    queryKey: queryKeys.projects.skills(id ?? ""),
+    queryFn: () => api.getProjectSkills(id!),
+    enabled: !!id,
+  });
+  const skills = skillsQuery.data ?? EMPTY_PROJECT_SKILLS;
+  const loading = skillsQuery.isLoading;
+  const loadError = skillsQuery.error ? getErrorMessage(skillsQuery.error, "读取项目技能失败") : "";
+  const loadSkills = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+  }, [queryClient]);
+  const agentTargetsQuery = useQuery({
+    queryKey: queryKeys.projects.agentTargets(id ?? ""),
+    queryFn: () => api.getProjectAgentTargets(id!),
+    enabled: !!id,
+  });
+  const projectAgentTargets = agentTargetsQuery.data ?? EMPTY_AGENT_TARGETS;
+  useEffect(() => {
+    if (agentTargetsQuery.error) {
+      console.error("Failed to load project agent targets:", agentTargetsQuery.error);
+    }
+  }, [agentTargetsQuery.error]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filterMode, setFilterMode] = useState<"all" | "enabled" | "disabled">("all");
   const [search, setSearch] = useState("");
   const [tagFilters, setTagFilters] = useState<Set<string>>(new Set());
   const [detailSkill, setDetailSkill] = useState<ProjectSkillGroup | null>(null);
-  const [loadError, setLoadError] = useState("");
-  const [docError, setDocError] = useState("");
-  const [centerDocError, setCenterDocError] = useState("");
-  const detailRequest = useRef(0);
-  const [docContent, setDocContent] = useState<string | null>(null);
-  const [docLoading, setDocLoading] = useState(false);
-  const [centerDocContent, setCenterDocContent] = useState<string | null>(null);
-  const [centerDocLoading, setCenterDocLoading] = useState(false);
   const [updatingCenterSkill, setUpdatingCenterSkill] = useState<string | null>(null);
   const [updatingProjectSkill, setUpdatingProjectSkill] = useState<string | null>(null);
   const [batchUpdatingCenter, setBatchUpdatingCenter] = useState(false);
@@ -150,51 +170,6 @@ export function ProjectDetail() {
   const getSkillKey = useCallback((skill: Pick<ProjectSkillGroup, "id">) => {
     return skill.id;
   }, []);
-
-  // Scanning a project is slow enough that switching projects can let the older
-  // scan land last, swapping another project's skills in under this route — and
-  // now also pruning this project's tag filter against the other one's tags.
-  // Same request-id guard as WorkspaceView's local-skill load.
-  const skillsRequestRef = useRef(0);
-  const loadSkills = useCallback(async () => {
-    if (!id) return;
-    const requestId = ++skillsRequestRef.current;
-    setLoading(true);
-    setLoadError("");
-    try {
-      const result = await api.getProjectSkills(id);
-      if (skillsRequestRef.current === requestId) setSkills(result);
-    } catch (e) {
-      if (skillsRequestRef.current === requestId) setLoadError(getErrorMessage(e, "读取项目技能失败"));
-    } finally {
-      if (skillsRequestRef.current === requestId) setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    // Defer so the loading/error resets inside loadSkills() don't run
-    // synchronously in the effect body.
-    void Promise.resolve().then(loadSkills);
-  }, [loadSkills]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const loadProjectAgentTargets = async () => {
-      if (!id) return;
-      try {
-        const result = await api.getProjectAgentTargets(id);
-        if (!cancelled) {
-          setProjectAgentTargets(result);
-        }
-      } catch (e) {
-        console.error("Failed to load project agent targets:", e);
-      }
-    };
-    void loadProjectAgentTargets();
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
 
   useEffect(() => {
     if (!project && !loading) {
@@ -252,7 +227,6 @@ export function ProjectDetail() {
     const refreshed = groupedSkills.find((skill) => skill.id === detailSkill.id) ?? null;
     if (!refreshed) {
       setDetailSkill(null);
-      setDocContent(null);
     } else if (refreshed !== detailSkill) {
       setDetailSkill(refreshed);
     }
@@ -336,44 +310,34 @@ export function ProjectDetail() {
 
   const selectedExportAgents = useMemo(() => getDefaultExportAgents(exportTargets), [exportTargets]);
 
-  const [lastUsedExportAgents, setLastUsedExportAgents] = useState<string[] | null>(null);
-  useEffect(() => {
-    if (!id) return undefined;
-    let cancelled = false;
-    api.getSettings(projectLastUsedAgentsKey(id))
-      .then((raw) => {
-        if (cancelled) return;
-        if (!raw) {
-          setLastUsedExportAgents(null);
-          return;
-        }
-        try {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) {
-            setLastUsedExportAgents(parsed.filter((x): x is string => typeof x === "string"));
-            return;
-          }
-        } catch {
-          // fall through
-        }
-        setLastUsedExportAgents(null);
-      })
-      .catch(() => {
-        if (!cancelled) setLastUsedExportAgents(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
+  const lastUsedAgentsSettingsKey = projectLastUsedAgentsKey(id ?? "");
+  const lastUsedAgentsQuery = useQuery({
+    queryKey: queryKeys.settings.value(lastUsedAgentsSettingsKey),
+    queryFn: () => api.getSettings(lastUsedAgentsSettingsKey).catch(() => null),
+    enabled: !!id,
+  });
+  const lastUsedExportAgents = useMemo(() => {
+    const raw = lastUsedAgentsQuery.data;
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((x): x is string => typeof x === "string");
+      }
+    } catch {
+      // fall through
+    }
+    return null;
+  }, [lastUsedAgentsQuery.data]);
 
   const handlePersistLastUsedAgents = useCallback(
     (agents: string[]) => {
-      setLastUsedExportAgents(agents);
-      if (id) {
-        void api.setSettings(projectLastUsedAgentsKey(id), JSON.stringify(agents)).catch(() => {});
-      }
+      if (!id) return;
+      const serialized = JSON.stringify(agents);
+      queryClient.setQueryData(queryKeys.settings.value(projectLastUsedAgentsKey(id)), serialized);
+      void api.setSettings(projectLastUsedAgentsKey(id), serialized).catch(() => {});
     },
-    [id],
+    [id, queryClient],
   );
 
   const initialSheetAgents = useMemo(() => {
@@ -439,39 +403,44 @@ export function ProjectDetail() {
     [selectedSkills]
   );
 
-  const handleOpenDetail = async (skill: ProjectSkillGroup) => {
-    const request = ++detailRequest.current;
-    setDocError("");
-    setCenterDocError("");
+  const detailCenterSkillId =
+    detailSkill && detailSkill.centerSkillIds.length > 0 ? detailSkill.centerSkillIds[0] : null;
+  const projectDocQuery = useQuery({
+    queryKey: queryKeys.projects.skillDocument(
+      id ?? "",
+      detailSkill ? `${detailSkill.primaryVariant.agent}:${detailSkill.primaryVariant.relative_path}` : ""
+    ),
+    queryFn: () =>
+      api.getProjectSkillDocument(
+        id!,
+        detailSkill!.primaryVariant.relative_path,
+        detailSkill!.primaryVariant.agent
+      ),
+    enabled: !!id && !!detailSkill && !!project,
+  });
+  const centerDocQuery = useQuery({
+    queryKey: queryKeys.skills.document(detailCenterSkillId ?? ""),
+    queryFn: () => api.getSkillDocument(detailCenterSkillId!),
+    enabled: !!detailCenterSkillId,
+  });
+  const docContent = projectDocQuery.data?.content ?? null;
+  const docLoading = projectDocQuery.isLoading;
+  const docError = projectDocQuery.error
+    ? getErrorMessage(projectDocQuery.error, "读取项目文档失败")
+    : "";
+  const centerDocContent = centerDocQuery.data?.content ?? null;
+  const centerDocLoading = !!detailCenterSkillId && centerDocQuery.isLoading;
+  const centerDocError = centerDocQuery.error
+    ? getErrorMessage(centerDocQuery.error, "读取技能库文档失败")
+    : "";
+
+  const handleOpenDetail = (skill: ProjectSkillGroup) => {
     setDetailSkill(skill);
-    setDocContent(null);
-    setDocLoading(true);
-    setCenterDocContent(null);
-    setCenterDocLoading(false);
-    if (!project || !id) return;
+  };
 
-    const centerSkillId = skill.centerSkillIds.length > 0 ? skill.centerSkillIds[0] : null;
-
-    if (centerSkillId) {
-      setCenterDocLoading(true);
-      api.getSkillDocument(centerSkillId)
-        .then((doc) => { if (request === detailRequest.current) setCenterDocContent(doc.content); })
-        .catch((error) => { if (request === detailRequest.current) setCenterDocError(getErrorMessage(error, "读取技能库文档失败")); })
-        .finally(() => { if (request === detailRequest.current) setCenterDocLoading(false); });
-    }
-
-    try {
-      const doc = await api.getProjectSkillDocument(
-        id,
-        skill.primaryVariant.relative_path,
-        skill.primaryVariant.agent
-      );
-      if (request === detailRequest.current) setDocContent(doc.content);
-    } catch (error) {
-      if (request === detailRequest.current) setDocError(getErrorMessage(error, "读取项目文档失败"));
-    } finally {
-      if (request === detailRequest.current) setDocLoading(false);
-    }
+  const handleRetryDetailDocs = () => {
+    void projectDocQuery.refetch();
+    if (detailCenterSkillId) void centerDocQuery.refetch();
   };
 
   // Push one variant to the center, then realign the rest from it.
@@ -535,7 +504,7 @@ export function ProjectDetail() {
       } else {
         toast.success(t("project.updateCenterSuccess", { name: skill.name }));
       }
-      await Promise.all([refreshManagedSkills(), refreshPresets(), loadSkills()]);
+      await Promise.all([refreshManagedSkills(), refreshPresets()]);
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, t("common.error")));
     } finally {
@@ -557,7 +526,7 @@ export function ProjectDetail() {
       } else {
         toast.success(t("project.updateProjectSuccess", { name: skill.name }));
       }
-      await Promise.all([loadSkills(), refreshProjects()]);
+      await refreshProjects();
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, t("common.error")));
     } finally {
@@ -610,7 +579,7 @@ export function ProjectDetail() {
         await api.deleteProjectSkill(id, existingVariant.relative_path, agentKey);
         toast.success(t("project.agentRemoved", { agent: displayName, name: skill.name }));
       }
-      await Promise.all([loadSkills(), refreshProjects()]);
+      await refreshProjects();
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, t("common.error")));
     } finally {
@@ -627,7 +596,7 @@ export function ProjectDetail() {
         )
       );
       toast.success(t("project.skillDeleted", { name: deleteTarget.name }));
-      await Promise.all([loadSkills(), refreshProjects()]);
+      await refreshProjects();
     } catch (error: unknown) {
       throw new Error(getErrorMessage(error, t("common.error")), { cause: error });
     }
@@ -656,7 +625,7 @@ export function ProjectDetail() {
     if (failed > 0) {
       toast.error(t("project.batchDeleteFailed", { count: failed }));
     }
-    await Promise.all([loadSkills(), refreshProjects()]);
+    await refreshProjects();
     if (failed > 0) throw new Error(t("project.batchDeleteFailed", { count: failed }));
     exitMultiSelect();
     setBatchDeleteConfirm(false);
@@ -740,7 +709,7 @@ export function ProjectDetail() {
       if (failed > 0) {
         toast.error(t("project.batchUpdateCenterFailed", { count: failed }));
       }
-      await Promise.all([refreshManagedSkills(), refreshPresets(), loadSkills()]);
+      await Promise.all([refreshManagedSkills(), refreshPresets()]);
     } finally {
       setBatchUpdatingCenter(false);
     }
@@ -775,7 +744,7 @@ export function ProjectDetail() {
       if (failed > 0) {
         toast.error(t("project.batchUpdateProjectFailed", { count: failed }));
       }
-      await Promise.all([loadSkills(), refreshProjects()]);
+      await refreshProjects();
     } finally {
       setBatchUpdatingProject(false);
     }
@@ -814,7 +783,7 @@ export function ProjectDetail() {
     if (failed > 0) {
       toast.error(t("project.batchTagsFailed", { count: failed }));
     }
-    await Promise.all([refreshManagedSkills(), loadSkills()]);
+    await refreshManagedSkills();
   };
 
   const presetSkillExistsInProject = useCallback(
@@ -843,8 +812,8 @@ export function ProjectDetail() {
   );
 
   const handlePresetActionComplete = useCallback(async () => {
-    await Promise.all([loadSkills(), refreshProjects()]);
-  }, [loadSkills, refreshProjects]);
+    await refreshProjects();
+  }, [refreshProjects]);
 
   if (!project) return null;
 
@@ -1103,7 +1072,7 @@ export function ProjectDetail() {
                   tabIndex={0}
                   onKeyDown={(event) =>
                     handleCardKeyDown(event, () =>
-                      isMultiSelect ? toggleSelect(skillKey) : void handleOpenDetail(skill)
+                      isMultiSelect ? toggleSelect(skillKey) : handleOpenDetail(skill)
                     )
                   }
                 >
@@ -1132,7 +1101,7 @@ export function ProjectDetail() {
                       className="flex-1 truncate text-[14px] font-semibold text-primary"
                       title={skill.name}
                     >
-                      <button type="button" aria-pressed={isMultiSelect ? isSelected : undefined} className="text-left hover:underline" onClick={e => { e.stopPropagation(); if (isMultiSelect) toggleSelect(skillKey); else void handleOpenDetail(skill); }}>{skill.name}</button>
+                      <button type="button" aria-pressed={isMultiSelect ? isSelected : undefined} className="text-left hover:underline" onClick={e => { e.stopPropagation(); if (isMultiSelect) toggleSelect(skillKey); else handleOpenDetail(skill); }}>{skill.name}</button>
                     </h3>
                     {skill.files.length > 0 && (
                       <span className="flex items-center gap-1 text-[12px] text-faint shrink-0">
@@ -1272,7 +1241,7 @@ export function ProjectDetail() {
                 tabIndex={0}
                 onKeyDown={(event) =>
                   handleCardKeyDown(event, () =>
-                    isMultiSelect ? toggleSelect(skillKey) : void handleOpenDetail(skill)
+                    isMultiSelect ? toggleSelect(skillKey) : handleOpenDetail(skill)
                   )
                 }
               >
@@ -1299,7 +1268,7 @@ export function ProjectDetail() {
                   className="w-[180px] shrink-0 truncate text-[14px] font-semibold text-secondary"
                   title={skill.name}
                 >
-                  <button type="button" aria-pressed={isMultiSelect ? isSelected : undefined} className="text-left hover:underline" onClick={e => { e.stopPropagation(); if (isMultiSelect) toggleSelect(skillKey); else void handleOpenDetail(skill); }}>{skill.name}</button>
+                  <button type="button" aria-pressed={isMultiSelect ? isSelected : undefined} className="text-left hover:underline" onClick={e => { e.stopPropagation(); if (isMultiSelect) toggleSelect(skillKey); else handleOpenDetail(skill); }}>{skill.name}</button>
                 </h3>
 
                 <p className="min-w-0 flex-1 truncate text-[13px] text-muted">
@@ -1443,7 +1412,7 @@ export function ProjectDetail() {
           key={detailSkill.id}
           docError={docError}
           centerDocError={centerDocError}
-          onRetry={() => void handleOpenDetail(detailSkill)}
+          onRetry={handleRetryDetailDocs}
           docContent={docContent}
           docLoading={docLoading}
           centerDocContent={centerDocContent}
@@ -1496,7 +1465,7 @@ export function ProjectDetail() {
           }}
           managedSkills={managedSkills}
           onInstalled={async () => {
-            await Promise.all([loadSkills(), refreshProjects()]);
+            await refreshProjects();
           }}
         />
       )}

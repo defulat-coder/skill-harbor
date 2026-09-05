@@ -86,6 +86,7 @@ impl Drop for FetchInFlightGuard {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_fetch(store: State<'_, Arc<SkillStore>>) -> Result<(), AppError> {
     sync_engine_pref(&store);
     // Coalesce concurrent fetches: a `git fetch` against the central repo
@@ -102,6 +103,7 @@ pub async fn git_backup_fetch(store: State<'_, Arc<SkillStore>>) -> Result<(), A
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_status(
     store: State<'_, Arc<SkillStore>>,
 ) -> Result<git_backup::GitBackupStatus, AppError> {
@@ -112,6 +114,7 @@ pub async fn git_backup_status(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_init(store: State<'_, Arc<SkillStore>>) -> Result<(), AppError> {
     let store = store.inner().clone();
     let skills_dir = central_repo::skills_dir();
@@ -147,7 +150,7 @@ fn sanitize_url_to_keychain(url: &str) -> String {
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, specta::Type)]
 pub struct GithubBackupConnectResult {
     /// Credential-free HTTPS URL of the backup repository.
     pub url: String,
@@ -166,6 +169,7 @@ pub struct GithubBackupConnectResult {
 /// the OS keychain, and save the credential-free URL. The keychain is
 /// mandatory here — guided mode never falls back to token-in-URL.
 #[tauri::command]
+#[specta::specta]
 pub async fn github_backup_connect(
     store: State<'_, Arc<SkillStore>>,
     token: String,
@@ -230,6 +234,7 @@ fn connect_with_token(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn github_device_flow_start(
     store: State<'_, Arc<SkillStore>>,
 ) -> Result<github_api::DeviceFlowStart, AppError> {
@@ -241,7 +246,7 @@ pub async fn github_device_flow_start(
     .await?
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, specta::Type)]
 pub struct GithubDevicePollResult {
     /// "pending" | "slow_down" | "connected"
     pub status: String,
@@ -252,6 +257,7 @@ pub struct GithubDevicePollResult {
 /// backend: it goes straight through `connect_with_token` into the OS
 /// keychain and is never returned to the webview.
 #[tauri::command]
+#[specta::specta]
 pub async fn github_device_flow_poll(
     store: State<'_, Arc<SkillStore>>,
     device_code: String,
@@ -288,6 +294,7 @@ pub async fn github_device_flow_poll(
 /// credentials go to the OS keychain, the returned URL is what the frontend
 /// must save and display.
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_sanitize_remote_url(url: String) -> Result<String, AppError> {
     git_fetcher::validate_git_url(&url).map_err(AppError::git)?;
     tokio::task::spawn_blocking(move || Ok(sanitize_url_to_keychain(url.trim())))
@@ -295,6 +302,7 @@ pub async fn git_backup_sanitize_remote_url(url: String) -> Result<String, AppEr
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_set_remote(
     store: State<'_, Arc<SkillStore>>,
     url: String,
@@ -315,6 +323,7 @@ pub async fn git_backup_set_remote(
 /// machine's stored access credential. Remote repository data and the local
 /// repo are kept; other devices are unaffected.
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_remove_remote(store: State<'_, Arc<SkillStore>>) -> Result<(), AppError> {
     let store = store.inner().clone();
     let skills_dir = central_repo::skills_dir();
@@ -346,6 +355,7 @@ fn disconnect_local(store: &SkillStore, skills_dir: &Path) -> Result<(), AppErro
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_commit(
     store: State<'_, Arc<SkillStore>>,
     message: String,
@@ -364,6 +374,7 @@ pub async fn git_backup_commit(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_push(store: State<'_, Arc<SkillStore>>) -> Result<(), AppError> {
     sync_engine_pref(&store);
     let store = store.inner().clone();
@@ -379,6 +390,7 @@ pub async fn git_backup_push(store: State<'_, Arc<SkillStore>>) -> Result<(), Ap
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_pull(
     store: State<'_, Arc<SkillStore>>,
 ) -> Result<merge::MergeSummary, AppError> {
@@ -413,7 +425,7 @@ pub async fn git_backup_pull(
 }
 
 /// Outcome of a full sync transaction for the frontend.
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, specta::Type)]
 pub struct SyncOutcome {
     /// Local changes were committed as part of this sync.
     pub committed: bool,
@@ -430,6 +442,7 @@ pub struct SyncOutcome {
 /// the frontend-orchestrated commit/pull/push sequence, whose lock gaps let a
 /// benign race surface as a non-fast-forward "needs recovery" error.
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_sync(
     store: State<'_, Arc<SkillStore>>,
     message: String,
@@ -536,6 +549,7 @@ fn run_sync_blocking(
 /// Pending "needs attention" conflicts (merge-engine design §4) for the
 /// Backup page. Reads the rebuildable SQLite projection.
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_pending_conflicts(
     store: State<'_, Arc<SkillStore>>,
 ) -> Result<Vec<crate::core::skill_store::PendingConflictRow>, AppError> {
@@ -548,6 +562,7 @@ pub async fn git_backup_pending_conflicts(
 /// "keep_local" | "use_remote" | "keep_both". Returns the safety snapshot
 /// tag taken before the resolution.
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_resolve_conflict(
     store: State<'_, Arc<SkillStore>>,
     skill_id: String,
@@ -579,6 +594,7 @@ pub async fn git_backup_resolve_conflict(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_clone(
     store: State<'_, Arc<SkillStore>>,
     url: String,
@@ -603,6 +619,7 @@ pub async fn git_backup_clone(
 /// Existing skill files are preserved via the same backup-then-merge flow
 /// used by the regular clone path.
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_reclone(
     store: State<'_, Arc<SkillStore>>,
     url: String,
@@ -624,6 +641,7 @@ pub async fn git_backup_reclone(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_create_snapshot(
     store: State<'_, Arc<SkillStore>>,
 ) -> Result<String, AppError> {
@@ -636,6 +654,7 @@ pub async fn git_backup_create_snapshot(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_list_versions(
     store: State<'_, Arc<SkillStore>>,
     limit: Option<u32>,
@@ -652,6 +671,7 @@ pub async fn git_backup_list_versions(
 /// Restore a snapshot. Returns the safety-point tag that captured the
 /// pre-restore state, so the UI can tell the user the restore is undoable.
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_restore_version(
     store: State<'_, Arc<SkillStore>>,
     tag: String,
@@ -674,6 +694,7 @@ pub async fn git_backup_restore_version(
 /// Effective device name (§4.3 设备命名): the saved setting, or a persisted
 /// hostname-derived default.
 #[tauri::command]
+#[specta::specta]
 pub async fn backup_device_name(store: State<'_, Arc<SkillStore>>) -> Result<String, AppError> {
     let store = store.inner().clone();
     tokio::task::spawn_blocking(move || Ok(effective_device_name(&store))).await?
@@ -682,6 +703,7 @@ pub async fn backup_device_name(store: State<'_, Arc<SkillStore>>) -> Result<Str
 /// Rename this device. Only affects backups made from now on — history keeps
 /// the author it was written with. Returns the sanitized name actually saved.
 #[tauri::command]
+#[specta::specta]
 pub async fn backup_set_device_name(
     store: State<'_, Arc<SkillStore>>,
     name: String,
@@ -705,6 +727,7 @@ pub async fn backup_set_device_name(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_size_report() -> Result<git_backup::BackupSizeReport, AppError> {
     let skills_dir = central_repo::skills_dir();
     tokio::task::spawn_blocking(move || git_backup::size_report(&skills_dir).map_err(AppError::io))
@@ -718,6 +741,7 @@ pub async fn git_backup_size_report() -> Result<git_backup::BackupSizeReport, Ap
 /// sanitized URL when a migration happened, `None` when there was nothing to
 /// migrate.
 #[tauri::command]
+#[specta::specta]
 pub async fn git_backup_migrate_credentials(
     store: State<'_, Arc<SkillStore>>,
 ) -> Result<Option<String>, AppError> {

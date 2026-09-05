@@ -802,6 +802,187 @@ fn teardown_before_exit(app: &tauri::AppHandle) {
     }
 }
 
+/// Single source of truth for the IPC command surface: the specta builder
+/// collects every command, feeds the Tauri invoke handler, and exports the
+/// TypeScript bindings. Adding a command here is enough — no separate
+/// `generate_handler!` list to keep in sync.
+fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
+    tauri_specta::Builder::new()
+        .commands(tauri_specta::collect_commands![
+            commands::skill_search::skill_search_status,
+            commands::skill_search::skill_search_index,
+            commands::skill_search::skill_search_query,
+            commands::skill_search_answer::skill_search_answer,
+            commands::skill_guides::get_skill_guide,
+            commands::skill_guides::save_skill_guide,
+            commands::skill_guides::generate_skill_guide,
+            commands::skill_guides::translate_market_query,
+            commands::skill_guides::preview_market_guide,
+            commands::workbench::workbench_create_project,
+            commands::workbench::workbench_deploy_skills,
+            commands::workbench::workbench_project_bindings,
+            commands::task_runner::start_task,
+            commands::task_runner::list_tasks,
+            commands::task_runner::cancel_task,
+            commands::task_runner::get_task_log,
+            commands::task_runner::runner_status,
+            // Tools
+            commands::tools::get_tool_status,
+            commands::tools::set_tool_enabled,
+            commands::tools::set_all_tools_enabled,
+            commands::tools::get_tool_order_cmd,
+            commands::tools::set_tool_order_cmd,
+            commands::tools::set_custom_tool_path,
+            commands::tools::reset_custom_tool_path,
+            commands::tools::set_custom_tool_project_path,
+            commands::tools::reset_custom_tool_project_path,
+            commands::tools::add_custom_tool,
+            commands::tools::remove_custom_tool,
+            // Skills
+            commands::skills::get_managed_skills,
+            commands::skills::get_skills_for_preset,
+            commands::skills::get_skill_document,
+            commands::skills::get_source_skill_document,
+            commands::skills::get_skill_source_diff,
+            commands::skills::delete_managed_skill,
+            commands::skills::delete_managed_skills,
+            commands::skills::install_local,
+            commands::skills::install_git,
+            commands::skills::preview_git_install,
+            commands::skills::confirm_git_install,
+            commands::skills::cancel_git_preview,
+            commands::skills::install_from_skillssh,
+            commands::skills::check_skill_update,
+            commands::skills::check_all_skill_updates,
+            commands::skills::update_skill,
+            commands::skills::batch_update_skills,
+            commands::skills::reimport_local_skill,
+            commands::skills::relink_local_skill_source,
+            commands::skills::detach_local_skill_source,
+            commands::skills::get_all_tags,
+            commands::skills::set_skill_tags,
+            commands::skills::rename_tag,
+            commands::skills::delete_tag,
+            commands::skills::cancel_install,
+            commands::skills::batch_import_folder,
+            // Sync
+            commands::sync::sync_skill_to_tool,
+            commands::sync::unsync_skill_from_tool,
+            commands::sync::get_skill_tool_toggles,
+            commands::sync::set_skill_tool_toggle,
+            // Scan
+            commands::scan::scan_local_skills,
+            commands::scan::import_existing_skill,
+            commands::scan::import_all_discovered,
+            // Browse
+            commands::browse::fetch_leaderboard,
+            commands::browse::search_skillssh,
+            // Settings
+            commands::settings::get_settings,
+            commands::settings::set_settings,
+            commands::settings::get_central_repo_path,
+            commands::settings::get_central_repo_path_override,
+            commands::settings::get_central_repo_warnings,
+            commands::settings::set_central_repo_path,
+            commands::settings::open_central_repo_folder,
+            commands::settings::check_app_update,
+            commands::settings::update_install_blocker,
+            commands::settings::get_diagnostic_info,
+            commands::settings::get_recent_log_excerpt,
+            commands::settings::export_logs_zip,
+            commands::settings::log_startup_event,
+            commands::settings::check_last_panic,
+            commands::settings::clear_last_panic,
+            commands::settings::app_exit,
+            commands::settings::restart_app,
+            commands::settings::hide_to_tray,
+            // Git Backup
+            commands::git_backup::git_backup_fetch,
+            commands::git_backup::git_backup_status,
+            commands::git_backup::git_backup_init,
+            commands::git_backup::git_backup_set_remote,
+            commands::git_backup::github_backup_connect,
+            commands::git_backup::github_device_flow_start,
+            commands::git_backup::github_device_flow_poll,
+            commands::git_backup::git_backup_sanitize_remote_url,
+            commands::git_backup::git_backup_migrate_credentials,
+            commands::git_backup::git_backup_size_report,
+            commands::git_backup::git_backup_remove_remote,
+            commands::git_backup::git_backup_commit,
+            commands::git_backup::git_backup_push,
+            commands::git_backup::git_backup_pull,
+            commands::git_backup::git_backup_clone,
+            commands::git_backup::git_backup_reclone,
+            commands::git_backup::git_backup_create_snapshot,
+            commands::git_backup::git_backup_list_versions,
+            commands::git_backup::git_backup_restore_version,
+            commands::git_backup::backup_device_name,
+            commands::git_backup::backup_set_device_name,
+            commands::git_backup::git_backup_pending_conflicts,
+            commands::git_backup::git_backup_resolve_conflict,
+            commands::git_backup::git_backup_sync,
+            // Projects
+            commands::projects::get_projects,
+            commands::projects::add_project,
+            commands::projects::add_linked_workspace,
+            commands::projects::remove_project,
+            commands::projects::scan_projects,
+            commands::projects::get_project_agent_targets,
+            commands::projects::get_project_skills,
+            commands::projects::get_project_skill_document,
+            commands::projects::import_project_skill_to_center,
+            commands::projects::export_skill_to_project,
+            commands::projects::update_project_skill_to_center,
+            commands::projects::update_project_skill_from_center,
+            commands::projects::toggle_project_skill,
+            commands::projects::delete_project_skill,
+            commands::projects::slugify_skill_names,
+            // Agent local workspace
+            commands::agent_workspace::get_global_local_skills,
+            commands::agent_workspace::get_global_local_skill_document,
+            commands::agent_workspace::import_global_local_skill_to_center,
+            commands::agent_workspace::update_global_local_skill_from_center,
+            commands::agent_workspace::delete_global_local_skill,
+            // Presets
+            commands::presets::get_presets,
+            commands::presets::get_active_preset,
+            commands::presets::create_preset,
+            commands::presets::update_preset,
+            commands::presets::delete_preset,
+            commands::presets::switch_preset,
+            commands::presets::apply_preset_to_default,
+            commands::presets::apply_preset_to_coding_agents,
+            commands::presets::add_skill_to_preset,
+            commands::presets::remove_skill_from_preset,
+            commands::presets::reorder_presets,
+            commands::projects::reorder_projects,
+            commands::presets::get_preset_skill_order,
+            commands::presets::reorder_preset_skills,
+        ])
+        // The frontend's handwritten wrappers in `src/lib/tauri.ts` rely on
+        // invoke rejecting with the raw AppError payload; keep thrown errors
+        // instead of Result objects so those call sites stay unchanged.
+        .error_handling(tauri_specta::ErrorHandlingMode::Throw)
+        // serde_json serializes i64/u64 as plain JSON numbers, and the
+        // frontend treats them as `number`; casting keeps the TS types honest.
+        .dangerously_cast_bigints_to_number()
+}
+
+#[cfg(test)]
+mod bindings_tests {
+    /// Regenerates `src/lib/bindings.ts` from the live command list.
+    /// Run with: pnpm run bindings (i.e. `cargo test export_bindings`).
+    #[test]
+    fn export_bindings() {
+        super::specta_builder()
+            .export(
+                specta_typescript::Typescript::default(),
+                "../src/lib/bindings.ts",
+            )
+            .expect("failed to export TypeScript bindings");
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     #[cfg(debug_assertions)]
@@ -819,6 +1000,7 @@ pub fn run() {
     let cancel_registry = Arc::new(core::install_cancel::InstallCancelRegistry::new());
 
     let builder_start = Instant::now();
+    let specta = specta_builder();
     tauri::Builder::default()
         .manage(store)
         .manage(cancel_registry)
@@ -998,157 +1180,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![
-            commands::skill_search::skill_search_status,
-            commands::skill_search::skill_search_index,
-            commands::skill_search::skill_search_query,
-            commands::skill_search_answer::skill_search_answer,
-            commands::skill_guides::get_skill_guide,
-            commands::skill_guides::save_skill_guide,
-            commands::skill_guides::generate_skill_guide,
-            commands::skill_guides::translate_market_query,
-            commands::skill_guides::preview_market_guide,
-            commands::workbench::workbench_create_project,
-            commands::workbench::workbench_deploy_skills,
-            commands::workbench::workbench_project_bindings,
-            commands::task_runner::start_task,
-            commands::task_runner::list_tasks,
-            commands::task_runner::cancel_task,
-            commands::task_runner::get_task_log,
-            commands::task_runner::runner_status,
-            // Tools
-            commands::tools::get_tool_status,
-            commands::tools::set_tool_enabled,
-            commands::tools::set_all_tools_enabled,
-            commands::tools::get_tool_order_cmd,
-            commands::tools::set_tool_order_cmd,
-            commands::tools::set_custom_tool_path,
-            commands::tools::reset_custom_tool_path,
-            commands::tools::set_custom_tool_project_path,
-            commands::tools::reset_custom_tool_project_path,
-            commands::tools::add_custom_tool,
-            commands::tools::remove_custom_tool,
-            // Skills
-            commands::skills::get_managed_skills,
-            commands::skills::get_skills_for_preset,
-            commands::skills::get_skill_document,
-            commands::skills::get_source_skill_document,
-            commands::skills::get_skill_source_diff,
-            commands::skills::delete_managed_skill,
-            commands::skills::delete_managed_skills,
-            commands::skills::install_local,
-            commands::skills::install_git,
-            commands::skills::preview_git_install,
-            commands::skills::confirm_git_install,
-            commands::skills::cancel_git_preview,
-            commands::skills::install_from_skillssh,
-            commands::skills::check_skill_update,
-            commands::skills::check_all_skill_updates,
-            commands::skills::update_skill,
-            commands::skills::batch_update_skills,
-            commands::skills::reimport_local_skill,
-            commands::skills::relink_local_skill_source,
-            commands::skills::detach_local_skill_source,
-            commands::skills::get_all_tags,
-            commands::skills::set_skill_tags,
-            commands::skills::rename_tag,
-            commands::skills::delete_tag,
-            commands::skills::cancel_install,
-            commands::skills::batch_import_folder,
-            // Sync
-            commands::sync::sync_skill_to_tool,
-            commands::sync::unsync_skill_from_tool,
-            commands::sync::get_skill_tool_toggles,
-            commands::sync::set_skill_tool_toggle,
-            // Scan
-            commands::scan::scan_local_skills,
-            commands::scan::import_existing_skill,
-            commands::scan::import_all_discovered,
-            // Browse
-            commands::browse::fetch_leaderboard,
-            commands::browse::search_skillssh,
-            // Settings
-            commands::settings::get_settings,
-            commands::settings::set_settings,
-            commands::settings::get_central_repo_path,
-            commands::settings::get_central_repo_path_override,
-            commands::settings::get_central_repo_warnings,
-            commands::settings::set_central_repo_path,
-            commands::settings::open_central_repo_folder,
-            commands::settings::check_app_update,
-            commands::settings::update_install_blocker,
-            commands::settings::get_diagnostic_info,
-            commands::settings::get_recent_log_excerpt,
-            commands::settings::export_logs_zip,
-            commands::settings::log_startup_event,
-            commands::settings::check_last_panic,
-            commands::settings::clear_last_panic,
-            commands::settings::app_exit,
-            commands::settings::restart_app,
-            commands::settings::hide_to_tray,
-            // Git Backup
-            commands::git_backup::git_backup_fetch,
-            commands::git_backup::git_backup_status,
-            commands::git_backup::git_backup_init,
-            commands::git_backup::git_backup_set_remote,
-            commands::git_backup::github_backup_connect,
-            commands::git_backup::github_device_flow_start,
-            commands::git_backup::github_device_flow_poll,
-            commands::git_backup::git_backup_sanitize_remote_url,
-            commands::git_backup::git_backup_migrate_credentials,
-            commands::git_backup::git_backup_size_report,
-            commands::git_backup::git_backup_remove_remote,
-            commands::git_backup::git_backup_commit,
-            commands::git_backup::git_backup_push,
-            commands::git_backup::git_backup_pull,
-            commands::git_backup::git_backup_clone,
-            commands::git_backup::git_backup_reclone,
-            commands::git_backup::git_backup_create_snapshot,
-            commands::git_backup::git_backup_list_versions,
-            commands::git_backup::git_backup_restore_version,
-            commands::git_backup::backup_device_name,
-            commands::git_backup::backup_set_device_name,
-            commands::git_backup::git_backup_pending_conflicts,
-            commands::git_backup::git_backup_resolve_conflict,
-            commands::git_backup::git_backup_sync,
-            // Projects
-            commands::projects::get_projects,
-            commands::projects::add_project,
-            commands::projects::add_linked_workspace,
-            commands::projects::remove_project,
-            commands::projects::scan_projects,
-            commands::projects::get_project_agent_targets,
-            commands::projects::get_project_skills,
-            commands::projects::get_project_skill_document,
-            commands::projects::import_project_skill_to_center,
-            commands::projects::export_skill_to_project,
-            commands::projects::update_project_skill_to_center,
-            commands::projects::update_project_skill_from_center,
-            commands::projects::toggle_project_skill,
-            commands::projects::delete_project_skill,
-            commands::projects::slugify_skill_names,
-            // Agent local workspace
-            commands::agent_workspace::get_global_local_skills,
-            commands::agent_workspace::get_global_local_skill_document,
-            commands::agent_workspace::import_global_local_skill_to_center,
-            commands::agent_workspace::update_global_local_skill_from_center,
-            commands::agent_workspace::delete_global_local_skill,
-            // Presets
-            commands::presets::get_presets,
-            commands::presets::get_active_preset,
-            commands::presets::create_preset,
-            commands::presets::update_preset,
-            commands::presets::delete_preset,
-            commands::presets::switch_preset,
-            commands::presets::apply_preset_to_default,
-            commands::presets::apply_preset_to_coding_agents,
-            commands::presets::add_skill_to_preset,
-            commands::presets::remove_skill_from_preset,
-            commands::presets::reorder_presets,
-            commands::projects::reorder_projects,
-            commands::presets::get_preset_skill_order,
-            commands::presets::reorder_preset_skills,
-        ])
+        .invoke_handler(specta.invoke_handler())
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|_, event| {

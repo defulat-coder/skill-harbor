@@ -29,7 +29,7 @@ pub(crate) fn sync_skill_to_active_preset(
     scenario_service::sync_skill_to_active_scenario(store, scenario_id, skill_id)
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct PresetDto {
     pub id: String,
     pub name: String,
@@ -58,6 +58,7 @@ fn preset_dto(store: &SkillStore, scenario: ScenarioRecord) -> PresetDto {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_presets(store: State<'_, Arc<SkillStore>>) -> Result<Vec<PresetDto>, AppError> {
     let store = store.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
@@ -78,6 +79,7 @@ pub async fn get_presets(store: State<'_, Arc<SkillStore>>) -> Result<Vec<Preset
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_active_preset(
     store: State<'_, Arc<SkillStore>>,
 ) -> Result<Option<PresetDto>, AppError> {
@@ -97,6 +99,7 @@ pub async fn get_active_preset(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn create_preset(
     app: tauri::AppHandle,
     name: String,
@@ -173,6 +176,7 @@ fn create_and_activate_preset_internal(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn update_preset(
     app: tauri::AppHandle,
     id: String,
@@ -214,6 +218,7 @@ pub fn update_preset_internal(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn delete_preset(
     app: tauri::AppHandle,
     id: String,
@@ -290,6 +295,7 @@ fn delete_preset_with_active_fallback_internal(
 /// only invoked when the user clicks "Apply to Default" — sidebar/command-palette
 /// preset clicks no longer call this.
 #[tauri::command]
+#[specta::specta]
 pub async fn apply_preset_to_default(
     app: tauri::AppHandle,
     id: String,
@@ -302,6 +308,7 @@ pub async fn apply_preset_to_default(
 /// should use [`apply_preset_to_default`] (or [`apply_preset_to_coding_agents`]
 /// for the workspace-scoped variant the tray now uses).
 #[tauri::command]
+#[specta::specta]
 pub async fn switch_preset(
     app: tauri::AppHandle,
     id: String,
@@ -330,6 +337,7 @@ async fn apply_preset_to_default_impl(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn add_skill_to_preset(
     app: tauri::AppHandle,
     skill_id: String,
@@ -354,6 +362,7 @@ pub async fn add_skill_to_preset(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn remove_skill_from_preset(
     app: tauri::AppHandle,
     skill_id: String,
@@ -409,6 +418,7 @@ pub fn set_preset_skills_internal(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn reorder_presets(
     app: tauri::AppHandle,
     ids: Vec<String>,
@@ -430,6 +440,7 @@ pub async fn reorder_presets(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_preset_skill_order(
     preset_id: String,
     store: State<'_, Arc<SkillStore>>,
@@ -444,6 +455,7 @@ pub async fn get_preset_skill_order(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn reorder_preset_skills(
     preset_id: String,
     skill_ids: Vec<String>,
@@ -476,7 +488,7 @@ pub(crate) fn unsync_scenario_skills(
     scenario_service::unsync_scenario_skills(store, scenario_id)
 }
 
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Copy, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum PresetApplyMode {
     Add,
@@ -499,6 +511,7 @@ impl From<PresetApplyMode> for BatchApplyMode {
 /// Lobster agents are intentionally excluded — they have their own workspace
 /// and their own preset bar.
 #[tauri::command]
+#[specta::specta]
 pub async fn apply_preset_to_coding_agents(
     app: tauri::AppHandle,
     preset_id: String,

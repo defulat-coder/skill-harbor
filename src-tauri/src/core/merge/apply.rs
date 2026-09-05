@@ -22,7 +22,7 @@ use crate::core::{git_backup, gix_repo, repo_lock::RepoLock};
 
 /// Human-readable outcome of a sync merge (§4.5/§8). Returned to the
 /// frontend by the pull command; commit messages only carry the count line.
-#[derive(Debug, Clone, Default, serde::Serialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, specta::Type)]
 pub struct MergeSummary {
     /// "object" or "system" (legacy fallback keeps the old line-merge path).
     pub engine: String,
@@ -40,7 +40,7 @@ pub struct MergeSummary {
     pub legacy_fallback: bool,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, specta::Type)]
 pub struct UpdatedSkill {
     pub skill_id: String,
     pub path: String,

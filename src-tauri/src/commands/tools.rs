@@ -19,7 +19,7 @@ use crate::core::tool_service::{
     set_custom_tools, set_disabled_tools, set_tool_order, ToolInfo,
 };
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct ToolInfoDto {
     pub key: String,
     pub display_name: String,
@@ -59,6 +59,7 @@ fn reconcile_tool_sync_after_path_change(store: &SkillStore, tool_key: &str) {
 static GET_TOOL_STATUS_FIRST_CALL: AtomicBool = AtomicBool::new(true);
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_tool_status(
     store: State<'_, Arc<SkillStore>>,
 ) -> Result<Vec<ToolInfoDto>, AppError> {
@@ -98,6 +99,7 @@ fn refresh_tray_menu_best_effort(app: &AppHandle) {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn set_tool_enabled(
     app: AppHandle,
     key: String,
@@ -141,6 +143,7 @@ pub fn set_tool_enabled_internal(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn set_all_tools_enabled(
     app: AppHandle,
     enabled: bool,
@@ -181,6 +184,7 @@ pub async fn set_all_tools_enabled(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_tool_order_cmd(
     store: State<'_, Arc<SkillStore>>,
 ) -> Result<Vec<String>, AppError> {
@@ -189,6 +193,7 @@ pub async fn get_tool_order_cmd(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn set_tool_order_cmd(
     order: Vec<String>,
     store: State<'_, Arc<SkillStore>>,
@@ -250,6 +255,7 @@ pub(crate) fn apply_tool_skills_dir(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn set_custom_tool_path(
     key: String,
     path: String,
@@ -260,6 +266,7 @@ pub async fn set_custom_tool_path(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn reset_custom_tool_path(
     key: String,
     store: State<'_, Arc<SkillStore>>,
@@ -337,6 +344,7 @@ pub(crate) fn apply_tool_project_skills_dir(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn set_custom_tool_project_path(
     key: String,
     project_relative_skills_dir: Option<String>,
@@ -350,6 +358,7 @@ pub async fn set_custom_tool_project_path(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn reset_custom_tool_project_path(
     key: String,
     store: State<'_, Arc<SkillStore>>,
@@ -373,6 +382,7 @@ pub async fn reset_custom_tool_project_path(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn add_custom_tool(
     key: String,
     display_name: String,
@@ -417,6 +427,7 @@ pub async fn add_custom_tool(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn remove_custom_tool(
     key: String,
     store: State<'_, Arc<SkillStore>>,

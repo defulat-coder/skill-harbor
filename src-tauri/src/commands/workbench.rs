@@ -13,7 +13,7 @@ use std::{
 };
 use tauri::State;
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, specta::Type)]
 pub struct Binding {
     pub skill_id: String,
     pub agent: String,
@@ -21,13 +21,13 @@ pub struct Binding {
     pub mode: String,
     pub status: String,
 }
-#[derive(Serialize)]
+#[derive(Serialize, specta::Type)]
 pub struct DeployResult {
     pub skill_id: String,
     pub ok: bool,
     pub error: Option<String>,
 }
-#[derive(Serialize)]
+#[derive(Serialize, specta::Type)]
 pub struct CreateResult {
     pub project_id: String,
     pub results: Vec<DeployResult>,
@@ -220,6 +220,7 @@ pub fn create(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn workbench_create_project(
     store: State<'_, Arc<SkillStore>>,
     path: String,
@@ -237,6 +238,7 @@ pub async fn workbench_create_project(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn workbench_deploy_skills(
     store: State<'_, Arc<SkillStore>>,
     project_id: String,
@@ -253,6 +255,7 @@ pub async fn workbench_deploy_skills(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn workbench_project_bindings(
     store: State<'_, Arc<SkillStore>>,
     project_id: String,
