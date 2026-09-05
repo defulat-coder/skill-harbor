@@ -5,7 +5,7 @@ import styles from "./GlobalSkills.module.css";
 import { Button } from "../components/ui/Button";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, getRouteApi, useNavigate } from "@tanstack/react-router";
 import { Library, Plus, Search, Link2, FileText, LayoutGrid, List, ArrowUpRight, X } from "lucide-react";
 import { useApp } from "../hooks/useApp";
 import { DetailSheet } from "../components/DetailSheet";
@@ -33,8 +33,11 @@ function GlobalSkillDetail({ skill, onClose, onLink }: { skill: ManagedSkill; on
   </DetailSheet>;
 }
 
+const libraryRouteApi = getRouteApi("/_layout/library");
+
 export function GlobalSkills() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const search = libraryRouteApi.useSearch();
+  const navigate = useNavigate();
   const { managedSkills, loading, appError, refreshAppData } = useApp();
   const [query, setQuery] = useState("");
   const [tag, setTag] = useState("");
@@ -52,7 +55,7 @@ export function GlobalSkills() {
   const needle = query.trim().toLowerCase();
   const filtered = managedSkills.filter(s => (!source || s.source_type === source) && (!tag || s.tags.includes(tag)) && `${s.name} ${s.description ?? ""} ${s.tags.join(" ")}`.toLowerCase().includes(needle))
     .toSorted((a, b) => sort === "updated" ? b.updated_at - a.updated_at : a.name.localeCompare(b.name, "zh-CN"));
-  const selected = managedSkills.find(s => s.id === (searchParams.get("skill") ?? selectedId));
+  const selected = managedSkills.find(s => s.id === (search.skill ?? selectedId));
   const checked = managedSkills.filter(s => checkedIds.includes(s.id));
   const linked = managedSkills.filter(s => linkIds.includes(s.id));
   const allChecked = filtered.length > 0 && filtered.every(s => checkedIds.includes(s.id));
@@ -73,10 +76,10 @@ export function GlobalSkills() {
     {selectionMode && <div className="ds-selection-bar"><label><input type="checkbox" aria-label="选择当前结果的全部技能" ref={element => { if (element) element.indeterminate = someChecked; }} aria-checked={someChecked ? "mixed" : allChecked} checked={allChecked} disabled={!filtered.length} onChange={() => setCheckedIds(ids => allChecked ? ids.filter(id => !filtered.some(s => s.id === id)) : [...new Set([...ids, ...filtered.map(s => s.id)])])} />{checked.length ? `已选 ${checked.length} 个` : `全部技能 · ${filtered.length} 个`}</label>{checked.length > 0 ? <div><Button variant="secondary" onClick={() => setCheckedIds([])}>取消选择</Button><Button variant="primary" onClick={() => setLinkIds(checked.map(s => s.id))}><Link2 size={14} />加入项目</Button></div> : <span>点击技能阅读用法 · 勾选后可批量链接</span>}</div>}
     {loading ? <LoadingState label="正在读取技能库…" /> : appError && !managedSkills.length ? <div className="ds-empty"><h2>技能库尚未读取完成</h2><p>加载出现问题，请重试后查看技能。</p><Button onClick={() => void refreshAppData()}>重新加载</Button></div> : !filtered.length ? <div className="ds-empty"><Library size={28} /><h2>{managedSkills.length ? "没有匹配的技能" : "添加你的第一个技能"}</h2><p>{managedSkills.length ? "试试其他关键词，或清除筛选条件。" : "导入本地技能或从市场安装，随后即可阅读中文用法。"}</p>{managedSkills.length ? <Button variant="secondary" onClick={() => { setQuery(""); setTag(""); setSource(""); }}>清除筛选</Button> : null}</div> : <section className={`ds-skills ds-skills-${view}`} aria-label="全局技能列表">{filtered.map(skill => <article className={`${styles.skill} ds-skill ${checkedIds.includes(skill.id) ? "is-checked" : ""}`} key={skill.id}>
       <div className="ds-skill-meta">{selectionMode && <input type="checkbox" checked={checkedIds.includes(skill.id)} aria-label={`选择 ${skill.name}`} onChange={() => toggle(skill.id)} />}<span>{sourceLabel(skill.source_type)}</span></div>
-      <button className="ds-skill-open" onClick={() => { setSelectedId(skill.id); if (searchParams.has("skill")) { const next = new URLSearchParams(searchParams); next.set("skill", skill.id); setSearchParams(next, {replace:true}); } }} aria-label={`查看 ${skill.name} 的用法`}><span className="ds-skill-icon"><FileText size={16} /></span><div><h2>{skill.name}</h2><p>{skill.description || "查看此技能的中文说明与原始文档。"}</p></div><ArrowUpRight className="ds-skill-arrow" size={16} /></button>
+      <button className="ds-skill-open" onClick={() => { setSelectedId(skill.id); if (search.skill !== undefined) { void navigate({ to: "/library", search: (prev) => ({ ...prev, skill: skill.id }), replace: true }); } }} aria-label={`查看 ${skill.name} 的用法`}><span className="ds-skill-icon"><FileText size={16} /></span><div><h2>{skill.name}</h2><p>{skill.description || "查看此技能的中文说明与原始文档。"}</p></div><ArrowUpRight className="ds-skill-arrow" size={16} /></button>
       <footer><div>{skill.tags.slice(0, 2).map(t => <span key={t} className="ds-tag">{t}</span>)}</div></footer>
     </article>)}</section>}
-    {selected && linked.length === 0 && <GlobalSkillDetail key={selected.id} skill={selected} onClose={() => { setSelectedId(null); if(searchParams.has("skill")) { const next = new URLSearchParams(searchParams); next.delete("skill"); setSearchParams(next, {replace:true}); } }} onLink={() => setLinkIds([selected.id])} />}
+    {selected && linked.length === 0 && <GlobalSkillDetail key={selected.id} skill={selected} onClose={() => { setSelectedId(null); if (search.skill !== undefined) { void navigate({ to: "/library", search: (prev) => ({ ...prev, skill: undefined }), replace: true }); } }} onLink={() => setLinkIds([selected.id])} />}
     {linked.length > 0 && <SkillLinkDialog key={linkIds.join(",")} skills={linked} onClose={() => setLinkIds([])} />}
   </div>;
 }

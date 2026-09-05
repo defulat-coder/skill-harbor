@@ -64,7 +64,7 @@ import {
   open as dialogOpen,
   confirm as dialogConfirm,
 } from "@tauri-apps/plugin-dialog";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@tanstack/react-router";
 import { cn } from "../utils";
 import { useApp } from "../hooks/useApp";
 import { useTheme, type Theme } from "../hooks/useTheme";
@@ -2036,7 +2036,7 @@ export function Settings() {
                     </p>
                     <Button
                       type="button"
-                      onClick={() => navigate("/backup")}
+                      onClick={() => navigate({ to: "/backup" })}
                       className={actionButtonClass}
                     >
                       <ExternalLink className="w-3.5 h-3.5" />

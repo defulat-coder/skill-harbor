@@ -30,7 +30,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { open as dialogOpen } from "@tauri-apps/plugin-dialog";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { cn } from "../utils";
@@ -1032,7 +1032,7 @@ export function MySkills() {
   return (
     <div className={styles.page}>
       <PageHeader title="维护与更新" count={skills.length}
-        actions={<Button onClick={() => navigate("/library")}>返回全局技能</Button>} />
+        actions={<Button onClick={() => navigate({ to: "/library" })}>返回全局技能</Button>} />
 
       <div className={styles.toolbar}>
         <div className={styles.searchGroup}>
@@ -1077,7 +1077,7 @@ export function MySkills() {
             return (
               <button
                 type="button"
-                onClick={() => navigate("/backup")}
+                onClick={() => navigate({ to: "/backup" })}
                 className={cn(
                   "inline-flex items-center gap-1 text-[12px] text-muted hover:underline",
                   meta.className
@@ -1407,7 +1407,7 @@ export function MySkills() {
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
                         {conflictIds.has(skill.id) && (
                           <button
-                            onClick={(e) => { e.stopPropagation(); void navigate("/backup"); }}
+                            onClick={(e) => { e.stopPropagation(); void navigate({ to: "/backup" }); }}
                             className="rounded-full bg-[var(--ds-warning-bg)] px-2 py-0.5 text-[13px] font-medium text-[var(--ds-warning)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)]"
                             title={t("mySkills.needsAttentionHint")}
                           >
@@ -1627,7 +1627,7 @@ export function MySkills() {
                 <div className="flex shrink-0 items-center gap-2.5">
                   {conflictIds.has(skill.id) && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); void navigate("/backup"); }}
+                      onClick={(e) => { e.stopPropagation(); void navigate({ to: "/backup" }); }}
                       className="rounded-full bg-[var(--ds-warning-bg)] px-2 py-0.5 text-[12px] font-medium text-[var(--ds-warning)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)]"
                       title={t("mySkills.needsAttentionHint")}
                     >

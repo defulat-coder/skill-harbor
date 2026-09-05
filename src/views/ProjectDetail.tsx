@@ -4,7 +4,7 @@ import { LoadingState } from "../components/ui/LoadingState";
 import { PageHeader } from "../components/ui/PageHeader";
 import { useState, useEffect, useCallback, useMemo, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams, useNavigate } from "react-router-dom";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import {
   FolderOpen,
   Search,
@@ -119,8 +119,10 @@ function getGroupStatus(variants: ProjectSkill[]): ProjectSkill["sync_status"] {
   return "project_only";
 }
 
+const projectAdvancedRouteApi = getRouteApi("/_layout/project/$id/advanced");
+
 export function ProjectDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { id } = projectAdvancedRouteApi.useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { projects, presets, managedSkills, refreshManagedSkills, refreshPresets, refreshProjects } = useApp();
@@ -129,8 +131,8 @@ export function ProjectDetail() {
   // "projects" prefix (via refreshProjects / refreshManagedSkills) and this
   // query refetches, replacing the old manual loadSkills() refetch chain.
   const skillsQuery = useQuery({
-    queryKey: queryKeys.projects.skills(id ?? ""),
-    queryFn: () => api.getProjectSkills(id!),
+    queryKey: queryKeys.projects.skills(id),
+    queryFn: () => api.getProjectSkills(id),
     enabled: !!id,
   });
   const skills = skillsQuery.data ?? EMPTY_PROJECT_SKILLS;
@@ -140,8 +142,8 @@ export function ProjectDetail() {
     await queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
   }, [queryClient]);
   const agentTargetsQuery = useQuery({
-    queryKey: queryKeys.projects.agentTargets(id ?? ""),
-    queryFn: () => api.getProjectAgentTargets(id!),
+    queryKey: queryKeys.projects.agentTargets(id),
+    queryFn: () => api.getProjectAgentTargets(id),
     enabled: !!id,
   });
   const projectAgentTargets = agentTargetsQuery.data ?? EMPTY_AGENT_TARGETS;
@@ -173,7 +175,7 @@ export function ProjectDetail() {
 
   useEffect(() => {
     if (!project && !loading) {
-      void navigate("/");
+      void navigate({ to: "/" });
     }
   }, [project, loading, navigate]);
 
@@ -310,7 +312,7 @@ export function ProjectDetail() {
 
   const selectedExportAgents = useMemo(() => getDefaultExportAgents(exportTargets), [exportTargets]);
 
-  const lastUsedAgentsSettingsKey = projectLastUsedAgentsKey(id ?? "");
+  const lastUsedAgentsSettingsKey = projectLastUsedAgentsKey(id);
   const lastUsedAgentsQuery = useQuery({
     queryKey: queryKeys.settings.value(lastUsedAgentsSettingsKey),
     queryFn: () => api.getSettings(lastUsedAgentsSettingsKey).catch(() => null),
@@ -407,12 +409,12 @@ export function ProjectDetail() {
     detailSkill && detailSkill.centerSkillIds.length > 0 ? detailSkill.centerSkillIds[0] : null;
   const projectDocQuery = useQuery({
     queryKey: queryKeys.projects.skillDocument(
-      id ?? "",
+      id,
       detailSkill ? `${detailSkill.primaryVariant.agent}:${detailSkill.primaryVariant.relative_path}` : ""
     ),
     queryFn: () =>
       api.getProjectSkillDocument(
-        id!,
+        id,
         detailSkill!.primaryVariant.relative_path,
         detailSkill!.primaryVariant.agent
       ),

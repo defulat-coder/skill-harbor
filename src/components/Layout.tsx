@@ -1,6 +1,6 @@
 import styles from "./Layout.module.css";
 import { useEffect, useState } from "react";
-import { Outlet, useNavigate, useLocation, Link } from "react-router-dom";
+import { Outlet, useNavigate, useLocation, Link } from "@tanstack/react-router";
 import { PanelLeft, Home, ChevronRight, Search } from "lucide-react";
 import "../workbench.css";
 import "../design-system.css";
@@ -36,7 +36,7 @@ export function Layout() {
         const target = e.target;
         if (target instanceof HTMLElement && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
         e.preventDefault();
-        void navigate("/settings");
+        void navigate({ to: "/settings" });
       }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "r") {
         const target = e.target;

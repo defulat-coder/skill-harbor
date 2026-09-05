@@ -38,7 +38,7 @@ import { queryKeys } from "../lib/queryKeys";
 import type { ScanResult, SkillsShSkill, BatchImportResult, GitPreviewResult } from "../lib/tauri";
 import { open } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { listen } from "@tauri-apps/api/event";
 import { StatusBanner } from "../components/StatusBanner";
 import { getErrorMessage, getErrorKind } from "../lib/error";
@@ -61,12 +61,14 @@ function handleCancelInstall(cancelKey: string) {
   });
 }
 
+const installRouteApi = getRouteApi("/_layout/install");
+
 export function InstallSkills() {
   const { t } = useTranslation();
   const { refreshPresets, refreshManagedSkills, refreshProjects, managedSkills, projects, openSkillDetailById } = useApp();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [targetProject, setTargetProject] = useState(searchParams.get("project") ?? "");
+  const search = installRouteApi.useSearch();
+  const [targetProject, setTargetProject] = useState(search.project ?? "");
   const [addingToProject, setAddingToProject] = useState<string | null>(null);
   const addMarketSkillToProject = async (skill: SkillsShSkill) => {
     if (!targetProject) return;
@@ -139,7 +141,7 @@ export function InstallSkills() {
     if (skill) {
       openSkillDetailById(skill.id);
     }
-    void navigate("/my-skills");
+    void navigate({ to: "/my-skills" });
   }, [navigate, openSkillDetailById]);
 
   const installedSourceRefs = useMemo(() => {
@@ -168,18 +170,17 @@ export function InstallSkills() {
     return () => clearTimeout(timer);
   }, [deferredMarketQuery]);
 
-  const [prevSearchParams, setPrevSearchParams] = useState<URLSearchParams | null>(null);
-  if (prevSearchParams !== searchParams) {
-    setPrevSearchParams(searchParams);
-    const tab = searchParams.get("tab");
-    if (tab === "market" || tab === "local" || tab === "git") {
-      setActiveTab(tab);
+  const [prevSearch, setPrevSearch] = useState<typeof search | null>(null);
+  if (prevSearch !== search) {
+    setPrevSearch(search);
+    if (search.tab) {
+      setActiveTab(search.tab);
     }
   }
 
   const switchTab = (tab: "market" | "local" | "git") => {
     setActiveTab(tab);
-    setSearchParams({ tab });
+    void navigate({ to: "/install", search: { tab } });
   };
 
   const runScan = useCallback(async () => {

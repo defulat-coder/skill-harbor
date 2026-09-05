@@ -11,8 +11,8 @@ import {
   Link,
   useNavigate,
   useParams,
-  useSearchParams,
-} from "react-router-dom";
+  useSearch,
+} from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
   ArrowLeft,
@@ -51,8 +51,8 @@ const statusLabels: Record<wb.TaskRun["status"], string> = {
 
 export function Workbench() {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { id } = useParams({ strict: false });
+  const search = useSearch({ strict: false });
   const { projects, managedSkills, loading, refreshAppData, refreshProjects } = useApp();
   const project = projects.find((p) => p.id === id);
   const [query, setQuery] = useState("");
@@ -104,17 +104,17 @@ export function Workbench() {
     // surfaces through the query error instead.
     setMutationError("");
   }, [queryClient]);
-  const wantsWizard = searchParams.get("new");
+  const wantsWizard = search.new;
   const [prevWantsWizard, setPrevWantsWizard] = useState(wantsWizard);
   if (prevWantsWizard !== wantsWizard) {
     setPrevWantsWizard(wantsWizard);
     if (wantsWizard) setWizard(true);
   }
   useEffect(() => {
-    if (searchParams.get("new")) {
-      setSearchParams({}, { replace: true });
+    if (search.new) {
+      void navigate({ to: ".", search: {}, replace: true });
     }
-  }, [searchParams, setSearchParams]);
+  }, [search, navigate]);
   const [prevId, setPrevId] = useState(id);
   if (prevId !== id) {
     setPrevId(id);
@@ -238,7 +238,7 @@ export function Workbench() {
                       { key: "remove", label: "移除项目登记", icon: <Trash2 size={14} />, danger: true, disabled: reordering, onSelect: () => setProjectToRemove(p) },
                     ]} />
                   </div>
-                  <Link className={styles.projectOpen} to={`/project/${p.id}`}>
+                  <Link className={styles.projectOpen} to="/project/$id" params={{ id: p.id }}>
                   <h3>{p.name}</h3>
                   <p title={p.path}>{p.path}</p>
                   <footer>
@@ -262,8 +262,8 @@ export function Workbench() {
               所有项目
             </Link>
             <CardActionMenu label="项目更多操作" actions={[
-              { key: "discover", label: "发现技能", icon: <Search size={14}/>, onSelect: () => navigate(`/install?project=${id}`) },
-              { key: "advanced", label: "高级管理", icon: <Folder size={14}/>, onSelect: () => navigate(`/project/${id}/advanced`) },
+              { key: "discover", label: "发现技能", icon: <Search size={14}/>, onSelect: () => navigate({ to: "/install", search: { project: id } }) },
+              { key: "advanced", label: "高级管理", icon: <Folder size={14}/>, onSelect: () => navigate({ to: "/project/$id/advanced", params: { id } }) },
             ]} />
           </div>
           <div className="wb-tabs">
@@ -397,7 +397,7 @@ export function Workbench() {
                           ) : (
                             <div className="wb-notice">
                               这是项目本地技能。请先在高级管理中导入技能库，再生成中文说明。
-                              <Link to={`/project/${id}/advanced`}>
+                              <Link to="/project/$id/advanced" params={{ id }}>
                                 打开高级管理 <ArrowUpRight size={14} aria-hidden className="inline align-[-2px]" />
                               </Link>
                             </div>
@@ -534,7 +534,7 @@ function ProjectWizard({
         setResult({ projectId: res.project_id, results: res.results });
       else {
         onClose();
-        void navigate(`/project/${res.project_id}`);
+        void navigate({ to: "/project/$id", params: { id: res.project_id } });
       }
     } catch (e) {
       setError(errText(e));
@@ -693,7 +693,7 @@ function ProjectWizard({
               variant="primary"
               onClick={() => {
                 onClose();
-                void navigate(`/project/${result.projectId}`);
+                void navigate({ to: "/project/$id", params: { id: result.projectId } });
               }}
             >
               查看项目

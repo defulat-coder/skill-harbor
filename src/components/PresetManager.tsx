@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useApp } from "../hooks/useApp";
@@ -48,7 +48,7 @@ export function PresetManager({ open, onClose }: { open: boolean; onClose: () =>
   function view(preset: Preset) {
     setViewedPresetId(preset.id);
     onClose();
-    void navigate("/my-skills");
+    void navigate({ to: "/my-skills" });
   }
   return <>
     <DetailSheet open={open} title="技能预设" description="把常用技能组织为预设，在项目或工具目录中一起启用。" onClose={onClose} closeDisabled={busy}>

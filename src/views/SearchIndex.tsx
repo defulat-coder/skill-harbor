@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import { ArrowRight, RefreshCw } from "lucide-react";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Button } from "../components/ui/Button";

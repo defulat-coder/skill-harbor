@@ -6,7 +6,7 @@ import { PageHeader } from "../components/ui/PageHeader";
 import styles from "./WorkspaceView.module.css";
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams, useNavigate, Navigate } from "react-router-dom";
+import { useParams, useNavigate, Navigate } from "@tanstack/react-router";
 import {
   ChevronRight,
   Download,
@@ -231,7 +231,7 @@ const SYNC_STATUS_LABEL_KEYS: Record<ProjectSkill["sync_status"], string> = {
 };
 
 export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
-  const { agentKey } = useParams<{ agentKey?: string }>();
+  const { agentKey } = useParams({ strict: false });
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { tools, managedSkills, presets, refreshManagedSkills, refreshTools } = useApp();
@@ -260,11 +260,10 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     !!agentKey &&
     !!requestedTool &&
     requestedTool.category !== config.category;
-  const redirectTarget = needsRedirect && requestedTool
-    ? (requestedTool.category === "lobster"
-        ? `/lobster-workspace/${requestedTool.key}`
-        : `/global-workspace/${requestedTool.key}`)
-    : null;
+
+  const workspacePaths = config.category === "lobster"
+    ? { overview: "/lobster-workspace", agent: "/lobster-workspace/$agentKey" } as const
+    : { overview: "/global-workspace", agent: "/global-workspace/$agentKey" } as const;
 
   const installedTools = useMemo(
     () => tools.filter((t) => t.installed && t.enabled && t.category === config.category),
@@ -634,8 +633,11 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
     );
   };
 
-  if (redirectTarget) {
-    return <Navigate to={redirectTarget} replace />;
+  if (needsRedirect && requestedTool) {
+    const to = requestedTool.category === "lobster"
+      ? "/lobster-workspace/$agentKey"
+      : "/global-workspace/$agentKey";
+    return <Navigate to={to} params={{ agentKey: requestedTool.key }} replace />;
   }
 
   if (installedTools.length === 0) {
@@ -650,7 +652,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
           <p className="mt-1 max-w-[260px] text-[12px] leading-relaxed text-muted">
             {t(config.i18nKeys.noAgentsHint)}
           </p>
-          <Button onClick={() => navigate("/settings")}>配置工具与目录</Button>
+          <Button onClick={() => navigate({ to: "/settings" })}>配置工具与目录</Button>
         </div>
       </div>
     );
@@ -682,7 +684,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
             return (
               <button
                 key={tool.key}
-                onClick={() => navigate(`${config.basePath}/${tool.key}`)}
+                onClick={() => navigate({ to: workspacePaths.agent, params: { agentKey: tool.key } })}
                 className={styles.toolCard}
               >
                 <AgentIcon
@@ -711,7 +713,7 @@ export function WorkspaceView({ config }: { config: WorkspaceConfig }) {
           <PageHeader title={currentTool.display_name} count={localSkills.length}
             description={`${compactHomePath(currentTool.skills_dir)} · ${t("globalWorkspace.localSkills.summary", {
               total: localSkills.length, managed: managedLocalCount, synced: inSyncLocalCount,
-            })}`} actions={<Button onClick={() => navigate(config.basePath)}>全部工具</Button>} />
+            })}`} actions={<Button onClick={() => navigate({ to: workspacePaths.overview })}>全部工具</Button>} />
 
           <div className={styles.toolbar}>
             <div className="relative w-full min-w-[220px] max-w-[320px]">

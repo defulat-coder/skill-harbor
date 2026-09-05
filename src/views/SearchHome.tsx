@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import { ArrowRight, ArrowUp, BookOpen, Folder, Link2, Loader2 } from "lucide-react";
 import { useApp } from "../hooks/useApp";
 import { Button } from "../components/ui/Button";
@@ -150,7 +150,7 @@ function SearchHomeContent({ index }: { index: ReturnType<typeof useSkillIndex> 
       {answer && <article className={styles.answer}><h3>中文回答</h3><SkillMarkdown content={answer} /></article>}
       {answerError && <div role="alert" className={styles.error}><span>{answerError}。下方来源仍可阅读。</span><Button disabled={busy} onClick={() => void retryAnswer()}>重试回答</Button></div>}
       <div className={styles.hits}>{groups.map(group => <article className={styles.hit} key={group.skillId}>
-        <header><h3><Link to={`/library?skill=${encodeURIComponent(group.skillId)}`}>{group.name}</Link></h3><Button variant="ghost" disabled={!managedSkills.some(skill => skill.id === group.skillId)} onClick={() => setLinkId(group.skillId)}><Link2 size={14} />加入项目</Button></header>
+        <header><h3><Link to="/library" search={{ skill: group.skillId }}>{group.name}</Link></h3><Button variant="ghost" disabled={!managedSkills.some(skill => skill.id === group.skillId)} onClick={() => setLinkId(group.skillId)}><Link2 size={14} />加入项目</Button></header>
         <Disclosure title={`查看来源 · ${group.sources.length} 个片段`}>{group.sources.map(({ hit, index: hitIndex }) => <div key={hitIndex}><p className={styles.source}><span>[{hitIndex + 1}] 第 {hit.line_start}–{hit.line_end} 行</span><code>{hit.path}</code></p><pre className={styles.excerpt}>{hit.text}</pre></div>)}</Disclosure>
       </article>)}</div>
     </section>}
